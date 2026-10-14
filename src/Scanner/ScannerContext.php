@@ -11,7 +11,7 @@ use WP_User;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The B2B loja's place in the barcode scanner (beltoft-b2b-scanner).
+ * The B2B loja's place in the barcode scanner (beltoft-scanner).
  *
  * The scanner is a core that knows nothing about this shop: it asks the plugins
  * that use it where it belongs, who may scan, and what they may order. This is

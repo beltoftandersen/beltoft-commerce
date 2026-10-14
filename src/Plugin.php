@@ -42,7 +42,7 @@ class Plugin {
 		// Frontend\TwoPhaseList::register(); // DISABLED - starves the Bricks filters, see the class docblock.
 		Frontend\VariationCodes::register();
 		QuickOrder\Page::register();
-		// The trade list's place in beltoft-b2b-scanner, through its filters only.
+		// The trade list's place in beltoft-scanner, through its filters only.
 		Scanner\ScannerContext::register();
 		Registration\FormAction::register();
 		Registration\AdminUsers::register();
