@@ -67,10 +67,10 @@ class BankDetailsGuard {
 
 		printf(
 			'<div class="notice notice-error"><p><strong>%s</strong> %s</p><p><a href="%s">%s</a></p></div>',
-			esc_html__( 'Transferência bancária sem dados.', 'beltoft-commerce' ),
-			esc_html__( 'Os parceiros só podem pagar por transferência, e a conta bancária não está preenchida — quem encomenda não recebe o IBAN nem a referência.', 'beltoft-commerce' ),
+			esc_html__( 'Bank transfer has no bank details.', 'beltoft-commerce' ),
+			esc_html__( 'Partners can only pay by bank transfer, and the bank account is not filled in — whoever orders gets neither the IBAN nor the reference.', 'beltoft-commerce' ),
 			esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=bacs' ) ),
-			esc_html__( 'Preencher os dados bancários', 'beltoft-commerce' )
+			esc_html__( 'Fill in the bank details', 'beltoft-commerce' )
 		);
 	}
 
@@ -87,7 +87,7 @@ class BankDetailsGuard {
 			return $description;
 		}
 
-		return __( 'Entramos em contacto com os dados para a transferência e a referência da encomenda. A encomenda é preparada após a confirmação do pagamento.', 'beltoft-commerce' );
+		return __( 'We will contact you with the transfer details and the order reference. The order is prepared once the payment is confirmed.', 'beltoft-commerce' );
 	}
 
 	/**

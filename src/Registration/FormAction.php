@@ -81,7 +81,7 @@ class FormAction {
 		$form->set_result( array(
 			'action'  => self::ACTION,
 			'type'    => 'success',
-			'message' => __( 'Recebemos o seu registo. Enviámos-lhe um email e entraremos em contacto após a análise.', 'beltoft-commerce' ),
+			'message' => __( 'We have received your application. We have sent you an email and will be in touch after the review.', 'beltoft-commerce' ),
 		) );
 	}
 

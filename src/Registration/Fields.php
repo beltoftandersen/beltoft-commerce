@@ -33,13 +33,13 @@ class Fields {
 				'meta'     => 'user_email',
 			),
 			'company'      => array(
-				'label'    => __( 'Nome da empresa', 'beltoft-commerce' ),
+				'label'    => __( 'Company name', 'beltoft-commerce' ),
 				'type'     => 'text',
 				'required' => true,
 				'meta'     => 'billing_company',
 			),
 			'nif'          => array(
-				'label'    => __( 'Número de contribuinte (NIF/NIPC)', 'beltoft-commerce' ),
+				'label'    => __( 'Tax number (NIF/NIPC)', 'beltoft-commerce' ),
 				'type'     => 'text',
 				'required' => true,
 				/*
@@ -66,44 +66,44 @@ class Fields {
 				'meta'     => \BeltoftCommerce\Vat\Field::META_KEY,
 			),
 			'first_name'   => array(
-				'label'    => __( 'Nome', 'beltoft-commerce' ),
+				'label'    => __( 'First name', 'beltoft-commerce' ),
 				'type'     => 'text',
 				'required' => true,
 				'meta'     => 'first_name',
 			),
 			'last_name'    => array(
-				'label'    => __( 'Apelido', 'beltoft-commerce' ),
+				'label'    => __( 'Last name', 'beltoft-commerce' ),
 				'type'     => 'text',
 				'required' => true,
 				'meta'     => 'last_name',
 			),
 			'address'      => array(
-				'label'    => __( 'Morada', 'beltoft-commerce' ),
+				'label'    => __( 'Address', 'beltoft-commerce' ),
 				'type'     => 'text',
 				'required' => true,
 				'meta'     => 'billing_address_1',
 			),
 			'postcode'     => array(
-				'label'    => __( 'Código postal', 'beltoft-commerce' ),
+				'label'    => __( 'Postcode', 'beltoft-commerce' ),
 				'type'     => 'text',
 				'required' => true,
 				'meta'     => 'billing_postcode',
 			),
 			'city'         => array(
-				'label'    => __( 'Localidade do código postal', 'beltoft-commerce' ),
+				'label'    => __( 'Town / City', 'beltoft-commerce' ),
 				'type'     => 'text',
 				'required' => true,
 				'meta'     => 'billing_city',
 			),
 			'country'      => array(
-				'label'    => __( 'País', 'beltoft-commerce' ),
+				'label'    => __( 'Country', 'beltoft-commerce' ),
 				'type'     => 'select',
 				'required' => true,
 				'meta'     => 'billing_country',
 				'options'  => 'countries',
 			),
 			'state'        => array(
-				'label'    => __( 'Distrito', 'beltoft-commerce' ),
+				'label'    => __( 'District', 'beltoft-commerce' ),
 				'type'     => 'select',
 				'required' => true,
 				/*
@@ -115,19 +115,19 @@ class Fields {
 				'options'  => 'states',
 			),
 			'phone'        => array(
-				'label'    => __( 'Telefone', 'beltoft-commerce' ),
+				'label'    => __( 'Phone', 'beltoft-commerce' ),
 				'type'     => 'tel',
 				'required' => true,
 				'meta'     => 'billing_phone',
 			),
 			'company_info' => array(
-				'label'    => __( 'Informação da empresa', 'beltoft-commerce' ),
+				'label'    => __( 'Company information', 'beltoft-commerce' ),
 				'type'     => 'textarea',
 				'required' => true,
 				'meta'     => '_b2b_company_info',
 			),
 			'shop_name'    => array(
-				'label'    => __( 'Nome da loja', 'beltoft-commerce' ),
+				'label'    => __( 'Shop name', 'beltoft-commerce' ),
 				'type'     => 'text',
 				'required' => true,
 				/*
@@ -144,7 +144,7 @@ class Fields {
 				'meta'     => 'user_url',
 			),
 			'password'     => array(
-				'label'    => __( 'Palavra-passe', 'beltoft-commerce' ),
+				'label'    => __( 'Password', 'beltoft-commerce' ),
 				'type'     => 'password',
 				'required' => true,
 				'meta'     => 'user_pass',

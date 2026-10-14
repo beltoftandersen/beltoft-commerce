@@ -126,12 +126,12 @@ class LoopQuantity {
 			'<button type="button" class="beltoft-loop-qty__step" data-step="1" aria-label="%7$s" tabindex="-1">+</button>' .
 			'</div>',
 			(int) $product->get_id(),
-			esc_attr__( 'Quantidade', 'beltoft-commerce' ),
+			esc_attr__( 'Quantity', 'beltoft-commerce' ),
 			$min,
 			$step,
 			'' !== $max ? ' max="' . (int) $max . '"' : '',
-			esc_attr__( 'Diminuir quantidade', 'beltoft-commerce' ),
-			esc_attr__( 'Aumentar quantidade', 'beltoft-commerce' )
+			esc_attr__( 'Decrease quantity', 'beltoft-commerce' ),
+			esc_attr__( 'Increase quantity', 'beltoft-commerce' )
 		);
 
 		return $field . $html;
@@ -166,7 +166,7 @@ class LoopQuantity {
 			'</div>' .
 			'<span class="button beltoft-loop-variable__add beltoft-loop-variable__add--sold-out" aria-disabled="true" tabindex="-1">%s</span>' .
 			'</div>',
-			esc_html__( 'Esgotado', 'beltoft-commerce' )
+			esc_html__( 'Sold out', 'beltoft-commerce' )
 		);
 	}
 
@@ -244,10 +244,10 @@ class LoopQuantity {
 			'<button type="button" class="beltoft-loop-qty__step" data-step="1" aria-label="%5$s" tabindex="-1">+</button>' .
 			'</div>',
 			(int) $product->get_id(),
-			esc_attr__( 'Quantidade', 'beltoft-commerce' ),
+			esc_attr__( 'Quantity', 'beltoft-commerce' ),
 			'' !== $max ? ' max="' . (int) $max . '"' : '',
-			esc_attr__( 'Diminuir quantidade', 'beltoft-commerce' ),
-			esc_attr__( 'Aumentar quantidade', 'beltoft-commerce' )
+			esc_attr__( 'Decrease quantity', 'beltoft-commerce' ),
+			esc_attr__( 'Increase quantity', 'beltoft-commerce' )
 		);
 	}
 

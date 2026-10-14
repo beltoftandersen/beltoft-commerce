@@ -83,14 +83,14 @@ class AccountEndpoint {
 		foreach ( $items as $key => $label ) {
 			// Above Edit account, which is the other "my details" page.
 			if ( 'edit-account' === $key ) {
-				$new[ self::ENDPOINT ] = __( 'Dados fiscais', 'beltoft-commerce' );
+				$new[ self::ENDPOINT ] = __( 'Tax details', 'beltoft-commerce' );
 			}
 
 			$new[ $key ] = $label;
 		}
 
 		if ( ! isset( $new[ self::ENDPOINT ] ) ) {
-			$new[ self::ENDPOINT ] = __( 'Dados fiscais', 'beltoft-commerce' );
+			$new[ self::ENDPOINT ] = __( 'Tax details', 'beltoft-commerce' );
 		}
 
 		return $new;
@@ -180,38 +180,38 @@ class AccountEndpoint {
 
 	private static function refusal_message( string $reason ): string {
 		if ( 'unreadable' === $reason ) {
-			return __( 'Não foi possível ler um número no que escreveu. O número anterior não foi alterado.', 'beltoft-commerce' );
+			return __( 'No number could be read from what you typed. Your previous number has not been changed.', 'beltoft-commerce' );
 		}
 
 		if ( 'pt_check_digit' === $reason ) {
-			return __( 'O número de contribuinte indicado não é válido. O número anterior não foi alterado.', 'beltoft-commerce' );
+			return __( 'The tax number given is not valid. Your previous number has not been changed.', 'beltoft-commerce' );
 		}
 
 		if ( 'country_mismatch' === $reason ) {
 			return __( 'This VAT number is from a different country than your billing address. Update your billing address first. Your previous number has not been changed.', 'beltoft-commerce' );
 		}
 
-		return __( 'Este número de IVA não foi reconhecido pelo VIES. O número anterior não foi alterado.', 'beltoft-commerce' );
+		return __( 'VIES did not recognise this VAT number. Your previous number has not been changed.', 'beltoft-commerce' );
 	}
 
 	private static function success_message( array $result, VatDecision $decision ): string {
 		if ( AccountUpdate::CLEARED === $result['outcome'] ) {
-			return __( 'Número de IVA removido da sua conta.', 'beltoft-commerce' );
+			return __( 'VAT number removed from your account.', 'beltoft-commerce' );
 		}
 
 		if ( 'unverified' === $result['status'] ) {
-			return __( 'Número guardado. Não foi possível contactar o VIES neste momento, por isso ainda não está confirmado.', 'beltoft-commerce' );
+			return __( 'Number saved. VIES could not be reached just now, so it is not confirmed yet.', 'beltoft-commerce' );
 		}
 
 		if ( 'valid' === $result['status'] ) {
-			return __( 'Número de IVA confirmado pelo VIES e guardado.', 'beltoft-commerce' );
+			return __( 'VAT number confirmed by VIES and saved.', 'beltoft-commerce' );
 		}
 
 		if ( '' === $result['status'] ) {
-			return __( 'Número guardado. Não é um número de IVA da União Europeia, por isso não há autoliquidação.', 'beltoft-commerce' );
+			return __( 'Number saved. It is not a European Union VAT number, so there is no reverse charge.', 'beltoft-commerce' );
 		}
 
-		return __( 'Número de contribuinte guardado.', 'beltoft-commerce' );
+		return __( 'Tax number saved.', 'beltoft-commerce' );
 	}
 
 	/**
@@ -230,20 +230,20 @@ class AccountEndpoint {
 		 * "Sem número de IVA associado" directly above it.
 		 */
 		if ( '' === $status && $has_number ) {
-			return __( 'Número registado. Não é um número de IVA da União Europeia, por isso as faturas levam IVA à taxa portuguesa.', 'beltoft-commerce' );
+			return __( 'Number on file. It is not a European Union VAT number, so invoices carry VAT at the Portuguese rate.', 'beltoft-commerce' );
 		}
 
 		switch ( $status ) {
 			case 'valid':
-				return __( 'Confirmado pelo VIES. As suas faturas são emitidas com autoliquidação, sem IVA português.', 'beltoft-commerce' );
+				return __( 'Confirmed by VIES. Your invoices are issued with reverse charge, without Portuguese VAT.', 'beltoft-commerce' );
 			case 'domestic':
-				return __( 'Número português. Não é enviado ao VIES e as suas faturas levam IVA à taxa portuguesa.', 'beltoft-commerce' );
+				return __( 'Portuguese number. It is not sent to VIES and your invoices carry VAT at the Portuguese rate.', 'beltoft-commerce' );
 			case 'unverified':
-				return __( 'Ainda não confirmado — o VIES não respondeu da última vez. Guarde novamente mais tarde para tentar outra vez.', 'beltoft-commerce' );
+				return __( 'Not confirmed yet — VIES did not answer last time. Save again later to try once more.', 'beltoft-commerce' );
 			case 'invalid':
-				return __( 'O VIES não reconheceu este número.', 'beltoft-commerce' );
+				return __( 'VIES did not recognise this number.', 'beltoft-commerce' );
 			default:
-				return __( 'Sem número de IVA associado. As suas faturas levam IVA à taxa portuguesa.', 'beltoft-commerce' );
+				return __( 'No VAT number on file. Your invoices carry VAT at the Portuguese rate.', 'beltoft-commerce' );
 		}
 	}
 
@@ -267,21 +267,21 @@ class AccountEndpoint {
 		$name     = (string) get_user_meta( $user_id, OrderEvidence::REGISTERED, true );
 		$checked  = (string) get_user_meta( $user_id, OrderEvidence::REQUEST_DATE, true );
 
-		echo '<h2>' . esc_html__( 'Dados fiscais', 'beltoft-commerce' ) . '</h2>';
+		echo '<h2>' . esc_html__( 'Tax details', 'beltoft-commerce' ) . '</h2>';
 
-		echo '<p>' . esc_html__( 'O número que usamos para emitir as suas faturas. Alterá-lo aqui verifica-o outra vez.', 'beltoft-commerce' ) . '</p>';
+		echo '<p>' . esc_html__( 'The number we use to issue your invoices. Changing it here checks it again.', 'beltoft-commerce' ) . '</p>';
 
-		echo '<p><strong>' . esc_html__( 'Estado:', 'beltoft-commerce' ) . '</strong> ' . esc_html( self::status_line( $status, '' !== $number ) ) . '</p>';
+		echo '<p><strong>' . esc_html__( 'Status:', 'beltoft-commerce' ) . '</strong> ' . esc_html( self::status_line( $status, '' !== $number ) ) . '</p>';
 
 		if ( '' !== $name ) {
-			echo '<p><strong>' . esc_html__( 'Registado como:', 'beltoft-commerce' ) . '</strong> ' . esc_html( $name ) . '</p>';
+			echo '<p><strong>' . esc_html__( 'Registered as:', 'beltoft-commerce' ) . '</strong> ' . esc_html( $name ) . '</p>';
 		}
 
 		if ( '' !== $checked ) {
 			$timestamp = strtotime( $checked );
 
 			if ( $timestamp ) {
-				echo '<p><strong>' . esc_html__( 'Verificado em:', 'beltoft-commerce' ) . '</strong> '
+				echo '<p><strong>' . esc_html__( 'Checked on:', 'beltoft-commerce' ) . '</strong> '
 					. esc_html( date_i18n( get_option( 'date_format' ) . ' H:i', $timestamp ) ) . '</p>';
 			}
 		}
@@ -290,16 +290,16 @@ class AccountEndpoint {
 		wp_nonce_field( self::NONCE );
 
 		echo '<p class="form-row form-row-wide">';
-		echo '<label for="beltoft_vat_number">' . esc_html__( 'Número de contribuinte (NIF/NIPC) ou número de IVA europeu', 'beltoft-commerce' ) . '</label>';
+		echo '<label for="beltoft_vat_number">' . esc_html__( 'Tax number (NIF/NIPC) or European VAT number', 'beltoft-commerce' ) . '</label>';
 		echo '<input type="text" class="woocommerce-Input woocommerce-Input--text input-text" name="beltoft_vat_number" id="beltoft_vat_number" autocomplete="off" value="' . esc_attr( $number ) . '">';
 		echo '</p>';
 
 		echo '<p>';
 		echo '<button type="submit" class="woocommerce-Button button" name="beltoft_vat_account_submit" value="1">'
-			. esc_html__( 'Guardar e verificar', 'beltoft-commerce' ) . '</button>';
+			. esc_html__( 'Save and check', 'beltoft-commerce' ) . '</button>';
 		echo '</p>';
 
-		echo '<p><small>' . esc_html__( 'Deixe em branco se não tiver número de IVA. Um número de outro país da União Europeia é verificado no VIES da Comissão Europeia.', 'beltoft-commerce' ) . '</small></p>';
+		echo '<p><small>' . esc_html__( 'Leave empty if you have no VAT number. A number from another European Union country is checked with the European Commission\'s VIES.', 'beltoft-commerce' ) . '</small></p>';
 
 		echo '</form>';
 	}

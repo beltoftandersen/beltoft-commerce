@@ -94,8 +94,8 @@ class Writer {
 			'name'    => $parent_name,
 			'variant' => $variant,
 			'stock'   => $product->is_in_stock()
-				? __( 'Em stock', 'beltoft-commerce' )
-				: __( 'Sem stock', 'beltoft-commerce' ),
+				? __( 'In stock', 'beltoft-commerce' )
+				: __( 'Out of stock', 'beltoft-commerce' ),
 			'price'   => wc_format_localized_price( (string) PriceResolver::resolve( $product, $group ) ),
 			'rrp'     => wc_format_localized_price( (string) $product->get_regular_price( 'edit' ) ),
 		);

@@ -14,8 +14,8 @@ class B2BApplicationApprovedEmail extends B2BApplicationEmail {
 
 	public function __construct() {
 		$this->id          = 'beltoft_b2b_application_approved';
-		$this->title       = __( 'Registo B2B aprovado', 'beltoft-commerce' );
-		$this->description = __( 'Enviado ao cliente quando o registo de parceiro é aprovado.', 'beltoft-commerce' );
+		$this->title       = __( 'B2B application approved', 'beltoft-commerce' );
+		$this->description = __( 'Sent to the customer when their partner application is approved.', 'beltoft-commerce' );
 
 		parent::__construct();
 
@@ -23,14 +23,14 @@ class B2BApplicationApprovedEmail extends B2BApplicationEmail {
 	}
 
 	public function get_default_subject(): string {
-		return __( 'O seu registo foi aprovado — {site_title}', 'beltoft-commerce' );
+		return __( 'Your application has been approved — {site_title}', 'beltoft-commerce' );
 	}
 
 	public function get_default_heading(): string {
-		return __( 'Bem-vindo, {company}', 'beltoft-commerce' );
+		return __( 'Welcome, {company}', 'beltoft-commerce' );
 	}
 
 	protected function body_copy(): string {
-		return __( 'O seu registo como parceiro foi aprovado. Já pode iniciar sessão e encomendar com os preços da sua conta.', 'beltoft-commerce' );
+		return __( 'Your partner application has been approved. You can now sign in and order at your account\'s prices.', 'beltoft-commerce' );
 	}
 }

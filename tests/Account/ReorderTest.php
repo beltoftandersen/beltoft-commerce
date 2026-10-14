@@ -55,6 +55,6 @@ class ReorderTest extends WP_UnitTestCase {
 			false
 		);
 
-		$this->assertContains( 'Amaciador Antigo (já não existe)', $result['skipped'] );
+		$this->assertContains( 'Amaciador Antigo (no longer exists)', $result['skipped'] );
 	}
 }

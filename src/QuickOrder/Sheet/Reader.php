@@ -41,7 +41,7 @@ class Reader {
 		$zip = new \ZipArchive();
 
 		if ( true !== $zip->open( $path ) ) {
-			throw new InvalidArgumentException( __( 'O ficheiro não é um .xlsx válido.', 'beltoft-commerce' ) );
+			throw new InvalidArgumentException( __( 'The file is not a valid .xlsx.', 'beltoft-commerce' ) );
 		}
 
 		$sheet = self::read_part( $zip, 'xl/worksheets/sheet1.xml', true );
@@ -64,14 +64,14 @@ class Reader {
 			$parsed  = self::rows( $sheet, $strings );
 
 			if ( libxml_get_errors() ) {
-				throw new InvalidArgumentException( __( 'A folha está danificada. Descarregue uma nova folha.', 'beltoft-commerce' ) );
+				throw new InvalidArgumentException( __( 'The sheet is damaged. Download a new sheet.', 'beltoft-commerce' ) );
 			}
 		} catch ( InvalidArgumentException $e ) {
 			throw $e;
 		} catch ( \Throwable $e ) {
 			// SimpleXMLElement throws its own Exception on malformed XML,
 			// bypassing libxml_get_errors() entirely.
-			throw new InvalidArgumentException( __( 'A folha está danificada. Descarregue uma nova folha.', 'beltoft-commerce' ) );
+			throw new InvalidArgumentException( __( 'The sheet is damaged. Download a new sheet.', 'beltoft-commerce' ) );
 		} finally {
 			libxml_clear_errors();
 			libxml_use_internal_errors( $previous );
@@ -91,7 +91,7 @@ class Reader {
 			if ( $required ) {
 				$zip->close();
 
-				throw new InvalidArgumentException( __( 'O ficheiro não é um .xlsx válido.', 'beltoft-commerce' ) );
+				throw new InvalidArgumentException( __( 'The file is not a valid .xlsx.', 'beltoft-commerce' ) );
 			}
 
 			return null;
@@ -100,7 +100,7 @@ class Reader {
 		if ( $stat['size'] > self::MAX_PART_BYTES ) {
 			$zip->close();
 
-			throw new InvalidArgumentException( __( 'A folha é demasiado grande.', 'beltoft-commerce' ) );
+			throw new InvalidArgumentException( __( 'The sheet is too large.', 'beltoft-commerce' ) );
 		}
 
 		$contents = $zip->getFromName( $name );
@@ -109,7 +109,7 @@ class Reader {
 			if ( $required ) {
 				$zip->close();
 
-				throw new InvalidArgumentException( __( 'O ficheiro não é um .xlsx válido.', 'beltoft-commerce' ) );
+				throw new InvalidArgumentException( __( 'The file is not a valid .xlsx.', 'beltoft-commerce' ) );
 			}
 
 			return null;
@@ -197,7 +197,7 @@ class Reader {
 		$reader->close();
 
 		if ( null === $map ) {
-			throw new InvalidArgumentException( __( 'A folha não tem as colunas SKU e Quantidade. Descarregue uma nova folha.', 'beltoft-commerce' ) );
+			throw new InvalidArgumentException( __( 'The sheet does not have the SKU and Quantity columns. Download a new sheet.', 'beltoft-commerce' ) );
 		}
 
 		return array(

@@ -23,13 +23,13 @@ do_action( 'woocommerce_email_header', $email_heading, $email ); ?>
 	$nif       = (string) get_user_meta( $user->ID, \BeltoftCommerce\Vat\Field::META_KEY, true );
 	?>
 	<?php if ( '' !== $company || '' !== $shop_name || '' !== $nif ) : ?>
-		<h2><?php esc_html_e( 'Dados do registo', 'beltoft-commerce' ); ?></h2>
+		<h2><?php esc_html_e( 'Application details', 'beltoft-commerce' ); ?></h2>
 		<ul>
 			<?php if ( '' !== $company ) : ?>
-				<li><?php esc_html_e( 'Empresa', 'beltoft-commerce' ); ?>: <?php echo esc_html( $company ); ?></li>
+				<li><?php esc_html_e( 'Company', 'beltoft-commerce' ); ?>: <?php echo esc_html( $company ); ?></li>
 			<?php endif; ?>
 			<?php if ( '' !== $shop_name ) : ?>
-				<li><?php esc_html_e( 'Loja', 'beltoft-commerce' ); ?>: <?php echo esc_html( $shop_name ); ?></li>
+				<li><?php esc_html_e( 'Shop', 'beltoft-commerce' ); ?>: <?php echo esc_html( $shop_name ); ?></li>
 			<?php endif; ?>
 			<?php if ( '' !== $nif ) : ?>
 				<li><?php esc_html_e( 'NIF/NIPC', 'beltoft-commerce' ); ?>: <?php echo esc_html( $nif ); ?></li>

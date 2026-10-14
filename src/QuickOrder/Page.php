@@ -157,7 +157,7 @@ class Page {
 			wc_add_notice(
 				sprintf(
 					/* translators: %s: maximum upload size, e.g. "64 MB". */
-					__( 'O envio excede o limite do servidor (%s). Reduza o ficheiro e tente novamente.', 'beltoft-commerce' ),
+					__( 'The upload exceeds the server limit (%s). Make the file smaller and try again.', 'beltoft-commerce' ),
 					size_format( wp_max_upload_size() )
 				),
 				'error'
@@ -193,7 +193,7 @@ class Page {
 		}
 
 		if ( 'sheet' === $route && UPLOAD_ERR_NO_FILE === $error ) {
-			wc_add_notice( __( 'Escolha primeiro o ficheiro .xlsx que quer importar.', 'beltoft-commerce' ), 'error' );
+			wc_add_notice( __( 'First choose the .xlsx file you want to import.', 'beltoft-commerce' ), 'error' );
 
 			self::redirect_to_page();
 		}
@@ -210,7 +210,7 @@ class Page {
 				wc_add_notice(
 					sprintf(
 						/* translators: %s: maximum upload size, e.g. "64 MB". */
-						__( 'O ficheiro excede o limite de envio (%s).', 'beltoft-commerce' ),
+						__( 'The file exceeds the upload limit (%s).', 'beltoft-commerce' ),
 						size_format( wp_max_upload_size() )
 					),
 					'error'
@@ -226,7 +226,7 @@ class Page {
 			 * about provenance, and the path goes straight to ZipArchive.
 			 */
 			if ( UPLOAD_ERR_OK !== $error || empty( $upload['tmp_name'] ) || ! is_uploaded_file( $upload['tmp_name'] ) ) {
-				wc_add_notice( __( 'Não foi possível ler o ficheiro enviado.', 'beltoft-commerce' ), 'error' );
+				wc_add_notice( __( 'The uploaded file could not be read.', 'beltoft-commerce' ), 'error' );
 
 				self::redirect_to_page();
 			}
@@ -235,7 +235,7 @@ class Page {
 
 			if ( in_array( $extension, self::UNSUPPORTED_EXTENSIONS, true ) ) {
 				wc_add_notice(
-					__( 'Este formato não é suportado. Guarde a folha como .xlsx no Excel (Ficheiro → Guardar como) e envie novamente.', 'beltoft-commerce' ),
+					__( 'This format is not supported. Save the sheet as .xlsx in Excel (File → Save as) and upload it again.', 'beltoft-commerce' ),
 					'error'
 				);
 
@@ -261,16 +261,16 @@ class Page {
 			 */
 			if ( 'sheet' === $route ) {
 				wc_add_notice(
-					__( 'A folha não trazia quantidades. Preencha a coluna Quantidade e envie outra vez.', 'beltoft-commerce' ),
+					__( 'The sheet had no quantities. Fill in the Quantity column and upload it again.', 'beltoft-commerce' ),
 					'error'
 				);
 			} elseif ( 'pad' === $route ) {
 				wc_add_notice(
-					__( 'Não foram encontradas linhas. Escreva uma referência e uma quantidade por linha.', 'beltoft-commerce' ),
+					__( 'No lines were found. Write one reference and one quantity per line.', 'beltoft-commerce' ),
 					'error'
 				);
 			} else {
-				wc_add_notice( __( 'Não foram encontradas linhas para encomendar. Verifique as referências e quantidades.', 'beltoft-commerce' ), 'error' );
+				wc_add_notice( __( 'No lines to order were found. Check the references and quantities.', 'beltoft-commerce' ), 'error' );
 			}
 
 			self::redirect_to_page();
@@ -444,7 +444,7 @@ class Page {
 			wc_add_notice(
 				sprintf(
 					/* translators: %d: number of lines added to the cart. */
-					_n( '%d linha adicionada ao carrinho.', '%d linhas adicionadas ao carrinho.', $added, 'beltoft-commerce' ),
+					_n( '%d line added to the cart.', '%d lines added to the cart.', $added, 'beltoft-commerce' ),
 					$added
 				),
 				'success'
@@ -609,42 +609,42 @@ class Page {
 					so neither is numbered and neither is presented first.
 				-->
 				<section class="beltoft-qo__panel">
-					<h2 class="beltoft-qo__title"><?php esc_html_e( 'Colar referências', 'beltoft-commerce' ); ?></h2>
+					<h2 class="beltoft-qo__title"><?php esc_html_e( 'Paste references', 'beltoft-commerce' ); ?></h2>
 					<label class="beltoft-qo__label" for="beltoft-quick-order-pad">
-						<?php esc_html_e( 'Uma referência e quantidade por linha', 'beltoft-commerce' ); ?>
+						<?php esc_html_e( 'One reference and quantity per line', 'beltoft-commerce' ); ?>
 					</label>
 					<textarea id="beltoft-quick-order-pad" name="beltoft_quick_order_pad" rows="9"
 						class="beltoft-qo__pad" spellcheck="false" autocomplete="off"
 						placeholder="ALL_AN227&#9;12&#10;CD_20153&#9;6&#10;5600221554068&#9;24"></textarea>
 					<p class="beltoft-qo__hint">
-						<?php esc_html_e( 'Aceita SKU ou código de barras. Separe com tab, vírgula, ponto e vírgula ou espaço.', 'beltoft-commerce' ); ?>
+						<?php esc_html_e( 'Accepts SKU or barcode. Separate with a tab, comma, semicolon or space.', 'beltoft-commerce' ); ?>
 					</p>
 
 					<div class="beltoft-qo__go">
 						<button type="submit" name="beltoft_qo_route" value="pad" class="beltoft-qo__submit">
-							<?php esc_html_e( 'Adicionar ao carrinho', 'beltoft-commerce' ); ?>
+							<?php esc_html_e( 'Add to cart', 'beltoft-commerce' ); ?>
 						</button>
 					</div>
 				</section>
 
 				<section class="beltoft-qo__panel" data-qo-sheet>
-					<h2 class="beltoft-qo__title"><?php esc_html_e( 'Folha de cálculo', 'beltoft-commerce' ); ?></h2>
+					<h2 class="beltoft-qo__title"><?php esc_html_e( 'Spreadsheet', 'beltoft-commerce' ); ?></h2>
 					<!-- Here the order IS a sequence, so it is numbered. -->
 					<ol class="beltoft-qo__steps">
 						<li>
 							<a class="beltoft-qo__download" href="<?php echo esc_url( $download ); ?>">
-								<?php esc_html_e( 'Descarregar a sua folha', 'beltoft-commerce' ); ?>
+								<?php esc_html_e( 'Download your sheet', 'beltoft-commerce' ); ?>
 							</a>
-							<span class="beltoft-qo__hint"><?php esc_html_e( 'Já com os seus preços e referências.', 'beltoft-commerce' ); ?></span>
+							<span class="beltoft-qo__hint"><?php esc_html_e( 'With your prices and references already in it.', 'beltoft-commerce' ); ?></span>
 						</li>
-						<li><?php esc_html_e( 'Preencha a coluna Quantidade.', 'beltoft-commerce' ); ?></li>
+						<li><?php esc_html_e( 'Fill in the Quantity column.', 'beltoft-commerce' ); ?></li>
 						<li>
-							<?php esc_html_e( 'Traga a folha de volta para aqui.', 'beltoft-commerce' ); ?>
+							<?php esc_html_e( 'Bring the sheet back here.', 'beltoft-commerce' ); ?>
 
 							<label class="beltoft-qo__drop" for="beltoft-sheet-file">
-								<span class="beltoft-qo__drop-lead"><?php esc_html_e( 'Arraste a folha para aqui', 'beltoft-commerce' ); ?></span>
-								<span class="beltoft-qo__drop-sub"><?php esc_html_e( 'ou clique para escolher no computador (.xlsx)', 'beltoft-commerce' ); ?></span>
-								<span class="beltoft-qo__drop-touch"><?php esc_html_e( 'Toque para escolher a folha (.xlsx)', 'beltoft-commerce' ); ?></span>
+								<span class="beltoft-qo__drop-lead"><?php esc_html_e( 'Drag the sheet here', 'beltoft-commerce' ); ?></span>
+								<span class="beltoft-qo__drop-sub"><?php esc_html_e( 'or click to choose it on your computer (.xlsx)', 'beltoft-commerce' ); ?></span>
+								<span class="beltoft-qo__drop-touch"><?php esc_html_e( 'Tap to choose the sheet (.xlsx)', 'beltoft-commerce' ); ?></span>
 							</label>
 
 							<div class="beltoft-qo__chosen">
@@ -654,7 +654,7 @@ class Page {
 									<span class="beltoft-qo__chosen-size"></span>
 								</span>
 								<button type="button" class="beltoft-qo__chosen-clear">
-									<?php esc_html_e( 'Remover', 'beltoft-commerce' ); ?>
+									<?php esc_html_e( 'Remove', 'beltoft-commerce' ); ?>
 								</button>
 							</div>
 
@@ -666,7 +666,7 @@ class Page {
 					<div class="beltoft-qo__go">
 						<button type="submit" name="beltoft_qo_route" value="sheet" class="beltoft-qo__submit"
 							data-qo-import disabled>
-							<?php esc_html_e( 'Importar e adicionar ao carrinho', 'beltoft-commerce' ); ?>
+							<?php esc_html_e( 'Import and add to cart', 'beltoft-commerce' ); ?>
 						</button>
 					</div>
 				</section>

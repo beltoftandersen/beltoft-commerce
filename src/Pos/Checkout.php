@@ -258,7 +258,7 @@ class Checkout {
 	public static function walkin_name(): string {
 		$name = (string) get_option( self::WALKIN_OPTION, '' );
 
-		return '' !== $name ? $name : __( 'Cliente de balcão', 'beltoft-commerce' );
+		return '' !== $name ? $name : __( 'Walk-in customer', 'beltoft-commerce' );
 	}
 
 	/**

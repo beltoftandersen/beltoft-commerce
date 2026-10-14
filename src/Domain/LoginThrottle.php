@@ -119,7 +119,7 @@ class LoginThrottle {
 	}
 
 	public static function message(): string {
-		return __( 'Demasiadas tentativas. Aguarde alguns minutos antes de tentar novamente.', 'beltoft-commerce' );
+		return __( 'Too many attempts. Please wait a few minutes before trying again.', 'beltoft-commerce' );
 	}
 
 	/**

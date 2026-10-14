@@ -41,7 +41,7 @@ class PurchaseOrder {
 	}
 
 	public static function label(): string {
-		return __( 'Número da nota de encomenda', 'beltoft-commerce' );
+		return __( 'Purchase order number', 'beltoft-commerce' );
 	}
 
 	public static function render(): void {
@@ -62,7 +62,7 @@ class PurchaseOrder {
 			 * checkout is not present, and this field is B2B-only regardless.
 			 */
 			'class'       => array( 'form-row-wide', 'brxe-woocommerce-form-field' ),
-			'description' => __( 'Se a sua empresa usa uma referência interna, indique-a aqui. Aparece na confirmação e na encomenda.', 'beltoft-commerce' ),
+			'description' => __( 'If your company uses an internal reference, enter it here. It appears on the confirmation and on the order.', 'beltoft-commerce' ),
 		), self::posted() );
 	}
 

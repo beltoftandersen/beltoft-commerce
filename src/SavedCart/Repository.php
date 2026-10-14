@@ -29,11 +29,11 @@ class Repository {
 		global $wpdb;
 
 		if ( ! $user_id ) {
-			return new \WP_Error( 'beltoft_saved_cart_auth', __( 'Inicie sessão para guardar a encomenda.', 'beltoft-commerce' ) );
+			return new \WP_Error( 'beltoft_saved_cart_auth', __( 'Sign in to save the order.', 'beltoft-commerce' ) );
 		}
 
 		if ( ! WC()->cart || WC()->cart->is_empty() ) {
-			return new \WP_Error( 'beltoft_saved_cart_empty', __( 'A encomenda está vazia.', 'beltoft-commerce' ) );
+			return new \WP_Error( 'beltoft_saved_cart_empty', __( 'The order is empty.', 'beltoft-commerce' ) );
 		}
 
 		if ( self::count_for( $user_id ) >= self::MAX_PER_USER ) {
@@ -41,7 +41,7 @@ class Repository {
 				'beltoft_saved_cart_limit',
 				sprintf(
 					/* translators: %d: how many saved orders are allowed. */
-					__( 'Só pode guardar %d encomendas. Elimine uma antes de guardar outra.', 'beltoft-commerce' ),
+					__( 'You can only save %d orders. Delete one before saving another.', 'beltoft-commerce' ),
 					self::MAX_PER_USER
 				)
 			);
@@ -73,7 +73,7 @@ class Repository {
 			array( '%d', '%s', '%s', '%d', '%s', '%s' )
 		);
 
-		return $ok ? (int) $wpdb->insert_id : new \WP_Error( 'beltoft_saved_cart_failed', __( 'Não foi possível guardar.', 'beltoft-commerce' ) );
+		return $ok ? (int) $wpdb->insert_id : new \WP_Error( 'beltoft_saved_cart_failed', __( 'Could not save.', 'beltoft-commerce' ) );
 	}
 
 	public static function all( int $user_id ): array {
@@ -187,25 +187,25 @@ class Repository {
 			if ( ! $product instanceof WC_Product ) {
 				// A deleted product has no title left to read; the caller may
 				// pass the name it was ordered or saved under.
-				$skipped[] = self::skipped_label( $parent, __( 'já não existe', 'beltoft-commerce' ), null, (string) ( $item['name'] ?? '' ) );
+				$skipped[] = self::skipped_label( $parent, __( 'no longer exists', 'beltoft-commerce' ), null, (string) ( $item['name'] ?? '' ) );
 				continue;
 			}
 
 			if ( class_exists( CatalogAudience::class )
 				&& ! CatalogAudience::can_purchase( $user_id, $parent ) ) {
-				$skipped[] = self::skipped_label( $parent, __( 'já não está disponível', 'beltoft-commerce' ), $product );
+				$skipped[] = self::skipped_label( $parent, __( 'no longer available', 'beltoft-commerce' ), $product );
 				continue;
 			}
 
 			if ( ! $product->is_purchasable() ) {
-				$skipped[] = self::skipped_label( $parent, __( 'já não está à venda', 'beltoft-commerce' ), $product );
+				$skipped[] = self::skipped_label( $parent, __( 'no longer for sale', 'beltoft-commerce' ), $product );
 				continue;
 			}
 
 			// Out of stock is not a reason to drop the line when the shop takes
 			// backorders on it; it is when the shop does not.
 			if ( ! $product->is_in_stock() && ! $product->backorders_allowed() ) {
-				$skipped[] = self::skipped_label( $parent, __( 'sem stock', 'beltoft-commerce' ), $product );
+				$skipped[] = self::skipped_label( $parent, __( 'out of stock', 'beltoft-commerce' ), $product );
 				continue;
 			}
 
@@ -214,7 +214,7 @@ class Repository {
 			}
 
 			if ( $quantity < 1 ) {
-				$skipped[] = self::skipped_label( $parent, __( 'sem stock', 'beltoft-commerce' ), $product );
+				$skipped[] = self::skipped_label( $parent, __( 'out of stock', 'beltoft-commerce' ), $product );
 				continue;
 			}
 
@@ -238,7 +238,7 @@ class Repository {
 			} else {
 				$skipped[] = self::skipped_label(
 					$line['parent'],
-					__( 'não foi possível adicionar', 'beltoft-commerce' ),
+					__( 'could not be added', 'beltoft-commerce' ),
 					$line['product']
 				);
 			}
@@ -264,7 +264,7 @@ class Repository {
 
 		if ( '' === $name ) {
 			/* translators: %s: today's date. */
-			$name = sprintf( __( 'Encomenda de %s', 'beltoft-commerce' ), date_i18n( get_option( 'date_format' ) ) );
+			$name = sprintf( __( 'Order of %s', 'beltoft-commerce' ), date_i18n( get_option( 'date_format' ) ) );
 		}
 
 		return mb_substr( $name, 0, 120 );

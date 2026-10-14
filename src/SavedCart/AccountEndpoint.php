@@ -68,20 +68,20 @@ class AccountEndpoint {
 
 			// Directly after Orders, which is the thing it is closest to.
 			if ( 'orders' === $key ) {
-				$new[ self::ENDPOINT ] = __( 'Encomendas guardadas', 'beltoft-commerce' );
+				$new[ self::ENDPOINT ] = __( 'Saved orders', 'beltoft-commerce' );
 			}
 		}
 
 		if ( ! isset( $new[ self::ENDPOINT ] ) ) {
-			$new[ self::ENDPOINT ] = __( 'Encomendas guardadas', 'beltoft-commerce' );
+			$new[ self::ENDPOINT ] = __( 'Saved orders', 'beltoft-commerce' );
 		}
 
 		return $new;
 	}
 
 	public static function content(): void {
-		echo '<h2>' . esc_html__( 'Encomendas guardadas', 'beltoft-commerce' ) . '</h2>';
-		echo '<p>' . esc_html__( 'Abra uma encomenda guardada para a colocar no carrinho, ou junte-a ao que já tem.', 'beltoft-commerce' ) . '</p>';
+		echo '<h2>' . esc_html__( 'Saved orders', 'beltoft-commerce' ) . '</h2>';
+		echo '<p>' . esc_html__( 'Open a saved order to put it in the cart, or add it to what you already have.', 'beltoft-commerce' ) . '</p>';
 
 		/*
 		 * Echoed, not passed through wp_kses_post().

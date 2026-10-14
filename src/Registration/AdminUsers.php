@@ -154,8 +154,8 @@ class AdminUsers {
 		}
 
 		$links = array(
-			Status::PENDING  => __( 'B2B por aprovar', 'beltoft-commerce' ),
-			Status::REJECTED => __( 'B2B rejeitados', 'beltoft-commerce' ),
+			Status::PENDING  => __( 'B2B awaiting approval', 'beltoft-commerce' ),
+			Status::REJECTED => __( 'B2B rejected', 'beltoft-commerce' ),
 		);
 
 		foreach ( $links as $status => $label ) {
@@ -206,7 +206,7 @@ class AdminUsers {
 	}
 
 	public static function columns( $columns ) {
-		$columns['beltoft_b2b'] = __( 'Registo B2B', 'beltoft-commerce' );
+		$columns['beltoft_b2b'] = __( 'B2B application', 'beltoft-commerce' );
 
 		return $columns;
 	}
@@ -228,9 +228,9 @@ class AdminUsers {
 		$status  = Status::get( (int) $user_id );
 
 		$labels = array(
-			Status::PENDING  => __( 'Por aprovar', 'beltoft-commerce' ),
-			Status::APPROVED => __( 'Aprovado', 'beltoft-commerce' ),
-			Status::REJECTED => __( 'Rejeitado', 'beltoft-commerce' ),
+			Status::PENDING  => __( 'Awaiting approval', 'beltoft-commerce' ),
+			Status::APPROVED => __( 'Approved', 'beltoft-commerce' ),
+			Status::REJECTED => __( 'Rejected', 'beltoft-commerce' ),
 		);
 
 		$lines = array( '<strong>' . esc_html( $labels[ $status ] ?? $status ) . '</strong>' );
@@ -251,8 +251,8 @@ class AdminUsers {
 	}
 
 	public static function bulk_actions( $actions ) {
-		$actions['beltoft_b2b_approve'] = __( 'Aprovar registo B2B', 'beltoft-commerce' );
-		$actions['beltoft_b2b_reject']  = __( 'Rejeitar registo B2B', 'beltoft-commerce' );
+		$actions['beltoft_b2b_approve'] = __( 'Approve B2B application', 'beltoft-commerce' );
+		$actions['beltoft_b2b_reject']  = __( 'Reject B2B application', 'beltoft-commerce' );
 
 		return $actions;
 	}
@@ -301,9 +301,9 @@ class AdminUsers {
 
 		$message = 'approve' === $action
 			/* translators: %d: number of accounts. */
-			? sprintf( _n( '%d registo aprovado.', '%d registos aprovados.', $done, 'beltoft-commerce' ), $done )
+			? sprintf( _n( '%d application approved.', '%d applications approved.', $done, 'beltoft-commerce' ), $done )
 			/* translators: %d: number of accounts. */
-			: sprintf( _n( '%d registo rejeitado.', '%d registos rejeitados.', $done, 'beltoft-commerce' ), $done );
+			: sprintf( _n( '%d application rejected.', '%d applications rejected.', $done, 'beltoft-commerce' ), $done );
 
 		printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html( $message ) );
 	}
@@ -348,21 +348,21 @@ class AdminUsers {
 
 		$can_edit = current_user_can( 'edit_user', $user->ID );
 		?>
-		<h2><?php esc_html_e( 'Registo B2B', 'beltoft-commerce' ); ?></h2>
+		<h2><?php esc_html_e( 'B2B application', 'beltoft-commerce' ); ?></h2>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th><label for="beltoft_b2b_shop_name"><?php esc_html_e( 'Nome da loja', 'beltoft-commerce' ); ?></label></th>
+				<th><label for="beltoft_b2b_shop_name"><?php esc_html_e( 'Shop name', 'beltoft-commerce' ); ?></label></th>
 				<td><input type="text" name="beltoft_b2b_shop_name" id="beltoft_b2b_shop_name" class="regular-text"
 					value="<?php echo esc_attr( (string) get_user_meta( $user->ID, '_b2b_shop_name', true ) ); ?>" <?php disabled( ! $can_edit ); ?>></td>
 			</tr>
 			<tr>
-				<th><label for="beltoft_b2b_company_info"><?php esc_html_e( 'Informação da empresa', 'beltoft-commerce' ); ?></label></th>
+				<th><label for="beltoft_b2b_company_info"><?php esc_html_e( 'Company information', 'beltoft-commerce' ); ?></label></th>
 				<td><textarea name="beltoft_b2b_company_info" id="beltoft_b2b_company_info" rows="4" class="large-text" <?php disabled( ! $can_edit ); ?>><?php
 					echo esc_textarea( (string) get_user_meta( $user->ID, '_b2b_company_info', true ) );
 				?></textarea></td>
 			</tr>
 			<tr>
-				<th><?php esc_html_e( 'Estado', 'beltoft-commerce' ); ?></th>
+				<th><?php esc_html_e( 'Status', 'beltoft-commerce' ); ?></th>
 				<td>
 					<p><?php echo esc_html( Status::get( (int) $user->ID ) ); ?></p>
 					<?php $reason = (string) get_user_meta( $user->ID, Status::META_REASON, true ); ?>

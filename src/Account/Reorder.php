@@ -102,7 +102,7 @@ class Reorder {
 
 		$actions['beltoft-reorder'] = array(
 			'url'  => self::url( $order ),
-			'name' => __( 'Encomendar novamente', 'beltoft-commerce' ),
+			'name' => __( 'Order again', 'beltoft-commerce' ),
 		);
 
 		return $actions;
@@ -118,7 +118,7 @@ class Reorder {
 		printf(
 			'<p class="beltoft-reorder"><a class="button" href="%s">%s</a></p>',
 			esc_url( self::url( $order ) ),
-			esc_html__( 'Encomendar novamente', 'beltoft-commerce' )
+			esc_html__( 'Order again', 'beltoft-commerce' )
 		);
 	}
 

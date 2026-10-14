@@ -15,8 +15,8 @@ class B2BApplicationReceivedEmail extends B2BApplicationEmail {
 
 	public function __construct() {
 		$this->id          = 'beltoft_b2b_application_received';
-		$this->title       = __( 'Registo B2B recebido', 'beltoft-commerce' );
-		$this->description = __( 'Enviado ao candidato assim que o registo de parceiro é submetido.', 'beltoft-commerce' );
+		$this->title       = __( 'B2B application received', 'beltoft-commerce' );
+		$this->description = __( 'Sent to the applicant as soon as the partner application is submitted.', 'beltoft-commerce' );
 
 		parent::__construct();
 
@@ -24,14 +24,14 @@ class B2BApplicationReceivedEmail extends B2BApplicationEmail {
 	}
 
 	public function get_default_subject(): string {
-		return __( 'Recebemos o seu registo — {site_title}', 'beltoft-commerce' );
+		return __( 'We have received your application — {site_title}', 'beltoft-commerce' );
 	}
 
 	public function get_default_heading(): string {
-		return __( 'Recebemos o seu registo', 'beltoft-commerce' );
+		return __( 'We have received your application', 'beltoft-commerce' );
 	}
 
 	protected function body_copy(): string {
-		return __( 'Obrigado pelo seu registo como parceiro. Vamos analisar os dados da sua empresa e enviamos uma resposta assim que a análise estiver concluída. Não é necessário fazer mais nada de momento.', 'beltoft-commerce' );
+		return __( 'Thank you for applying as a partner. We will review your company\'s details and send you an answer once the review is complete. There is nothing else you need to do for now.', 'beltoft-commerce' );
 	}
 }

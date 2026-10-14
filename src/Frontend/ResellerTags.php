@@ -377,7 +377,7 @@ class ResellerTags {
 		}
 
 		/* translators: %d: number of distinct GTINs across a product's variations. */
-		return sprintf( _n( '%d código', '%d códigos', count( $codes ), 'beltoft-commerce' ), count( $codes ) );
+		return sprintf( _n( '%d code', '%d codes', count( $codes ), 'beltoft-commerce' ), count( $codes ) );
 	}
 
 	private static function cart_shipping(): string {
@@ -388,7 +388,7 @@ class ResellerTags {
 		$net = (float) WC()->cart->get_shipping_total();
 
 		if ( $net <= 0 ) {
-			return esc_html__( 'Grátis', 'beltoft-commerce' );
+			return esc_html__( 'Free', 'beltoft-commerce' );
 		}
 
 		// B2B displays ex-IVA and retail inc-IVA; follow whichever this session

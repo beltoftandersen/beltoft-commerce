@@ -106,15 +106,15 @@ class Report {
 	public static function message_for( string $reason ): string {
 		switch ( $reason ) {
 			case self::UNKNOWN:
-				return __( 'Referência desconhecida.', 'beltoft-commerce' );
+				return __( 'Unknown reference.', 'beltoft-commerce' );
 			case self::OUT_OF_STOCK:
-				return __( 'Sem stock de momento.', 'beltoft-commerce' );
+				return __( 'Out of stock at the moment.', 'beltoft-commerce' );
 			case self::REFUSED:
-				return __( 'Não foi possível adicionar esta linha.', 'beltoft-commerce' );
+				return __( 'This line could not be added.', 'beltoft-commerce' );
 			case self::NOT_AVAILABLE:
 			case self::NO_PRICE:
 			default:
-				return __( 'Não disponível na sua conta.', 'beltoft-commerce' );
+				return __( 'Not available on your account.', 'beltoft-commerce' );
 		}
 	}
 }

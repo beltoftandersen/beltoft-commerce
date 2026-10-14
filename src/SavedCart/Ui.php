@@ -77,7 +77,7 @@ class Ui {
 		<details class="beltoft-saved"<?php echo esc_attr( $open ); ?>>
 			<summary class="beltoft-saved__toggle">
 				<span class="beltoft-saved__toggle-label">
-					<?php esc_html_e( 'Encomendas guardadas', 'beltoft-commerce' ); ?>
+					<?php esc_html_e( 'Saved orders', 'beltoft-commerce' ); ?>
 				</span>
 				<?php if ( $count ) : ?>
 					<span class="beltoft-saved__badge"><?php echo esc_html( $count ); ?></span>
@@ -86,7 +86,7 @@ class Ui {
 			</summary>
 
 			<div class="beltoft-saved__panel">
-				<button type="button" class="beltoft-saved__close" aria-label="<?php esc_attr_e( 'Fechar', 'beltoft-commerce' ); ?>" hidden>&times;</button>
+				<button type="button" class="beltoft-saved__close" aria-label="<?php esc_attr_e( 'Close', 'beltoft-commerce' ); ?>" hidden>&times;</button>
 				<?php if ( $notice && ! $success ) : ?>
 					<p class="beltoft-saved__notice beltoft-saved__notice--<?php echo esc_attr( $notice['type'] ); ?>">
 						<?php echo esc_html( $notice['message'] ); ?>
@@ -98,16 +98,16 @@ class Ui {
 						<?php wp_nonce_field( Actions::SAVE ); ?>
 						<input type="hidden" name="action" value="<?php echo esc_attr( Actions::SAVE ); ?>">
 						<label class="screen-reader-text" for="beltoft-saved-name">
-							<?php esc_html_e( 'Nome da encomenda', 'beltoft-commerce' ); ?>
+							<?php esc_html_e( 'Order name', 'beltoft-commerce' ); ?>
 						</label>
 						<input type="text" id="beltoft-saved-name" name="saved_cart_name" maxlength="120"
-							placeholder="<?php esc_attr_e( 'Guardar a encomenda atual como…', 'beltoft-commerce' ); ?>">
-						<button type="submit"><?php esc_html_e( 'Guardar', 'beltoft-commerce' ); ?></button>
+							placeholder="<?php esc_attr_e( 'Save the current order as…', 'beltoft-commerce' ); ?>">
+						<button type="submit"><?php esc_html_e( 'Save', 'beltoft-commerce' ); ?></button>
 					</form>
 				<?php endif; ?>
 
 				<?php if ( ! $saved ) : ?>
-					<p class="beltoft-saved__empty"><?php esc_html_e( 'Ainda não guardou nenhuma encomenda.', 'beltoft-commerce' ); ?></p>
+					<p class="beltoft-saved__empty"><?php esc_html_e( 'You have not saved any orders yet.', 'beltoft-commerce' ); ?></p>
 				<?php else : ?>
 					<ul class="beltoft-saved__list">
 						<?php foreach ( $saved as $cart ) : ?>
@@ -118,7 +118,7 @@ class Ui {
 										<?php
 										printf(
 											/* translators: 1: number of lines, 2: date the order was saved. */
-											esc_html( _n( '%1$d linha · %2$s', '%1$d linhas · %2$s', (int) $cart->item_count, 'beltoft-commerce' ) ),
+											esc_html( _n( '%1$d line · %2$s', '%1$d lines · %2$s', (int) $cart->item_count, 'beltoft-commerce' ) ),
 											(int) $cart->item_count,
 											esc_html( date_i18n( get_option( 'date_format' ), strtotime( $cart->updated_at . ' UTC' ) ) )
 										);
@@ -153,7 +153,7 @@ class Ui {
 										 */
 										?>
 										<button type="submit" class="beltoft-saved__use">
-											<?php esc_html_e( 'Substituir', 'beltoft-commerce' ); ?>
+											<?php esc_html_e( 'Replace', 'beltoft-commerce' ); ?>
 										</button>
 									</form>
 
@@ -163,17 +163,17 @@ class Ui {
 										<input type="hidden" name="saved_cart_id" value="<?php echo esc_attr( $cart->id ); ?>">
 										<input type="hidden" name="saved_cart_merge" value="1">
 										<button type="submit" class="beltoft-saved__merge">
-											<?php esc_html_e( 'Juntar', 'beltoft-commerce' ); ?>
+											<?php esc_html_e( 'Add to current order', 'beltoft-commerce' ); ?>
 										</button>
 									</form>
 
 									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
-										onsubmit="return confirm('<?php echo esc_js( __( 'Eliminar esta encomenda guardada?', 'beltoft-commerce' ) ); ?>');">
+										onsubmit="return confirm('<?php echo esc_js( __( 'Delete this saved order?', 'beltoft-commerce' ) ); ?>');">
 										<?php wp_nonce_field( Actions::DELETE ); ?>
 										<input type="hidden" name="action" value="<?php echo esc_attr( Actions::DELETE ); ?>">
 										<input type="hidden" name="saved_cart_id" value="<?php echo esc_attr( $cart->id ); ?>">
 										<button type="submit" class="beltoft-saved__delete"
-											aria-label="<?php esc_attr_e( 'Eliminar', 'beltoft-commerce' ); ?>">&times;</button>
+											aria-label="<?php esc_attr_e( 'Delete', 'beltoft-commerce' ); ?>">&times;</button>
 									</form>
 								</div>
 							</li>

@@ -17,9 +17,9 @@ class Tenders {
 	public static function all(): array {
 		return (array) apply_filters( 'beltoft_pos_tenders', array(
 			self::PREFIX . 'mbway' => __( 'MB WAY', 'beltoft-commerce' ),
-			self::PREFIX . 'card'  => __( 'Cartão (Teya)', 'beltoft-commerce' ),
-			self::PREFIX . 'cash'  => __( 'Dinheiro', 'beltoft-commerce' ),
-			self::PREFIX . 'bank'  => __( 'Transferência bancária', 'beltoft-commerce' ),
+			self::PREFIX . 'card'  => __( 'Card (Teya)', 'beltoft-commerce' ),
+			self::PREFIX . 'cash'  => __( 'Cash', 'beltoft-commerce' ),
+			self::PREFIX . 'bank'  => __( 'Bank transfer', 'beltoft-commerce' ),
 		) );
 	}
 

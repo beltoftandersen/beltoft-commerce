@@ -95,7 +95,7 @@ class B2BPaymentMethods {
 			return $title;
 		}
 
-		return __( 'Transferência bancária', 'beltoft-commerce' );
+		return __( 'Bank transfer', 'beltoft-commerce' );
 	}
 
 	public static function description( $description, $id = '' ) {
@@ -103,7 +103,7 @@ class B2BPaymentMethods {
 			return $description;
 		}
 
-		return __( 'Enviamos os dados bancários e a referência da encomenda com a confirmação. A encomenda é preparada após a confirmação do pagamento.', 'beltoft-commerce' );
+		return __( 'We send the bank details and the order reference with the confirmation. The order is prepared once the payment is confirmed.', 'beltoft-commerce' );
 	}
 
 	private static function applies(): bool {

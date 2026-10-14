@@ -38,7 +38,7 @@ class Registrar {
 			if ( '' === $value ) {
 				if ( $field['required'] ) {
 					/* translators: %s: field label. */
-					return new WP_Error( 'beltoft_required', sprintf( __( 'Preencha o campo "%s".', 'beltoft-commerce' ), $field['label'] ) );
+					return new WP_Error( 'beltoft_required', sprintf( __( 'Fill in the "%s" field.', 'beltoft-commerce' ), $field['label'] ) );
 				}
 
 				continue;
@@ -48,11 +48,11 @@ class Registrar {
 		}
 
 		if ( ! is_email( $clean['email'] ) ) {
-			return new WP_Error( 'beltoft_email', __( 'Indique um endereço de email válido.', 'beltoft-commerce' ) );
+			return new WP_Error( 'beltoft_email', __( 'Enter a valid email address.', 'beltoft-commerce' ) );
 		}
 
 		if ( email_exists( $clean['email'] ) ) {
-			return new WP_Error( 'beltoft_email_exists', __( 'Já existe uma conta com este email.', 'beltoft-commerce' ) );
+			return new WP_Error( 'beltoft_email_exists', __( 'An account with this email already exists.', 'beltoft-commerce' ) );
 		}
 
 		$nif = self::validate_nif( $clean['nif'], $clean['country'] ?? 'PT' );
@@ -157,7 +157,7 @@ class Registrar {
 		 * corrected by the person who typed it.
 		 */
 		if ( 'domestic' === $decision->status && ! PtNif::is_valid( $nif ) ) {
-			return new WP_Error( 'beltoft_nif', __( 'O número de contribuinte indicado não é válido.', 'beltoft-commerce' ) );
+			return new WP_Error( 'beltoft_nif', __( 'The tax number given is not valid.', 'beltoft-commerce' ) );
 		}
 
 		/*
@@ -168,7 +168,7 @@ class Registrar {
 		 * into a closed shop door, and the applicant could do nothing about it.
 		 */
 		if ( 'invalid' === $decision->status ) {
-			return new WP_Error( 'beltoft_nif', __( 'O número de contribuinte indicado não é válido.', 'beltoft-commerce' ) );
+			return new WP_Error( 'beltoft_nif', __( 'The tax number given is not valid.', 'beltoft-commerce' ) );
 		}
 
 		// The country chosen here becomes the billing country, and reverse

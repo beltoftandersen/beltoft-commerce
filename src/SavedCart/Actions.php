@@ -74,7 +74,7 @@ class Actions {
 			$user_id,
 			sprintf(
 				/* translators: %s: the name the partner gave this order. */
-				__( 'Encomenda guardada como «%s».', 'beltoft-commerce' ),
+				__( 'Order saved as «%s».', 'beltoft-commerce' ),
 				Repository::clean_name( $name )
 			),
 			'success'
@@ -108,21 +108,21 @@ class Actions {
 		$skipped = (array) ( $result['skipped'] ?? array() );
 
 		if ( ! $added && ! $skipped ) {
-			self::notice( $user_id, __( 'Não foi possível abrir essa encomenda.', 'beltoft-commerce' ), 'error' );
+			self::notice( $user_id, __( 'That order could not be opened.', 'beltoft-commerce' ), 'error' );
 
 			return;
 		}
 
 		$message = sprintf(
 			/* translators: %d: how many lines were put back on the order. */
-			_n( '%d linha adicionada à encomenda.', '%d linhas adicionadas à encomenda.', $added, 'beltoft-commerce' ),
+			_n( '%d line added to the order.', '%d lines added to the order.', $added, 'beltoft-commerce' ),
 			$added
 		);
 
 		if ( $skipped ) {
 			$message .= ' ' . sprintf(
 				/* translators: %s: comma-separated list of products that could not be added. */
-				__( 'Não foi possível adicionar: %s.', 'beltoft-commerce' ),
+				__( 'Could not be added: %s.', 'beltoft-commerce' ),
 				implode( ', ', $skipped )
 			);
 		}
@@ -135,7 +135,7 @@ class Actions {
 		$id = isset( $_POST['saved_cart_id'] ) ? absint( $_POST['saved_cart_id'] ) : 0;
 
 		Repository::delete( $id, $user_id );
-		self::notice( $user_id, __( 'Encomenda guardada eliminada.', 'beltoft-commerce' ), 'success' );
+		self::notice( $user_id, __( 'Saved order deleted.', 'beltoft-commerce' ), 'success' );
 	}
 
 	/**

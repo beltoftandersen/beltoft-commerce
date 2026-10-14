@@ -45,7 +45,7 @@ class RateLabel {
 		}
 
 		/* translators: %s: tax rate percentage, e.g. "23". */
-		return sprintf( __( 'IVA %s%%', 'beltoft-commerce' ), $percent );
+		return sprintf( __( 'VAT %s%%', 'beltoft-commerce' ), $percent );
 	}
 
 	/**
