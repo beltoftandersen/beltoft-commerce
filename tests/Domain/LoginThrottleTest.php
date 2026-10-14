@@ -154,9 +154,15 @@ class LoginThrottleTest extends WP_UnitTestCase {
 		$this->assertSame( $user, LoginThrottle::maybe_block( $user, $username, 'segredo' ) );
 	}
 
-	public function test_getting_it_right_clears_the_slate() {
+	/** A partner who mistyped and then got it right is not carrying the misses. */
+	public function test_getting_it_right_clears_the_accounts_slate() {
 		$username = 'parceiro@example.com';
-		$this->fail_times( 13, $username );
+
+		// Eight failures from different addresses: the account limit, not the IP one.
+		for ( $i = 0; $i < 8; $i++ ) {
+			$_SERVER['REMOTE_ADDR'] = '203.0.113.' . ( 50 + $i );
+			LoginThrottle::record_failure( $username );
+		}
 
 		$this->assertInstanceOf( WP_Error::class, LoginThrottle::maybe_block( null, $username, 'segredo' ) );
 
@@ -167,6 +173,22 @@ class LoginThrottleTest extends WP_UnitTestCase {
 		$this->assertSame( $user, LoginThrottle::maybe_block( $user, $username, 'segredo' ) );
 	}
 
+	/**
+	 * Signing in to an account of one's own used to zero the address's
+	 * counter, so seven guesses each at many accounts, a login to a free
+	 * retail account, and repeat - the per-IP limit stopped nothing.
+	 */
+	public function test_signing_in_does_not_reset_the_addresss_counter() {
+		for ( $i = 0; $i < 11; $i++ ) {
+			LoginThrottle::record_failure( 'alvo' . $i . '@example.com' );
+		}
+
+		LoginThrottle::clear( 'atacante@example.com', null );
+		LoginThrottle::record_failure( 'alvo99@example.com' );
+
+		$this->assertInstanceOf( WP_Error::class, LoginThrottle::maybe_block( null, 'outro@example.com', 'segredo' ) );
+	}
+
 	public function test_an_empty_password_is_not_an_attempt() {
 		$this->fail_times( 13, 'alvo@example.com' );
 
@@ -175,14 +197,28 @@ class LoginThrottleTest extends WP_UnitTestCase {
 		$this->assertSame( $user, LoginThrottle::maybe_block( $user, 'alvo@example.com', '' ) );
 	}
 
-	public function test_retail_is_never_throttled() {
-		$this->fail_times( 13, 'cliente@example.com' );
-
+	/**
+	 * Partner accounts are ordinary accounts of the same install, so their
+	 * passwords could be guessed on the retail login instead, unlimited. The
+	 * throttle covers both hosts.
+	 */
+	public function test_retail_is_throttled_too() {
 		$_SERVER['HTTP_HOST'] = Hosts::retail();
-		$user                 = new WP_User( 0 );
 
-		$this->assertSame( $user, LoginThrottle::maybe_block( $user, 'cliente@example.com', 'segredo' ) );
-		$this->assertSame( array(), $this->reported );
+		$this->fail_times( 8, 'parceiro@example.com' );
+
+		$this->assertInstanceOf( WP_Error::class, LoginThrottle::maybe_block( null, 'parceiro@example.com', 'segredo' ) );
+	}
+
+	/** One counter per account, whichever host the guesses came through. */
+	public function test_failures_on_either_host_count_together() {
+		$_SERVER['HTTP_HOST'] = Hosts::retail();
+		$this->fail_times( 4, 'parceiro@example.com' );
+
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+		$this->fail_times( 4, 'parceiro@example.com' );
+
+		$this->assertInstanceOf( WP_Error::class, LoginThrottle::maybe_block( null, 'parceiro@example.com', 'segredo' ) );
 	}
 
 	public function test_reporting_can_be_switched_off_without_losing_the_block() {

@@ -2,14 +2,13 @@
 
 namespace BeltoftCommerce\Domain;
 
-use BeltoftCommerce\Support\Hosts;
 use WP_Error;
 use WP_User;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * A limit on how fast the trade login can be guessed at.
+ * A limit on how fast logins - trade and retail - can be guessed at.
  *
  * beltoft-hardening's own notes name "Rate limiting (nginx `limit_req
  * zone=wp_login`)" as the defence against guessing. That zone is declared in
@@ -172,11 +171,16 @@ class LoginThrottle {
 	}
 
 	/**
-	 * A successful sign-in clears that account, and the address it came from.
+	 * A successful sign-in clears that account - not the address it came from.
 	 *
 	 * Otherwise a partner who mistyped a password five times and then got it
 	 * right would still be carrying those five failures for a quarter of an
 	 * hour, and the next slip would lock them out of their own account.
+	 *
+	 * The address's counter is left alone. Clearing it too let anyone zero it
+	 * by signing in to an account of their own - a free retail one will do -
+	 * between rounds of guessing at others, which made the per-IP limit stop
+	 * nothing. A person's own few misses stay well under it.
 	 *
 	 * @param string  $login
 	 * @param WP_User $user
@@ -185,8 +189,6 @@ class LoginThrottle {
 		if ( ! self::applies() ) {
 			return;
 		}
-
-		delete_transient( self::IP_PREFIX . self::ip_key() );
 
 		$account = self::account_key( (string) $login );
 
@@ -362,15 +364,16 @@ class LoginThrottle {
 	}
 
 	/**
-	 * The trade host only.
+	 * Both hosts.
 	 *
-	 * Retail's login is the WooCommerce account form and wp-login.php, both of
-	 * which are somebody else's problem to rate limit and neither of which
-	 * should start behaving differently because of a change made for trade.
+	 * It used to be the trade host only, on the reasoning that retail's login
+	 * was somebody else's to limit. Nobody limits it, and partner accounts are
+	 * ordinary accounts of this same install - so a partner's password could
+	 * be guessed through the retail login instead, without limit. The counters
+	 * are shared, so guesses split between the two hosts still add up.
 	 */
 	private static function applies(): bool {
-		return Hosts::is_b2b_host()
-			&& ! ( defined( 'WP_CLI' ) && WP_CLI )
+		return ! ( defined( 'WP_CLI' ) && WP_CLI )
 			&& ! ( defined( 'REST_REQUEST' ) && REST_REQUEST );
 	}
 }
