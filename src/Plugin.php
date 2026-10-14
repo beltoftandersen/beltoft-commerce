@@ -18,6 +18,8 @@ class Plugin {
 		);
 
 		Domain\LoginGate::register();
+		// Trade pages resolved on retail by any spelling (?pagename=, ?page_id=, case, encoding).
+		add_action( 'template_redirect', array( Domain\HostRoutes::class, 'maybe_redirect_resolved' ), 2 );
 		Domain\LoginThrottle::register();
 		Domain\SeoGuards::register();
 		Domain\CacheRules::register();

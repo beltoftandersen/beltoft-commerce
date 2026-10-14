@@ -37,8 +37,112 @@ class LoginGate {
 	 */
 	public const REGISTER_PATH = '/registo/';
 
+	/**
+	 * Query variables that make WordPress serve something other than the path.
+	 *
+	 * The allowlist is of paths, and WordPress answers query strings too:
+	 * /entrar/?pagename=b2b-loja rendered the trade ordering page to a logged-out
+	 * visitor, and /entrar/?wc-ajax=checkout ran a checkout. An allowed path
+	 * carrying any of these is treated as what it really asks for. The login and
+	 * reset flows' own parameters (redirect_to, loggedout, key, login) are not
+	 * here and keep working.
+	 *
+	 * A fixed list because the early gate runs before WordPress has registered
+	 * its query variables.
+	 */
+	private const CONTENT_VARS = array(
+		'p', 'page_id', 'pagename', 'name', 'attachment', 'attachment_id', 'subpost', 'subpost_id',
+		'preview', 'post_type', 'static', 'pb', 'embed',
+		's', 'cat', 'category_name', 'tag', 'tag_id', 'taxonomy', 'term', 'author', 'author_name',
+		'feed', 'm', 'year', 'monthnum', 'day', 'w', 'sitemap', 'post_format',
+		'product', 'product_cat', 'product_tag', 'product_brand',
+		'rest_route', 'wc-ajax',
+	);
+
+	/** The scanner answers for its own REST namespace (see the allowlist). */
+	private const OWN_REST_PREFIX = '/b2b/v1';
+
 	public static function register(): void {
 		add_action( 'template_redirect', array( __CLASS__, 'maybe_redirect' ), 1 );
+		// Before StoreApiGuard and QueryResultCache, which also answer here.
+		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'guard_rest' ), 5, 3 );
+	}
+
+	/**
+	 * The path a request really asks for.
+	 *
+	 * ?rest_route= is the REST API reached through any page's URL, so
+	 * /entrar/?rest_route=/wc/store/v1/products is judged as the
+	 * /wp-json/wc/store/v1/products it is, not as the login page.
+	 */
+	public static function effective_path( string $request_uri ): string {
+		$query = self::query_of( $request_uri );
+
+		if ( isset( $query['rest_route'] ) && is_string( $query['rest_route'] ) ) {
+			return '/wp-json/' . ltrim( $query['rest_route'], '/' );
+		}
+
+		return wp_parse_url( $request_uri, PHP_URL_PATH ) ?: '/';
+	}
+
+	private static function query_of( string $request_uri ): array {
+		$query = array();
+		parse_str( (string) wp_parse_url( $request_uri, PHP_URL_QUERY ), $query );
+
+		return $query;
+	}
+
+	private static function selects_other_content( array $query ): bool {
+		return (bool) array_intersect( array_keys( $query ), self::CONTENT_VARS );
+	}
+
+	private static function allowlisted( string $path, array $query ): bool {
+		if ( self::selects_other_content( $query ) ) {
+			return false;
+		}
+
+		foreach ( self::allowlist() as $allowed ) {
+			if ( 0 === strpos( $path, $allowed ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * REST on the trade host needs a real login.
+	 *
+	 * REST requests never reach the page gate, and the early gate only looks for
+	 * a cookie's name - so any cookie called wordpress_logged_in_* opened the
+	 * whole API. Here the login cookie is validated. It is checked directly
+	 * rather than through is_user_logged_in(): WordPress treats a REST request
+	 * without a nonce as anonymous, and a signed-in partner's page making such a
+	 * call must keep working.
+	 *
+	 * @param mixed            $result
+	 * @param \WP_REST_Server  $server
+	 * @param \WP_REST_Request $request
+	 * @return mixed
+	 */
+	public static function guard_rest( $result, $server = null, $request = null ) {
+		if ( null !== $result || ! Hosts::is_b2b_host() || ! $request instanceof \WP_REST_Request ) {
+			return $result;
+		}
+
+		if ( 0 === strpos( $request->get_route(), self::OWN_REST_PREFIX ) ) {
+			return $result;
+		}
+
+		if ( is_user_logged_in() || wp_validate_auth_cookie( '', 'logged_in' ) ) {
+			return $result;
+		}
+
+		return new \WP_Error(
+			'beltoft_b2b_login_required',
+			__( 'Inicie sessão para continuar.', 'beltoft-commerce' ),
+			array( 'status' => 401 )
+		);
 	}
 
 	/**
@@ -108,7 +212,7 @@ class LoginGate {
 		) );
 	}
 
-	public static function should_gate( string $path ): bool {
+	public static function should_gate( string $path, array $query = array() ): bool {
 		if ( ! Hosts::is_b2b_host() ) {
 			return false;
 		}
@@ -117,13 +221,7 @@ class LoginGate {
 			return false;
 		}
 
-		foreach ( self::allowlist() as $allowed ) {
-			if ( 0 === strpos( $path, $allowed ) ) {
-				return false;
-			}
-		}
-
-		return true;
+		return ! self::allowlisted( $path, $query );
 	}
 
 	/**
@@ -140,7 +238,7 @@ class LoginGate {
 	 * a stale or forged cookie only buys the visitor a trip to the real
 	 * gate in maybe_redirect(), which re-checks properly.
 	 */
-	public static function should_gate_early( string $path, bool $has_auth_cookie ): bool {
+	public static function should_gate_early( string $path, bool $has_auth_cookie, array $query = array() ): bool {
 		if ( ! Hosts::is_b2b_host() ) {
 			return false;
 		}
@@ -149,17 +247,13 @@ class LoginGate {
 			return false;
 		}
 
-		foreach ( self::allowlist() as $allowed ) {
-			if ( 0 === strpos( $path, $allowed ) ) {
-				return false;
-			}
-		}
-
-		return true;
+		return ! self::allowlisted( $path, $query );
 	}
 
 	public static function maybe_redirect_early(): void {
-		$path = wp_parse_url( $_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH ) ?: '/';
+		$request_uri = (string) ( $_SERVER['REQUEST_URI'] ?? '/' );
+		$path        = self::effective_path( $request_uri );
+		$query       = self::query_of( $request_uri );
 
 		$has_auth_cookie = false;
 
@@ -170,7 +264,7 @@ class LoginGate {
 			}
 		}
 
-		if ( ! self::should_gate_early( $path, $has_auth_cookie ) ) {
+		if ( ! self::should_gate_early( $path, $has_auth_cookie, $query ) ) {
 			return;
 		}
 
@@ -181,9 +275,9 @@ class LoginGate {
 	}
 
 	public static function maybe_redirect(): void {
-		$path = wp_parse_url( $_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH ) ?: '/';
+		$request_uri = (string) ( $_SERVER['REQUEST_URI'] ?? '/' );
 
-		if ( ! self::should_gate( $path ) ) {
+		if ( ! self::should_gate( self::effective_path( $request_uri ), self::query_of( $request_uri ) ) ) {
 			return;
 		}
 

@@ -130,6 +130,13 @@ class HostRoutes {
 			return false;
 		}
 
+		/*
+		 * WordPress resolves pages case-insensitively and after URL-decoding,
+		 * so /B2B-loja/ and /%62%32b-loja/ rendered the trade page here - and,
+		 * as a 200 on the retail host, went into its page cache.
+		 */
+		$path = strtolower( rawurldecode( $path ) );
+
 		foreach ( self::b2b_only_paths() as $b2b_path ) {
 			if ( 0 === strpos( $path, $b2b_path ) ) {
 				return true;
@@ -137,6 +144,48 @@ class HostRoutes {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Where a trade page that WordPress resolved on the retail host belongs.
+	 *
+	 * The path check above sees only the URL, and a URL is not the only way to
+	 * name a page: ?pagename=b2b-loja and ?page_id= reach it from any path. Once
+	 * WordPress has decided what it is serving, that decides - whatever the
+	 * request looked like.
+	 *
+	 * @return string The trade-host URL, or '' when the page belongs here.
+	 */
+	public static function resolved_redirect_target(): string {
+		if ( Hosts::is_b2b_host() || ! is_singular() ) {
+			return '';
+		}
+
+		$post = get_queried_object();
+
+		if ( ! $post instanceof \WP_Post ) {
+			return '';
+		}
+
+		$path = '/' . trim( (string) get_page_uri( $post ), '/' ) . '/';
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only compared, never stored.
+		$is_bricks_builder = isset( $_GET['bricks'] ) && 'run' === $_GET['bricks'];
+
+		return self::should_redirect( $path, $is_bricks_builder ) ? 'https://' . Hosts::b2b() . $path : '';
+	}
+
+	/** Sends a trade page resolved on the retail host to the trade host. */
+	public static function maybe_redirect_resolved(): void {
+		$target = self::resolved_redirect_target();
+
+		if ( '' === $target ) {
+			return;
+		}
+
+		// A different host, which wp_safe_redirect() would refuse.
+		wp_redirect( $target, 302 );
+		exit;
 	}
 
 	/**
