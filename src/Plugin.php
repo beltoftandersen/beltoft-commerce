@@ -75,7 +75,9 @@ class Plugin {
 		Pricing\LookupIndex::register();
 		Hooks\PriceQuery::register();
 
-		Catalog\Taxonomy::register();
+		// On init, not here: its labels are translated, and translating during
+		// plugins_loaded logs _load_textdomain_just_in_time on every request.
+		add_action( 'init', array( Catalog\Taxonomy::class, 'register' ), 5 );
 		Catalog\CatalogAudience::register();
 		add_action( 'woocommerce_update_product', array( Frontend\ResellerTags::class, 'flush' ) );
 		Enforcement\QueryFilter::register();

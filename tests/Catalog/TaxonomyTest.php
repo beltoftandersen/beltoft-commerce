@@ -9,6 +9,15 @@ class TaxonomyTest extends WP_UnitTestCase {
 		Taxonomy::register();
 	}
 
+	/**
+	 * Registered on init, not on plugins_loaded where Plugin::init() runs: its
+	 * labels are translated, and translating before init made WordPress log
+	 * _load_textdomain_just_in_time for beltoft-commerce on every request.
+	 */
+	public function test_it_is_registered_on_init_not_while_plugins_load() {
+		$this->assertNotFalse( has_action( 'init', array( Taxonomy::class, 'register' ) ) );
+	}
+
 	public function test_the_taxonomy_is_registered_against_products() {
 		$this->assertTrue( taxonomy_exists( Taxonomy::TAXONOMY ) );
 		$this->assertContains( 'product', get_taxonomy( Taxonomy::TAXONOMY )->object_type );
