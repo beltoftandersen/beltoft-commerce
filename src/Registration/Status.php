@@ -10,10 +10,9 @@ defined( 'ABSPATH' ) || exit;
  * STATUS IS NOT THE ROLE, and keeping them apart is the point. The role answers
  * "what may this account do" and is what every pricing and enforcement decision
  * reads; the status answers "what did we decide about this application" and is
- * what the shop reads. A rejected applicant keeps the b2b_pending role, which is
- * retail-equivalent by design (§2.2), so rejection removes nothing they had and
- * grants nothing they should not have - it is a decision recorded, not a
- * punishment applied.
+ * what the shop reads. A rejected account always ends up with the b2b_pending
+ * role, which is retail-equivalent by design (§2.2): an applicant loses nothing
+ * they had, and a partner whose access is revoked loses the wholesale role.
  *
  * Deliberately NOT inferred from the role. "b2b_pending with no decision" and
  * "b2b_pending, rejected" are different things to a human and identical to a
@@ -66,19 +65,36 @@ class Status {
 	}
 
 	/**
-	 * Reject: the role does not change.
+	 * Reject: the account ends up as b2b_pending, whatever it was.
 	 *
-	 * b2b_pending already resolves to the retail catalog and retail prices, so
-	 * there is nothing to take away. Leaving the role alone also means the
-	 * account stays visible under the pending filter instead of disappearing
-	 * into twenty-three thousand retail customers, which is what makes a
-	 * reapplication or a later reversal findable.
+	 * b2b_pending resolves to the retail catalog and retail prices. For an
+	 * applicant that is the role they already have; for an approved partner,
+	 * rejecting is how access is revoked, so b2b_customer is taken away here -
+	 * otherwise they kept wholesale prices and fell out of every list. Keeping
+	 * b2b_pending rather than dropping to customer also keeps the account under
+	 * the rejected filter instead of disappearing into twenty-three thousand
+	 * retail customers, which is what makes a reapplication or a later
+	 * reversal findable.
+	 *
+	 * Only B2B accounts can be rejected. Because this changes the role, an
+	 * administrator or retail customer caught in a bulk action on the plain
+	 * Users list must be left exactly as they were.
 	 */
 	public static function reject( int $user_id, string $reason = '' ): bool {
 		$user = get_userdata( $user_id );
 
 		if ( ! $user || self::REJECTED === self::get( $user_id ) ) {
 			return false;
+		}
+
+		$roles = (array) $user->roles;
+
+		if ( ! array_intersect( $roles, array( 'b2b_pending', 'b2b_customer' ) ) ) {
+			return false;
+		}
+
+		if ( array( 'b2b_pending' ) !== array_values( $roles ) ) {
+			$user->set_role( 'b2b_pending' );
 		}
 
 		update_user_meta( $user_id, self::META_STATUS, self::REJECTED );
