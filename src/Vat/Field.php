@@ -72,6 +72,18 @@ class Field {
 		), self::posted() ?: self::stored_value() );
 	}
 
+	/**
+	 * Whether the checkout submitted the field at all, empty included.
+	 *
+	 * posted() cannot tell "left empty" from "not on this form", and the two
+	 * mean opposite things: an emptied field is the customer choosing a normal
+	 * sale, a missing one is a form this field is not part of.
+	 */
+	public static function was_posted(): bool {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WooCommerce verifies the checkout nonce before this runs.
+		return isset( $_POST['beltoft_vat_number'] );
+	}
+
 	public static function posted(): string {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WooCommerce verifies the checkout nonce before this runs.
 		return isset( $_POST['beltoft_vat_number'] ) ? sanitize_text_field( wp_unslash( $_POST['beltoft_vat_number'] ) ) : '';

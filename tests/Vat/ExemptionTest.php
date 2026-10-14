@@ -94,6 +94,30 @@ class ExemptionTest extends WP_UnitTestCase {
 		$this->assertFalse( Exemption::is_exempt() );
 	}
 
+	/**
+	 * Emptying the field is how a partner buys as a normal sale. The submit
+	 * posts the field empty; that is an answer, not a missing field, and it
+	 * must not fall back to the number on file and zero-rate the order.
+	 */
+	public function test_a_field_cleared_at_checkout_charges_iva() {
+		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
+		$this->cache_vies( 'ES', 'B12345678', 'valid' );
+
+		$_POST['beltoft_vat_number'] = '';
+		$_POST['billing_country']    = 'ES';
+
+		$this->assertFalse( Exemption::is_exempt() );
+	}
+
+	public function test_a_field_cleared_in_the_checkout_review_charges_iva() {
+		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
+		$this->cache_vies( 'ES', 'B12345678', 'valid' );
+
+		Exemption::capture_review( 'billing_country=ES&beltoft_vat_number=&billing_city=Madrid' );
+
+		$this->assertFalse( Exemption::is_exempt() );
+	}
+
 	public function test_the_checkout_review_payload_is_read() {
 		$this->cache_vies( 'ES', 'B12345678', 'valid' );
 

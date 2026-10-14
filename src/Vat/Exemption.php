@@ -184,12 +184,16 @@ class Exemption {
 		}
 	}
 
-	/** Checkout submission, then checkout review, then what we hold on file. */
+	/**
+	 * Checkout submission, then checkout review, then what we hold on file.
+	 *
+	 * A field submitted empty is the answer, not a gap to fill from the
+	 * account: falling back there zero-rated a partner who had cleared the
+	 * number to buy as a normal sale, and left the order with no VAT evidence.
+	 */
 	private static function number(): string {
-		$posted = Field::posted();
-
-		if ( '' !== $posted ) {
-			return $posted;
+		if ( Field::was_posted() ) {
+			return Field::posted();
 		}
 
 		if ( null !== self::$posted_review ) {
