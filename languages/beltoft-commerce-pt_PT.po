@@ -942,3 +942,23 @@ msgstr ""
 #: src/Vat/Field.php
 msgid "This VAT number is from a different country than your billing address. Change the billing country to the VAT number's country, or leave the field empty."
 msgstr "Este número de IVA é de um país diferente do da morada de faturação. Altere o país de faturação para o país do número de IVA, ou deixe o campo vazio."
+
+#: src/Domain/LoginGate.php
+msgid "Sign in to continue."
+msgstr "Inicie sessão para continuar."
+
+#: src/Registration/Registrar.php
+msgid "The VAT number given is from a different country than the one selected."
+msgstr "O número de IVA indicado é de um país diferente do país selecionado."
+
+#: src/Registration/FormAction.php
+msgid "Too many requests from this connection. Please try again later."
+msgstr "Demasiados pedidos a partir desta ligação. Tente novamente mais tarde."
+
+#: src/Scanner/ScannerContext.php
+msgid "The back-in-stock alert could not be saved. Please try again."
+msgstr "Não foi possível registar o aviso. Tente novamente."
+
+#: src/Vat/AccountEndpoint.php
+msgid "This VAT number is from a different country than your billing address. Update your billing address first. Your previous number has not been changed."
+msgstr "Este número de IVA é de um país diferente do da sua morada de faturação. Atualize primeiro a morada de faturação. O número anterior não foi alterado."

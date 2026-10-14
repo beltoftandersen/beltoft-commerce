@@ -41,6 +41,66 @@ class ScannerContext {
 	public static function register(): void {
 		add_filter( 'beltoft_scanner_contexts', array( __CLASS__, 'add_context' ) );
 		add_filter( 'beltoft_scanner_assess', array( __CLASS__, 'assess' ), 10, 3 );
+		/*
+		 * Only with the notifier. The scanner offers "Notify me" whenever
+		 * anything answers this hook (has_filter), so hooking in without the
+		 * notifier would show a button that cannot work.
+		 */
+		if ( class_exists( '\BeltoftInStockNotifier\Subscription\Repository' ) ) {
+			add_filter( 'beltoft_scanner_notify', array( __CLASS__, 'notify' ), 10, 4 );
+		}
+	}
+
+	/**
+	 * "Notify me": a partner who scans an out-of-stock product can ask for the
+	 * back-in-stock email there and then.
+	 *
+	 * The scanner keeps no subscriptions; beltoft-in-stock-notifier does, and
+	 * this hands the request over to it. Without the notifier this answers
+	 * nothing and the scanner simply does not offer the button. The scanner
+	 * has already applied the catalogue rules (assess() above) before asking.
+	 *
+	 * The notifier stores a variation under its parent, as its own product page
+	 * form does. Asking means consent - the partner pressed the button for
+	 * exactly this email.
+	 *
+	 * @param mixed       $result   An earlier handler's answer, which stands.
+	 * @param \WC_Product $product
+	 * @param \WP_User    $user
+	 * @param int         $quantity
+	 * @return mixed 'subscribed', 'already', a WP_Error, or $result untouched.
+	 */
+	public static function notify( $result, $product = null, $user = null, $quantity = 1 ) {
+		if ( null !== $result || ! $product instanceof WC_Product || ! $user instanceof WP_User ) {
+			return $result;
+		}
+
+		if ( ! class_exists( '\BeltoftInStockNotifier\Subscription\Repository' ) ) {
+			return $result;
+		}
+
+		$parent = $product->get_parent_id();
+
+		$id = \BeltoftInStockNotifier\Subscription\Repository::upsert( array(
+			'product_id'        => $parent ?: $product->get_id(),
+			'variation_id'      => $parent ? $product->get_id() : 0,
+			'email'             => $user->user_email,
+			'locale'            => get_user_locale( $user ),
+			'quantity'          => max( 1, (int) $quantity ),
+			'gdpr_consent'      => 1,
+			'unsubscribe_token' => wp_generate_password( 32, false ),
+		) );
+
+		if ( false === $id ) {
+			return new \WP_Error(
+				'beltoft_commerce_notify_failed',
+				__( 'The back-in-stock alert could not be saved. Please try again.', 'beltoft-commerce' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		// The notifier answers 0 for an address already waiting on this product.
+		return 0 === $id ? 'already' : 'subscribed';
 	}
 
 	/**

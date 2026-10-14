@@ -140,7 +140,7 @@ class LoginGate {
 
 		return new \WP_Error(
 			'beltoft_b2b_login_required',
-			__( 'Inicie sessão para continuar.', 'beltoft-commerce' ),
+			__( 'Sign in to continue.', 'beltoft-commerce' ),
 			array( 'status' => 401 )
 		);
 	}

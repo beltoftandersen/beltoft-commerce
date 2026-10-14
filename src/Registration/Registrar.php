@@ -174,7 +174,7 @@ class Registrar {
 		// The country chosen here becomes the billing country, and reverse
 		// charge needs it to be the number's own member state.
 		if ( 'country_mismatch' === $decision->status ) {
-			return new WP_Error( 'beltoft_nif', __( 'O número de IVA indicado é de um país diferente do país selecionado.', 'beltoft-commerce' ) );
+			return new WP_Error( 'beltoft_nif', __( 'The VAT number given is from a different country than the one selected.', 'beltoft-commerce' ) );
 		}
 
 		return $nif;

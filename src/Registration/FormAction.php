@@ -35,7 +35,7 @@ class FormAction {
 			$form->set_result( array(
 				'action'  => self::ACTION,
 				'type'    => 'error',
-				'message' => __( 'Demasiados pedidos a partir desta ligação. Tente novamente mais tarde.', 'beltoft-commerce' ),
+				'message' => __( 'Too many requests from this connection. Please try again later.', 'beltoft-commerce' ),
 			) );
 
 			return;

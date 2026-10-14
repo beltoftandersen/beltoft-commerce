@@ -21,6 +21,7 @@ class ScannerContextTest extends WP_UnitTestCase {
 	public function tearDown(): void {
 		remove_all_filters( 'beltoft_scanner_contexts' );
 		remove_all_filters( 'beltoft_scanner_assess' );
+		remove_all_filters( 'beltoft_scanner_notify' );
 		unset( $_SERVER['HTTP_HOST'] );
 		wp_set_current_user( 0 );
 		parent::tearDown();
@@ -126,5 +127,86 @@ class ScannerContextTest extends WP_UnitTestCase {
 			'not_purchasable',
 			apply_filters( 'beltoft_scanner_assess', 'not_purchasable', $this->product( Taxonomy::BOTH ), $partner )
 		);
+	}
+
+	// --- "Notify me": back-in-stock subscriptions through the notifier --------
+
+	/** The in-stock notifier plugin, loaded the way the site loads it. */
+	private function with_notifier(): void {
+		if ( ! class_exists( '\\BeltoftInStockNotifier\\Subscription\\Repository' ) ) {
+			require_once BELTOFT_SITE_PLUGINS . '/beltoft-in-stock-notifier/beltoft-in-stock-notifier.php';
+		}
+
+		\BeltoftInStockNotifier\Support\Installer::activate();
+
+		// The handler hooks in only when the notifier exists, so register again now it does.
+		ScannerContext::register();
+	}
+
+	private function notify( WC_Product $product, WP_User $user, int $quantity = 1 ) {
+		return apply_filters( 'beltoft_scanner_notify', null, $product, $user, $quantity );
+	}
+
+	private function subscriptions_for( string $email ): array {
+		global $wpdb;
+
+		return $wpdb->get_results( $wpdb->prepare(
+			"SELECT product_id, variation_id, quantity_requested, status FROM {$wpdb->prefix}bisn_subscriptions WHERE email = %s",
+			$email
+		), ARRAY_A );
+	}
+
+	/**
+	 * Scanning an out-of-stock product offers "Notify me"; the scanner keeps
+	 * no subscriptions itself and hands them to whoever handles the hook.
+	 */
+	public function test_notify_me_subscribes_the_partner_to_the_back_in_stock_email() {
+		$this->with_notifier();
+		$partner = get_userdata( self::factory()->user->create( array( 'role' => 'b2b_customer', 'user_email' => 'parceiro@example.com' ) ) );
+		$product = $this->product( Taxonomy::BOTH );
+
+		$this->assertSame( 'subscribed', $this->notify( $product, $partner, 6 ) );
+
+		$rows = $this->subscriptions_for( 'parceiro@example.com' );
+		$this->assertCount( 1, $rows );
+		$this->assertSame( (string) $product->get_id(), (string) $rows[0]['product_id'] );
+		$this->assertSame( '6', (string) $rows[0]['quantity_requested'] );
+		$this->assertSame( 'active', $rows[0]['status'] );
+	}
+
+	public function test_asking_twice_says_already() {
+		$this->with_notifier();
+		$partner = get_userdata( self::factory()->user->create( array( 'role' => 'b2b_customer', 'user_email' => 'parceiro2@example.com' ) ) );
+		$product = $this->product( Taxonomy::BOTH );
+
+		$this->notify( $product, $partner );
+
+		$this->assertSame( 'already', $this->notify( $product, $partner ) );
+	}
+
+	/** A variation is subscribed under its parent, as the notifier stores it. */
+	public function test_a_variation_is_subscribed_under_its_parent() {
+		$this->with_notifier();
+		$partner = get_userdata( self::factory()->user->create( array( 'role' => 'b2b_customer', 'user_email' => 'parceiro3@example.com' ) ) );
+
+		$parent = new WC_Product_Variable();
+		$parent->save();
+		$variation = new WC_Product_Variation();
+		$variation->set_parent_id( $parent->get_id() );
+		$variation->save();
+
+		$this->assertSame( 'subscribed', $this->notify( wc_get_product( $variation->get_id() ), $partner ) );
+
+		$rows = $this->subscriptions_for( 'parceiro3@example.com' );
+		$this->assertSame( (string) $parent->get_id(), (string) $rows[0]['product_id'] );
+		$this->assertSame( (string) $variation->get_id(), (string) $rows[0]['variation_id'] );
+	}
+
+	/** Another handler that already answered is left alone. */
+	public function test_an_earlier_answer_stands() {
+		$this->with_notifier();
+		$partner = get_userdata( self::factory()->user->create( array( 'role' => 'b2b_customer' ) ) );
+
+		$this->assertSame( 'already', apply_filters( 'beltoft_scanner_notify', 'already', $this->product( Taxonomy::BOTH ), $partner, 1 ) );
 	}
 }

@@ -32,12 +32,12 @@ class CountryMismatchMessagesTest extends WP_UnitTestCase {
 		$result = $this->call( Registrar::class, 'validate_nif', 'ESB12345678', 'PT' );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
-		$this->assertStringContainsString( 'país', $result->get_error_message() );
+		$this->assertStringContainsString( 'country', $result->get_error_message() );
 	}
 
 	public function test_the_account_page_explains_a_country_mismatch() {
 		$message = $this->call( AccountEndpoint::class, 'refusal_message', 'country_mismatch' );
 
-		$this->assertStringContainsString( 'faturação', $message );
+		$this->assertStringContainsString( 'billing address', $message );
 	}
 }
