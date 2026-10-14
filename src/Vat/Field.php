@@ -43,8 +43,7 @@ class Field {
 
 	/**
 	 * The trade host's checkout. This field belongs to an ACCOUNT: it prefills
-	 * from the signed-in partner and saves back to them. The till, which sells
-	 * to whoever is at the counter, is beltoft-pos's and on its own host.
+	 * from the signed-in partner and saves back to them.
 	 */
 	private static function applies(): bool {
 		return Hosts::is_b2b_host();

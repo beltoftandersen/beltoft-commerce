@@ -31,8 +31,7 @@ class ScannerContext {
 	 * Who may scan on the trade list.
 	 *
 	 * b2b_pending is deliberately not here: an applicant can sign in before
-	 * anyone has approved them and must not price or order anything. The till
-	 * scans on its own page, through beltoft-pos's own context.
+	 * anyone has approved them and must not price or order anything.
 	 */
 	private const ROLES = array( 'b2b_customer' );
 

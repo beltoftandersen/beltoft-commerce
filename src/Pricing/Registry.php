@@ -26,8 +26,7 @@ class Registry {
 			'b2b_standard' => array(
 				'label'  => __( 'B2B', 'beltoft-commerce' ),
 				'roles'  => array( 'b2b_customer' ),
-				// Own price meta, trade terms. The till is not a group here:
-				// it lives in beltoft-pos, with its own role and stock pool.
+				// Own price meta, trade terms.
 				'prices' => 'own',
 				'trade'  => true,
 			),
