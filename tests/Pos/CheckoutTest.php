@@ -216,4 +216,88 @@ class PosCheckoutTest extends WP_UnitTestCase {
 
 		remove_action( 'woocommerce_review_order_before_payment', 'cppw_woocommerce_review_order_before_payment' );
 	}
+
+	/** What sale 1 left on the till account under WooCommerce's normal behaviour. */
+	private function previous_customer_on_the_account(): void {
+		foreach ( array(
+			'billing_first_name' => 'Ana',
+			'billing_last_name'  => 'Silva',
+			'billing_company'    => 'Silva Lda',
+			'billing_address_1'  => 'Rua X 12',
+			'billing_postcode'   => '1000-001',
+			'billing_city'       => 'Lisboa',
+			'billing_phone'      => '912345678',
+			'billing_nif'        => '123456789',
+		) as $key => $value ) {
+			update_user_meta( $this->pos, $key, $value );
+		}
+	}
+
+	/**
+	 * The till is one account serving a queue of strangers. Whatever sale 1
+	 * typed must not appear on sale 2's form - only the walk-in name.
+	 */
+	public function test_the_next_sale_never_shows_the_previous_customers_details() {
+		wp_set_current_user( $this->pos );
+
+		foreach ( array( 'billing_last_name' => 'Silva', 'billing_company' => 'Silva Lda', 'billing_address_1' => 'Rua X 12', 'billing_phone' => '912345678', 'billing_nif' => '123456789' ) as $key => $stored ) {
+			$this->assertSame( '', Checkout::prefill( $stored, $key ), $key );
+		}
+
+		$this->assertSame( Checkout::walkin_name(), Checkout::prefill( 'Ana', 'billing_first_name' ) );
+	}
+
+	public function test_the_till_keeps_the_shop_country() {
+		wp_set_current_user( $this->pos );
+
+		$this->assertSame( WC()->countries->get_base_country(), Checkout::prefill( 'ES', 'billing_country' ) );
+	}
+
+	public function test_what_the_operator_types_for_this_sale_still_wins() {
+		wp_set_current_user( $this->pos );
+		$_POST['post_data'] = 'billing_nif=123456789&billing_address_1=Rua+X+12';
+
+		$this->assertSame( '123456789', Checkout::prefill( '', 'billing_nif' ) );
+		$this->assertSame( 'Rua X 12', Checkout::prefill( '', 'billing_address_1' ) );
+
+		unset( $_POST['post_data'] );
+	}
+
+	public function test_a_till_sale_does_not_save_the_customer_onto_the_till_account() {
+		wp_set_current_user( $this->pos );
+		$this->assertFalse( Checkout::keep_account_clean( true ) );
+
+		wp_set_current_user( $this->b2b );
+		$this->assertTrue( Checkout::keep_account_clean( true ), 'Partners keep their saved details.' );
+	}
+
+	/**
+	 * Whatever reached the account anyway - the order review saves the
+	 * address it is given - is wiped after each sale.
+	 */
+	public function test_after_a_sale_the_account_holds_only_the_walk_in_name() {
+		wp_set_current_user( $this->pos );
+		$this->previous_customer_on_the_account();
+		WC()->customer = new WC_Customer( $this->pos );
+		WC()->customer->set_billing_address_1( 'Rua X 12' );
+
+		Checkout::clear_after_sale();
+
+		$this->assertSame( Checkout::walkin_name(), get_user_meta( $this->pos, 'billing_first_name', true ) );
+
+		foreach ( array( 'billing_last_name', 'billing_company', 'billing_address_1', 'billing_postcode', 'billing_city', 'billing_phone', 'billing_nif' ) as $key ) {
+			$this->assertSame( '', (string) get_user_meta( $this->pos, $key, true ), $key );
+		}
+
+		$this->assertSame( '', WC()->customer->get_billing_address_1(), 'The session copy is cleared too.' );
+	}
+
+	public function test_clearing_after_a_sale_leaves_partners_alone() {
+		wp_set_current_user( $this->b2b );
+		update_user_meta( $this->b2b, 'billing_company', 'Parceiro Lda' );
+
+		Checkout::clear_after_sale();
+
+		$this->assertSame( 'Parceiro Lda', get_user_meta( $this->b2b, 'billing_company', true ) );
+	}
 }

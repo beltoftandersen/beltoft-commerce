@@ -44,6 +44,8 @@ class Checkout {
 		add_filter( 'woocommerce_cart_needs_shipping_address', array( __CLASS__, 'no_shipping' ) );
 		add_filter( 'woocommerce_cart_needs_shipping', array( __CLASS__, 'no_shipping' ) );
 		add_filter( 'woocommerce_checkout_get_value', array( __CLASS__, 'prefill' ), 10, 2 );
+		add_filter( 'woocommerce_checkout_update_customer_data', array( __CLASS__, 'keep_account_clean' ) );
+		add_action( 'woocommerce_checkout_order_processed', array( __CLASS__, 'clear_after_sale' ), 99 );
 		add_filter( 'woocommerce_format_postcode', array( __CLASS__, 'blank_postcode_stays_blank' ), 10, 2 );
 
 		/*
@@ -148,7 +150,82 @@ class Checkout {
 			return self::walkin_name();
 		}
 
+		/*
+		 * Nothing else comes from the account. The till is one account serving
+		 * a queue of strangers, so whatever an earlier sale left there - a
+		 * name, an address, a phone, a NIF - belongs to somebody else. Each
+		 * sale starts from the walk-in name and the shop's own country.
+		 */
+		if ( 'billing_country' === $key ) {
+			return WC()->countries->get_base_country();
+		}
+
+		if ( 0 === strpos( (string) $key, 'billing_' ) ) {
+			return '';
+		}
+
 		return $value;
+	}
+
+	/**
+	 * Keep the customer's details on the order, not on the till account.
+	 *
+	 * WooCommerce saves the checkout's billing fields to the signed-in
+	 * account, which for a shopper is right. At the till the account is the
+	 * operator's, so the next walk-in would be offered the last one's details.
+	 *
+	 * @param mixed $update
+	 * @return mixed
+	 */
+	public static function keep_account_clean( $update ) {
+		return Session::is_pos() ? false : $update;
+	}
+
+	/**
+	 * After every till sale the account goes back to the walk-in name alone.
+	 *
+	 * keep_account_clean() stops the checkout saving to it, but the order
+	 * review saves the address it is given to the session customer and on
+	 * to the account as the operator types. So whatever reached the account,
+	 * by any route, is cleared once the sale is placed - the account and the
+	 * session copy WooCommerce prefills from.
+	 */
+	public static function clear_after_sale(): void {
+		if ( ! Session::is_pos() ) {
+			return;
+		}
+
+		$user_id = get_current_user_id();
+
+		if ( ! $user_id ) {
+			return;
+		}
+
+		$customer = function_exists( 'WC' ) ? WC()->customer : null;
+
+		if ( $customer instanceof \WC_Customer && (int) $customer->get_id() === $user_id ) {
+			foreach ( array_keys( $customer->get_billing() ) as $prop ) {
+				$setter = 'set_billing_' . $prop;
+
+				if ( is_callable( array( $customer, $setter ) ) ) {
+					$customer->{$setter}( '' );
+				}
+			}
+
+			$customer->delete_meta_data( 'billing_nif' );
+			$customer->set_billing_first_name( self::walkin_name() );
+			$customer->set_billing_country( WC()->countries->get_base_country() );
+			$customer->save();
+		}
+
+		foreach ( array_keys( (array) get_user_meta( $user_id ) ) as $key ) {
+			if ( 0 === strpos( (string) $key, 'billing_' ) ) {
+				delete_user_meta( $user_id, $key );
+			}
+		}
+
+		update_user_meta( $user_id, 'billing_first_name', self::walkin_name() );
+		update_user_meta( $user_id, 'billing_country', WC()->countries->get_base_country() );
 	}
 
 	/**
