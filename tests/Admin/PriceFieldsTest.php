@@ -61,6 +61,37 @@ class PriceFieldsTest extends WP_UnitTestCase {
 		$this->assertSame( '60.50', get_post_meta( $product->get_id(), '_price_group_b2b_standard', true ) );
 	}
 
+	/**
+	 * WooCommerce saves every changed variation in one request, firing
+	 * woocommerce_save_product_variation( $variation_id, $loop ) once per
+	 * variation, with the fields suffixed _<loop>. Each variation must get
+	 * its own row's values - not the lowest-numbered row's.
+	 */
+	public function test_saving_several_variations_gives_each_its_own_prices() {
+		PriceFields::register();
+
+		$first = new WC_Product_Variation();
+		$first->save();
+		$fourth = new WC_Product_Variation();
+		$fourth->save();
+
+		$_POST = array(
+			'_price_group_b2b_standard_0'               => '10,00',
+			'_sale_price_dates_to_group_b2b_standard_0' => '2026-11-01',
+			'_price_group_b2b_standard_3'               => '30,00',
+			'_sale_price_dates_to_group_b2b_standard_3' => '',
+		);
+
+		do_action( 'woocommerce_save_product_variation', $first->get_id(), 0 );
+		do_action( 'woocommerce_save_product_variation', $fourth->get_id(), 3 );
+
+		$_POST = array();
+
+		$this->assertSame( '10.00', get_post_meta( $first->get_id(), '_price_group_b2b_standard', true ) );
+		$this->assertSame( '30.00', get_post_meta( $fourth->get_id(), '_price_group_b2b_standard', true ) );
+		$this->assertFalse( metadata_exists( 'post', $fourth->get_id(), '_sale_price_dates_to_group_b2b_standard' ) );
+	}
+
 	public function test_saving_an_empty_value_deletes_the_meta_rather_than_storing_empty() {
 		$product = new WC_Product_Simple();
 		$product->save();

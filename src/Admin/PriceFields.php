@@ -21,7 +21,7 @@ class PriceFields {
 		add_action( 'woocommerce_product_options_pricing', array( __CLASS__, 'render_simple' ) );
 		add_action( 'woocommerce_variation_options_pricing', array( __CLASS__, 'render_variation' ), 10, 3 );
 		add_action( 'woocommerce_process_product_meta', array( __CLASS__, 'save_from_post' ) );
-		add_action( 'woocommerce_save_product_variation', array( __CLASS__, 'save_from_post' ) );
+		add_action( 'woocommerce_save_product_variation', array( __CLASS__, 'save_variation_from_post' ), 10, 2 );
 	}
 
 	/**
@@ -174,28 +174,38 @@ class PriceFields {
 	}
 
 	/**
+	 * One variation of the many WooCommerce saves in a single request.
+	 *
+	 * Its fields carry the _<loop> suffix of its own row. Without $loop the
+	 * save used to pick the lowest-numbered row present, so saving several
+	 * variations at once wrote the first one's prices to all of them.
+	 *
+	 * @param int $variation_id
+	 * @param int $loop
+	 */
+	public static function save_variation_from_post( $variation_id, $loop ): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WooCommerce verifies before firing this action.
+		self::save_group_prices( (int) $variation_id, wp_unslash( $_POST ), (int) $loop );
+	}
+
+	/**
 	 * Only keys the registry derives are honoured, so a crafted POST cannot
 	 * write arbitrary meta.
 	 *
 	 * An empty value DELETES the meta rather than storing an empty string,
 	 * because fail-closed resolution depends on the key being absent.
+	 *
+	 * @param int|null $loop The variation row whose _<loop> fields to read;
+	 *                       null for a simple product's unsuffixed fields.
 	 */
-	public static function save_group_prices( int $post_id, array $input ): void {
+	public static function save_group_prices( int $post_id, array $input, ?int $loop = null ): void {
 		foreach ( self::all_fields() as $fields ) {
 			foreach ( $fields as $field ) {
-				$key = $field['key'];
-
-				$posted_key = $key;
+				$key        = $field['key'];
+				$posted_key = null === $loop ? $key : $key . '_' . $loop;
 
 				if ( ! array_key_exists( $posted_key, $input ) ) {
-					// Variation fields carry a _<loop> suffix.
-					$matches = preg_grep( '/^' . preg_quote( $key, '/' ) . '_\d+$/', array_keys( $input ) );
-
-					if ( ! $matches ) {
-						continue;
-					}
-
-					$posted_key = (string) reset( $matches );
+					continue;
 				}
 
 				$raw = (string) $input[ $posted_key ];
