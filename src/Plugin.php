@@ -102,13 +102,23 @@ class Plugin {
 		Checkout\NoCartPage::register();
 		Checkout\ItemCodes::register();
 		Checkout\B2BPaymentMethods::register();
-		Stock\GroupStock::register();
-		Stock\AdminField::register();
-		Stock\Recount::register();
-		Pos\Checkout::register();
-		Pos\ListColumns::register();
-		Pos\Tenders::register();
-		Pos\PaymentMethods::register();
+
+		/*
+		 * The till now lives in beltoft-pos. While both are active, only one of
+		 * them may register tenders and move the till stock, or every sale
+		 * would be counted twice. Removed with the rest of the till code once
+		 * the POS is in use.
+		 */
+		if ( ! defined( 'BELTOFT_POS_FILE' ) ) {
+			Stock\GroupStock::register();
+			Stock\AdminField::register();
+			Stock\Recount::register();
+			Pos\Checkout::register();
+			Pos\ListColumns::register();
+			Pos\Tenders::register();
+			Pos\PaymentMethods::register();
+		}
+
 		Checkout\BankDetailsGuard::register();
 		Vat\Field::register();
 		Vat\RateLabel::register();
