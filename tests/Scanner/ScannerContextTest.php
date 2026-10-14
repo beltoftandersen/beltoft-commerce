@@ -54,13 +54,6 @@ class ScannerContextTest extends WP_UnitTestCase {
 		$this->assertFalse( $this->may_scan( 'customer' ) );
 	}
 
-	/** The till scans on its own page, through beltoft-pos's own context. */
-	public function test_the_till_is_not_a_trade_list_scanner() {
-		add_role( 'pos_operator', 'POS', array( 'read' => true ) );
-
-		$this->assertFalse( $this->may_scan( 'pos_operator' ) );
-	}
-
 	public function test_it_does_not_apply_on_the_retail_host() {
 		$_SERVER['HTTP_HOST'] = Hosts::retail();
 

@@ -79,7 +79,7 @@ class UrlFilterTest extends WP_UnitTestCase {
 	 *
 	 * Action Scheduler's async runner reaches the site over HTTP, so a queued
 	 * job CAN arrive with a host - the host of whichever page happened to spawn
-	 * the runner. It drains the whole queue, so one till sale decided the URLs
+	 * the runner. It drains the whole queue, so one trade sale decided the URLs
 	 * in every job in that batch, including other people's order emails.
 	 */
 	public function test_queued_work_ignores_the_host_it_arrived_on() {
