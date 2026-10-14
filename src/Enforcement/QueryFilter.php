@@ -135,11 +135,54 @@ class QueryFilter {
 		$post_type = $query->get( 'post_type' );
 
 		if ( empty( $post_type ) ) {
-			return false;
+			return self::is_product_taxonomy_query( $query );
 		}
 
 		$post_type = is_array( $post_type ) ? $post_type : array( $post_type );
 
 		return in_array( 'product', $post_type, true );
+	}
+
+	/**
+	 * A category, tag, brand or attribute archive.
+	 *
+	 * These reach pre_get_posts with post_type still empty - WordPress only
+	 * fills it in inside get_posts() - so the post-type test alone let every
+	 * product archive through unfiltered: retail-only products on a B2B
+	 * customer's category pages, and B2B-only ones on retail's.
+	 *
+	 * Only taxonomies registered for products and nothing else count. Every
+	 * result of such a query is a product, so the audience clause is safe;
+	 * on a taxonomy shared with posts or pages it would hide all of those,
+	 * because they carry no audience term. Search with no post_type is not
+	 * caught here for the same reason - it mixes post types - and goes
+	 * through SearchIndex instead.
+	 */
+	private static function is_product_taxonomy_query( \WP_Query $query ): bool {
+		$product_only = array();
+
+		foreach ( get_object_taxonomies( 'product', 'objects' ) as $taxonomy ) {
+			if ( array( 'product' ) === array_values( (array) $taxonomy->object_type ) ) {
+				$product_only[ $taxonomy->name ] = $taxonomy->query_var;
+			}
+		}
+
+		foreach ( $product_only as $name => $query_var ) {
+			if ( $query_var && '' !== (string) $query->get( $query_var ) ) {
+				return true;
+			}
+		}
+
+		if ( isset( $product_only[ (string) $query->get( 'taxonomy' ) ] ) ) {
+			return true;
+		}
+
+		foreach ( (array) $query->get( 'tax_query' ) as $clause ) {
+			if ( is_array( $clause ) && isset( $clause['taxonomy'] ) && isset( $product_only[ $clause['taxonomy'] ] ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

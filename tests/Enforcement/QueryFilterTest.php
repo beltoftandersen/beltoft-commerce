@@ -113,6 +113,79 @@ class QueryFilterTest extends WP_UnitTestCase {
 		set_current_screen( 'front' );
 	}
 
+	/** A taxonomy archive query, as WordPress builds it: no post_type. */
+	private function archive_ids( array $args ): array {
+		$q = new WP_Query( array_merge( array(
+			'post_status'    => 'publish',
+			'fields'         => 'ids',
+			'posts_per_page' => -1,
+		), $args ) );
+
+		return array_map( 'intval', $q->posts );
+	}
+
+	private function in_category( string $slug ): void {
+		$term = wp_insert_term( $slug, 'product_cat' );
+
+		foreach ( array( $this->retail_only, $this->b2b_only, $this->both ) as $id ) {
+			wp_set_object_terms( $id, (int) $term['term_id'], 'product_cat' );
+		}
+	}
+
+	/**
+	 * Category, tag and brand archives reach pre_get_posts with post_type
+	 * still empty; WordPress fills it in later. A B2B customer saw retail-only
+	 * products on every category page.
+	 */
+	public function test_a_b2b_customer_on_a_category_archive_sees_only_their_catalog() {
+		$this->in_category( 'cosmeticos' );
+		wp_set_current_user( $this->b2b_user );
+
+		$ids = $this->archive_ids( array( 'product_cat' => 'cosmeticos' ) );
+
+		$this->assertContains( $this->b2b_only, $ids );
+		$this->assertContains( $this->both, $ids );
+		$this->assertNotContains( $this->retail_only, $ids );
+	}
+
+	public function test_a_category_archive_reached_through_a_tax_query_is_filtered_too() {
+		$this->in_category( 'cosmeticos' );
+		wp_set_current_user( $this->b2b_user );
+
+		$ids = $this->archive_ids( array(
+			'tax_query' => array(
+				array( 'taxonomy' => 'product_cat', 'field' => 'slug', 'terms' => 'cosmeticos' ),
+			),
+		) );
+
+		$this->assertNotContains( $this->retail_only, $ids );
+	}
+
+	public function test_a_guest_on_a_category_archive_does_not_see_b2b_only_products() {
+		$this->in_category( 'cosmeticos' );
+		wp_set_current_user( 0 );
+
+		$ids = $this->archive_ids( array( 'product_cat' => 'cosmeticos' ) );
+
+		$this->assertContains( $this->retail_only, $ids );
+		$this->assertNotContains( $this->b2b_only, $ids );
+	}
+
+	/**
+	 * A taxonomy shared with other post types is not a product archive:
+	 * adding the audience clause there would hide every non-product.
+	 */
+	public function test_an_archive_of_a_shared_taxonomy_is_untouched() {
+		register_taxonomy( 'shared_label', array( 'post', 'product' ) );
+		$post = $this->factory->post->create();
+		wp_set_object_terms( $post, 'x', 'shared_label' );
+		wp_set_current_user( $this->b2b_user );
+
+		$this->assertContains( $post, $this->archive_ids( array( 'shared_label' => 'x', 'post_type' => 'any' ) ) );
+
+		unregister_taxonomy( 'shared_label' );
+	}
+
 	public function test_non_product_queries_are_untouched() {
 		wp_set_current_user( $this->b2b_user );
 		$post = $this->factory->post->create();
