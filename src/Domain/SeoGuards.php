@@ -10,16 +10,17 @@ defined( 'ABSPATH' ) || exit;
  * Keeps the B2B host out of every search index, and points canonical tags
  * on shared content at the retail domain. See architecture §2.3.
  *
- * Unlike a public staging site, `Disallow: /` is correct here: the B2B host
- * is fully authenticated and serves logged-out visitors nothing but a login
- * page, so there is no content a crawler needs to reach in order to see a
- * noindex directive.
+ * The B2B host is kept out of the index by noindex - an X-Robots-Tag header
+ * and a robots meta tag on every response - not by robots.txt. robots.txt
+ * belongs to Slim SEO on both hosts: it used to be replaced here with
+ * `Disallow: /` after Slim SEO had run, which threw away its rules and its
+ * Sitemap line, and a crawler that may not fetch a page cannot read the
+ * noindex on it either.
  */
 class SeoGuards {
 
 	public static function register(): void {
 		add_filter( 'robots_txt', array( __CLASS__, 'replace_default_robots' ), 9, 2 );
-		add_filter( 'robots_txt', array( __CLASS__, 'filter_robots_txt' ), PHP_INT_MAX, 2 );
 		add_filter( 'get_canonical_url', array( __CLASS__, 'filter_canonical' ) );
 		add_action( 'wp_head', array( __CLASS__, 'print_noindex' ), 1 );
 		add_action( 'send_headers', array( __CLASS__, 'send_noindex_header' ) );
@@ -38,17 +39,6 @@ class SeoGuards {
 	 * `Disallow: /` would stop them reading it, and Google can index a URL
 	 * it cannot crawl.
 	 */
-	public static function filter_robots_txt( $output, $public ) {
-		if ( ! Hosts::is_b2b_host() ) {
-			return $output;
-		}
-
-		// PHP_INT_MAX: Slim SEO hooks robots_txt at 9999 and appends a
-		// `Sitemap:` directive. The B2B host must advertise nothing at all,
-		// so this runs last and discards whatever was added.
-		return "User-agent: *\nDisallow: /\n";
-	}
-
 	/**
 	 * The retail host's own rules, previously held in a physical robots.txt.
 	 */
