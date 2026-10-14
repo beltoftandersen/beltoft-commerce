@@ -168,21 +168,24 @@ class QueryResultCache {
 		}
 
 		/*
-		 * Everything the rendered rows can depend on. The nonce is deliberately
-		 * not part of it: it is per session and would make the cache per person,
-		 * which is the one thing this must not be.
+		 * The whole request, except the nonce. It used to be a list of the
+		 * fields known to matter, and Bricks sends more than that list held:
+		 * urlParams (element conditions, {url_parameter} tags), afTags,
+		 * mainQueryId, activeSearchTemplate (replaces the query), componentId.
+		 * Two requests differing only there shared one entry - one buyer got
+		 * rows rendered for another's URL, and a crafted body could poison the
+		 * entry the whole group reads. Keying on everything means a field Bricks
+		 * adds later is covered too.
+		 *
+		 * The nonce stays out: it is per session and would make the cache per
+		 * person, which is the one thing this must not be.
 		 */
+		unset( $body['nonce'] );
+		ksort( $body );
+
 		$vary = array(
-			'group'    => $group,
-			'post'     => $body['postId'] ?? 0,
-			'element'  => $body['queryElementId'],
-			'filters'  => $body['filters'] ?? array(),
-			'selected' => $body['selectedFilters'] ?? array(),
-			'page'     => $body['pageFilters'] ?? array(),
-			'infinite' => $body['infinitePage'] ?? 1,
-			'base'     => $body['baseUrl'] ?? '',
-			'lang'     => $body['lang'] ?? '',
-			'vars'     => $body['originalQueryVars'] ?? '',
+			'group' => $group,
+			'body'  => $body,
 		);
 
 		return 'blt_rows_' . self::version() . '_' . md5( (string) wp_json_encode( $vary ) );

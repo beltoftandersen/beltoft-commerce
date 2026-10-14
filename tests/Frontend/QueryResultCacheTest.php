@@ -41,4 +41,73 @@ class QueryResultCacheTest extends WP_UnitTestCase {
 
 		$this->assertNotSame( $before, $this->version() );
 	}
+
+	/** The body Bricks posts for the trade list, as bricks.min.js builds it. */
+	private function body( array $changes = array() ): array {
+		return array_merge( array(
+			'postId'               => 191348,
+			'queryElementId'       => 'abc123',
+			'previewTemplateId'    => 0,
+			'originalQueryVars'    => '[]',
+			'pageFilters'          => false,
+			'filters'              => array(),
+			'infinitePage'         => 1,
+			'selectedFilters'      => array(),
+			'afTags'               => array(),
+			'nonce'                => 'aaaa',
+			'baseUrl'              => 'https://b2b.example/loja/',
+			'lang'                 => false,
+			'mainQueryId'          => false,
+			'activeSearchTemplate' => false,
+			'urlParams'            => array(),
+		), $changes );
+	}
+
+	private function key( array $body ): string {
+		$request = new WP_REST_Request( 'POST', '/bricks/v1/query_result' );
+		$request->set_header( 'content-type', 'application/json' );
+		$request->set_body( wp_json_encode( $body ) );
+
+		$key = new ReflectionMethod( BeltoftCommerce\Frontend\QueryResultCache::class, 'key' );
+		$key->setAccessible( true );
+
+		return $key->invoke( null, $request );
+	}
+
+	/** The nonce is per session; keying on it would make the cache per person. */
+	public function test_requests_differing_only_in_the_nonce_share_an_entry() {
+		$_SERVER['HTTP_HOST'] = BeltoftCommerce\Support\Hosts::b2b();
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'b2b_customer' ) ) );
+
+		$this->assertNotSame( '', $this->key( $this->body() ) );
+		$this->assertSame( $this->key( $this->body() ), $this->key( $this->body( array( 'nonce' => 'bbbb' ) ) ) );
+	}
+
+	/**
+	 * Every other field can change the rows Bricks renders: URL parameters
+	 * drive element conditions and {url_parameter} tags, a search template
+	 * replaces the query, a component id picks the element. Leaving any out of
+	 * the key served one buyer the rows rendered for another - or let a crafted
+	 * request poison the entry everyone in the group reads.
+	 */
+	public function test_every_other_field_separates_entries() {
+		$_SERVER['HTTP_HOST'] = BeltoftCommerce\Support\Hosts::b2b();
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'b2b_customer' ) ) );
+
+		$base = $this->key( $this->body() );
+
+		foreach ( array(
+			'urlParams'            => array( 'marca' => 'x' ),
+			'afTags'               => array( 'tag' ),
+			'mainQueryId'          => 'zzz999',
+			'activeSearchTemplate' => 42,
+			'componentId'          => 'cmp001',
+			'previewTemplateId'    => 7,
+		) as $field => $value ) {
+			$this->assertNotSame( $base, $this->key( $this->body( array( $field => $value ) ) ), $field );
+		}
+
+		unset( $_SERVER['HTTP_HOST'] );
+		wp_set_current_user( 0 );
+	}
 }
