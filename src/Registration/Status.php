@@ -45,11 +45,21 @@ class Status {
 
 	/**
 	 * Approve: this is the one place the wholesale role is granted.
+	 *
+	 * Only to an applicant - an account holding b2b_pending, rejected ones
+	 * included so a refusal can be reversed. The bulk action is offered on
+	 * every Users view and an account with no status reads as pending, so
+	 * without this an approval run on the plain list replaced the role of
+	 * administrators (the one running it included) and retail customers.
 	 */
 	public static function approve( int $user_id ): bool {
 		$user = get_userdata( $user_id );
 
 		if ( ! $user || self::APPROVED === self::get( $user_id ) ) {
+			return false;
+		}
+
+		if ( ! in_array( 'b2b_pending', (array) $user->roles, true ) ) {
 			return false;
 		}
 
