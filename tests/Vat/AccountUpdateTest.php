@@ -56,6 +56,14 @@ class AccountUpdateTest extends WP_UnitTestCase {
 		$this->assertSame( 'vies_invalid', $result['reason'] );
 	}
 
+	/** A number from another member state than the billing address is refused. */
+	public function test_a_number_from_another_country_than_billing_is_refused() {
+		$result = AccountUpdate::from_decision( $this->decision( 'country_mismatch' ), 'ESB12345678' );
+
+		$this->assertSame( AccountUpdate::REFUSED, $result['outcome'] );
+		$this->assertSame( 'country_mismatch', $result['reason'] );
+	}
+
 	/**
 	 * An outage is "we do not know", never "no" - the same reading registration
 	 * and checkout already take. Refusing the save here would make a member

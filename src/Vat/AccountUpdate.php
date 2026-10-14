@@ -26,6 +26,8 @@ defined( 'ABSPATH' ) || exit;
  * | Non-PT EU, VIES valid     | yes     | With the evidence VIES returned.    |
  * | Non-PT EU, VIES invalid   | NO      | The one case that is a real answer  |
  * |                           |         | of "no such number".                |
+ * | Non-PT EU, billing in     | NO      | Reverse charge needs the billing    |
+ * | another country           |         | address in the number's country.    |
  * | VIES unreachable          | yes     | An outage is "we do not know", not  |
  * |                           |         | "no". Blocking a save because a     |
  * |                           |         | member state is down is a closed    |
@@ -96,6 +98,14 @@ class AccountUpdate {
 				'outcome' => self::REFUSED,
 				'status'  => $decision->status,
 				'reason'  => 'vies_invalid',
+			);
+		}
+
+		if ( 'country_mismatch' === $decision->status ) {
+			return array(
+				'outcome' => self::REFUSED,
+				'status'  => $decision->status,
+				'reason'  => 'country_mismatch',
 			);
 		}
 

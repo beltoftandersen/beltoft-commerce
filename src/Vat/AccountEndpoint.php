@@ -187,6 +187,10 @@ class AccountEndpoint {
 			return __( 'O número de contribuinte indicado não é válido. O número anterior não foi alterado.', 'beltoft-commerce' );
 		}
 
+		if ( 'country_mismatch' === $reason ) {
+			return __( 'Este número de IVA é de um país diferente do da sua morada de faturação. Atualize primeiro a morada de faturação. O número anterior não foi alterado.', 'beltoft-commerce' );
+		}
+
 		return __( 'Este número de IVA não foi reconhecido pelo VIES. O número anterior não foi alterado.', 'beltoft-commerce' );
 	}
 

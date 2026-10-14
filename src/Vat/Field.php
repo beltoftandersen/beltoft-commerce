@@ -106,7 +106,12 @@ class Field {
 		// Revalidated at each checkout rather than trusted from last time.
 		$decision = Validator::decide( $number, $country );
 
-		if ( $decision->blocks_checkout ) {
+		if ( 'country_mismatch' === $decision->status ) {
+			wc_add_notice(
+				__( 'This VAT number is from a different country than your billing address. Change the billing country to the VAT number\'s country, or leave the field empty.', 'beltoft-commerce' ),
+				'error'
+			);
+		} elseif ( $decision->blocks_checkout ) {
 			wc_add_notice(
 				__( 'The VAT number you entered could not be validated. Please correct it or leave the field empty.', 'beltoft-commerce' ),
 				'error'

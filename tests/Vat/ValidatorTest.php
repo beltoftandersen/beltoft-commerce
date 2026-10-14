@@ -113,4 +113,35 @@ class ValidatorTest extends WP_UnitTestCase {
 		$this->assertFalse( $d->blocks_checkout );
 		$this->assertSame( 0, $this->requests, 'non-EU numbers are not sent to VIES' );
 	}
+
+	/**
+	 * Reverse charge belongs to the member state on the number. A valid
+	 * Spanish number with a Portuguese billing address zero-rated a domestic
+	 * sale; the billing country has to be the number's country.
+	 */
+	public function test_an_eu_number_from_another_country_than_billing_blocks_checkout() {
+		$this->mock_vies( 'valid' );
+
+		$d = Validator::decide( 'ESB12345678', 'PT' );
+
+		$this->assertFalse( $d->exempt );
+		$this->assertTrue( $d->blocks_checkout );
+		$this->assertSame( 'country_mismatch', $d->status );
+		$this->assertSame( 0, $this->requests, 'a mismatch is decided before VIES is asked' );
+	}
+
+	public function test_a_missing_billing_country_is_a_mismatch_too() {
+		$this->mock_vies( 'valid' );
+
+		$d = Validator::decide( 'ESB12345678', '' );
+
+		$this->assertFalse( $d->exempt );
+		$this->assertSame( 'country_mismatch', $d->status );
+	}
+
+	public function test_billing_country_case_does_not_matter() {
+		$this->mock_vies( 'valid' );
+
+		$this->assertTrue( Validator::decide( 'ESB12345678', 'es' )->exempt );
+	}
 }

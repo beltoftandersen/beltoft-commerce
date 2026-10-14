@@ -938,3 +938,7 @@ msgstr ""
 #: src/Registration/Fields.php:147
 msgid "Palavra-passe"
 msgstr ""
+
+#: src/Vat/Field.php
+msgid "This VAT number is from a different country than your billing address. Change the billing country to the VAT number's country, or leave the field empty."
+msgstr "Este número de IVA é de um país diferente do da morada de faturação. Altere o país de faturação para o país do número de IVA, ou deixe o campo vazio."

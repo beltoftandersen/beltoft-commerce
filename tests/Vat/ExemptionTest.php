@@ -40,6 +40,20 @@ class ExemptionTest extends WP_UnitTestCase {
 		} );
 	}
 
+	/** Reverse charge needs the billing address in the number's country. */
+	private function billing_in( string $country ): void {
+		WC()->customer = new WC_Customer( $this->user );
+		WC()->customer->set_billing_country( $country );
+	}
+
+	public function test_a_valid_number_with_billing_in_portugal_is_not_exempt() {
+		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
+		$this->cache_vies( 'ES', 'B12345678', 'valid' );
+		$this->billing_in( 'PT' );
+
+		$this->assertFalse( Exemption::is_exempt() );
+	}
+
 	public function test_no_vat_number_is_not_exempt() {
 		$this->assertFalse( Exemption::is_exempt() );
 	}
@@ -60,6 +74,7 @@ class ExemptionTest extends WP_UnitTestCase {
 	public function test_an_eu_number_with_a_cached_valid_answer_is_exempt() {
 		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
 		$this->cache_vies( 'ES', 'B12345678', 'valid' );
+		$this->billing_in( 'ES' );
 
 		$this->assertTrue( Exemption::is_exempt() );
 	}
@@ -132,7 +147,7 @@ class ExemptionTest extends WP_UnitTestCase {
 		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
 		$this->cache_vies( 'ES', 'B12345678', 'valid' );
 
-		WC()->customer = new WC_Customer( $this->user );
+		$this->billing_in( 'ES' );
 		WC()->customer->set_is_vat_exempt( false );
 
 		Exemption::apply();
@@ -160,6 +175,7 @@ class ExemptionTest extends WP_UnitTestCase {
 	public function test_lapsed_cache_uses_a_recent_valid_account_answer_without_calling_vies() {
 		$this->forbid_http();
 		$this->account_evidence( 'DK40817921', 'valid', 2 );
+		$this->billing_in( 'DK' );
 
 		$this->assertTrue( Exemption::is_exempt() );
 		$this->assertTrue( (bool) as_has_scheduled_action( Exemption::REFRESH_HOOK, array( $this->user ), 'beltoft-commerce' ), 'a background refresh is queued' );

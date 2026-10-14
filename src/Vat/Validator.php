@@ -11,6 +11,8 @@ defined( 'ABSPATH' ) || exit;
  * |--------------------------|---------------------------------------------|
  * | Field empty              | Consumer sale, IVA charged                  |
  * | Country prefix PT        | Domestic — no VIES call, no exemption, IVA  |
+ * | Non-PT EU, billing in    | Checkout blocked, no VIES call: reverse     |
+ * | another country          | charge belongs to the number's own country  |
  * | Non-PT EU, VIES valid    | Reverse charge, evidence stored             |
  * | Non-PT EU, VIES invalid  | Checkout blocked, translatable error        |
  * | VIES unreachable/timeout | Order proceeds, IVA charged, flagged        |
@@ -56,6 +58,18 @@ class Validator {
 
 		if ( ! in_array( $country, self::EU, true ) ) {
 			// Out of scope here; handled as an export.
+			return $decision;
+		}
+
+		/*
+		 * A Spanish number with a Portuguese (or missing) billing address is
+		 * not a Spanish business buying from Portugal, whatever VIES says
+		 * about the number. Billing must be the number's own member state.
+		 */
+		if ( strtoupper( trim( $billing_country ) ) !== $country ) {
+			$decision->status          = 'country_mismatch';
+			$decision->blocks_checkout = true;
+
 			return $decision;
 		}
 
