@@ -112,4 +112,62 @@ class PriceFieldsTest extends WP_UnitTestCase {
 
 		$this->assertFalse( metadata_exists( 'post', $product->get_id(), '_evil_key' ) );
 	}
+
+	private function site_time( string $local ): int {
+		return ( new DateTimeImmutable( $local, wp_timezone() ) )->getTimestamp();
+	}
+
+	/**
+	 * "To 2026-10-20" means the sale is on for all of the 20th in the shop's
+	 * own time, as WooCommerce's sale dates do. It was stored as 00:00 UTC,
+	 * ending the sale a day early.
+	 */
+	public function test_a_sale_runs_through_the_whole_of_its_last_day_in_shop_time() {
+		update_option( 'timezone_string', 'Europe/Lisbon' );
+		$product = new WC_Product_Simple();
+		$product->save();
+
+		PriceFields::save_group_prices( $product->get_id(), array(
+			'_sale_price_dates_from_group_b2b_standard' => '2026-10-14',
+			'_sale_price_dates_to_group_b2b_standard'   => '2026-10-20',
+		) );
+
+		$this->assertSame( $this->site_time( '2026-10-14 00:00:00' ), (int) get_post_meta( $product->get_id(), '_sale_price_dates_from_group_b2b_standard', true ) );
+		$this->assertSame( $this->site_time( '2026-10-20 23:59:59' ), (int) get_post_meta( $product->get_id(), '_sale_price_dates_to_group_b2b_standard', true ) );
+	}
+
+	public function test_a_sale_ending_today_is_still_on() {
+		update_option( 'timezone_string', 'Europe/Lisbon' );
+		$product = new WC_Product_Simple();
+		$product->set_regular_price( '100' );
+		$product->save();
+
+		PriceFields::save_group_prices( $product->get_id(), array(
+			'_price_group_b2b_standard'               => '60',
+			'_sale_price_group_b2b_standard'          => '45',
+			'_sale_price_dates_to_group_b2b_standard' => wp_date( 'Y-m-d' ),
+		) );
+
+		$this->assertSame( '45', BeltoftCommerce\Pricing\PriceResolver::resolve( wc_get_product( $product->get_id() ), 'b2b_standard' ) );
+	}
+
+	/**
+	 * The field showed the stored timestamp back ("1792800000"), which the
+	 * date pattern rejects and strtotime() cannot read on the next save.
+	 */
+	public function test_the_date_fields_show_the_date_not_the_timestamp() {
+		update_option( 'timezone_string', 'Europe/Lisbon' );
+		$variation = new WC_Product_Variation();
+		$variation->save();
+		update_post_meta( $variation->get_id(), '_sale_price_dates_to_group_b2b_standard', $this->site_time( '2026-10-20 23:59:59' ) );
+
+		// The price inputs use WooCommerce's admin form helpers.
+		require_once WC_ABSPATH . 'includes/admin/wc-meta-box-functions.php';
+
+		ob_start();
+		PriceFields::render_variation( 2, array(), get_post( $variation->get_id() ) );
+		$html = ob_get_clean();
+
+		$this->assertStringContainsString( 'value="2026-10-20"', $html );
+	}
 }

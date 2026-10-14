@@ -158,7 +158,7 @@ class PriceFields {
 					class="short"
 					name="<?php echo esc_attr( $field['key'] . $suffix ); ?>"
 					id="<?php echo esc_attr( $field['key'] . $suffix ); ?>"
-					value="<?php echo esc_attr( (string) get_post_meta( $post_id, $field['key'], true ) ); ?>"
+					value="<?php echo esc_attr( self::date_value( $post_id, $field['key'] ) ); ?>"
 					placeholder="<?php echo esc_attr( 0 === $i ? _x( 'From&hellip;', 'placeholder', 'woocommerce' ) . ' YYYY-MM-DD' : _x( 'To&hellip;', 'placeholder', 'woocommerce' ) . ' YYYY-MM-DD' ); ?>"
 					maxlength="10"
 					pattern="<?php echo esc_attr( $pattern ); ?>"
@@ -166,6 +166,38 @@ class PriceFields {
 			<?php endforeach; ?>
 		</p>
 		<?php
+	}
+
+	/**
+	 * A stored sale date as the field shows it: the shop's own calendar day.
+	 *
+	 * The meta holds a timestamp. Showing it raw put "1792800000" in a field
+	 * whose pattern only accepts YYYY-MM-DD, and strtotime() cannot read that
+	 * back on the next save.
+	 */
+	private static function date_value( int $post_id, string $key ): string {
+		$stored = get_post_meta( $post_id, $key, true );
+
+		return is_numeric( $stored ) && (int) $stored > 0 ? wp_date( 'Y-m-d', (int) $stored ) : '';
+	}
+
+	/**
+	 * A typed sale date as a timestamp, read in the shop's timezone.
+	 *
+	 * "From" starts at the beginning of its day and "to" runs to the end of
+	 * its own, as WooCommerce's sale dates do. strtotime() alone gave 00:00
+	 * UTC, so a sale ended at the start of its last day instead of the end.
+	 *
+	 * @return string The timestamp, or '' when the date cannot be read.
+	 */
+	private static function date_timestamp( string $raw, bool $end_of_day ): string {
+		$day = \DateTimeImmutable::createFromFormat( '!Y-m-d', trim( $raw ), wp_timezone() );
+
+		if ( ! $day ) {
+			return '';
+		}
+
+		return (string) ( $end_of_day ? $day->setTime( 23, 59, 59 ) : $day )->getTimestamp();
 	}
 
 	public static function save_from_post( $post_id ): void {
@@ -199,7 +231,7 @@ class PriceFields {
 	 *                       null for a simple product's unsuffixed fields.
 	 */
 	public static function save_group_prices( int $post_id, array $input, ?int $loop = null ): void {
-		foreach ( self::all_fields() as $fields ) {
+		foreach ( self::all_fields() as $slug => $fields ) {
 			foreach ( $fields as $field ) {
 				$key        = $field['key'];
 				$posted_key = null === $loop ? $key : $key . '_' . $loop;
@@ -217,7 +249,13 @@ class PriceFields {
 
 				$value = 'price' === $field['type']
 					? wc_format_decimal( $raw )
-					: (string) strtotime( $raw );
+					: self::date_timestamp( $raw, Registry::sale_to_key( $slug ) === $key );
+
+				// An unreadable date keeps what was there. Deleting an end
+				// date would quietly make the sale run forever.
+				if ( '' === $value ) {
+					continue;
+				}
 
 				update_post_meta( $post_id, $key, $value );
 			}
