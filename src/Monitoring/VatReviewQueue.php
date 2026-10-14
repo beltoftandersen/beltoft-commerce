@@ -42,8 +42,15 @@ class VatReviewQueue {
 	 * @param string $month Y-m
 	 */
 	public static function month_end_report( string $month ): array {
-		$start = gmdate( 'Y-m-d', strtotime( $month . '-01' ) );
-		$end   = gmdate( 'Y-m-d', strtotime( $month . '-01 +1 month' ) );
+		/*
+		 * The month's first and last second in the shop's own time, as
+		 * timestamps. The range used to end at the 1st of the next month as a
+		 * date, which WooCommerce includes whole - so that day's orders were in
+		 * two reports - and was worked out in UTC rather than Lisbon time.
+		 */
+		$first = \DateTimeImmutable::createFromFormat( '!Y-m', $month, wp_timezone() );
+		$start = $first ? $first->getTimestamp() : 0;
+		$end   = $first ? $first->modify( 'first day of next month' )->getTimestamp() - 1 : 0;
 
 		$orders = self::pending( array(
 			'date_created' => $start . '...' . $end,
