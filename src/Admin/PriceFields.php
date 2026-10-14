@@ -69,7 +69,7 @@ class PriceFields {
 			/*
 			 * A group priced from WooCommerce's own fields has no price meta,
 			 * so offering it a price box would invite somebody to fill in a
-			 * number that is then never read. The till sells at the PVP.
+			 * number that is then never read.
 			 */
 			if ( Registry::inherits_prices( $slug ) ) {
 				continue;

@@ -85,7 +85,7 @@ class PluginPolicy {
 		 *   rwmb_meta_boxes filters simply never fire here.
 		 * - beltoft-gift-cards: the one gift-card product returns no results in
 		 *   the trade catalogue, and of fifteen redemptions to date none were on
-		 *   a trade or POS order - gift cards are a consumer product.
+		 *   a trade order - gift cards are a consumer product.
 		 *
 		 * If trade ever sells a gift card or a subscription, remove the matching
 		 * line here first: the product type will not exist on this host until it

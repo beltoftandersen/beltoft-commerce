@@ -41,7 +41,7 @@ class UrlFilter {
 		 * and every job in that batch renders trade URLs.
 		 *
 		 * Which batch that is has nothing to do with the jobs in it. The
-		 * runner drains the whole queue, so a till sale spawning the runner
+		 * runner drains the whole queue, so a trade sale spawning the runner
 		 * decided the URLs in a retail customer's order email - nine links
 		 * pointing at a host that answers them with a trade login page. And it
 		 * was only ever a coin flip: the same email sent a minute later, by

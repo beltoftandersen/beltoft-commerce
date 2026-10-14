@@ -25,8 +25,8 @@ defined( 'ABSPATH' ) || exit;
  * country, state, postcode, city and address to the session, so landing back
  * on the payment step would show a checkout whose earlier steps had quietly
  * emptied. So the answers are kept too, in sessionStorage, and put back before
- * the step is. At a till that is the whole point - an operator mid-sale should
- * not lose a customer's NIF to a stray refresh.
+ * the step is. A partner part-way through a long trade checkout should not
+ * lose a typed NIF or address to a stray refresh.
  *
  * WHY sessionStorage AND NOT THE SERVER. These are answers somebody is still
  * typing, not an order. They belong to one tab, they should disappear when it

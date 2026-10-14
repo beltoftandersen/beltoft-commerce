@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
  * and returned 36. Both were true of the number; neither was fixable here.
  *
  * Correcting them WAS built and did work on a page render - verified exact on
- * eighteen filters across trade and the till - but not once a filter was
+ * eighteen filters - but not once a filter was
  * active. Bricks builds each option's count from the unfiltered set narrowed by
  * the OTHER active filters, deliberately excluding the element's own selection,
  * and that set is assembled inside the filter element where nothing can reach

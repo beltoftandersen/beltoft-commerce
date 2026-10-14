@@ -11,7 +11,7 @@ defined( 'ABSPATH' ) || exit;
  * Group prices are NET; retail prices are GROSS.
  *
  * The store is a Portuguese consumer shop, so `woocommerce_prices_include_tax`
- * is `yes` and a retail price of 10,05 means 10,05 at the till. Wholesale is
+ * is `yes` and a retail price of 10,05 means 10,05 paid. Wholesale is
  * quoted the other way round: the number on a trade price list is what the
  * buyer pays BEFORE IVA. Without this, a 4,50 typed into the B2B price field
  * was read as gross and became a 3,66 line — every trade price 18,7% under
@@ -49,13 +49,13 @@ class TaxBasis {
 	 *
 	 * It does when the group carries its own price meta, because that is how a
 	 * trade price list is quoted. It does not when the group is priced from
-	 * WooCommerce's own fields - those are the shop's gross prices, and the
-	 * till sells at the number on the shelf edge.
+	 * WooCommerce's own fields - those are the shop's gross prices, the number
+	 * on the shelf edge.
 	 *
-	 * This used to ask "is this group not retail?", which was the same question
-	 * while B2B was the only group. It stopped being the same question when the
-	 * till arrived: POS is not retail, so a PVP of 8,50 that already contains
-	 * IVA was read as net and rung up at 9,01.
+	 * Deliberately not "is this group not retail?". The two answers differ for
+	 * any group that is not retail but sells at the shop's own prices: asked the
+	 * old way, a PVP of 8,50 that already contains IVA was read as net and
+	 * charged at 9,01.
 	 */
 	private static function stored_net(): bool {
 		return ! Registry::inherits_prices( PricingContext::current() );
