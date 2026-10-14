@@ -43,7 +43,7 @@ class TradeBoundaryTest extends WP_UnitTestCase {
 	/** /entrar/?rest_route=/wc/store/v1/products listed the catalogue logged out. */
 	public function test_rest_route_is_judged_as_the_rest_path_it_is() {
 		$this->assertSame( '/wp-json/wc/store/v1/products', LoginGate::effective_path( '/entrar/?rest_route=/wc/store/v1/products' ) );
-		$this->assertSame( '/wp-json/b2b/v1/lookup', LoginGate::effective_path( '/?rest_route=%2Fb2b%2Fv1%2Flookup' ) );
+		$this->assertSame( '/wp-json/beltoft-scanner/v1/lookup', LoginGate::effective_path( '/?rest_route=%2Fbeltoft-scanner%2Fv1%2Flookup' ) );
 		$this->assertSame( '/entrar/', LoginGate::effective_path( '/entrar/?redirect_to=%2Floja%2F' ) );
 	}
 
@@ -88,7 +88,18 @@ class TradeBoundaryTest extends WP_UnitTestCase {
 	public function test_the_scanner_namespace_is_left_to_answer_for_itself() {
 		$_SERVER['HTTP_HOST'] = Hosts::b2b();
 
-		$this->assertNull( $this->dispatch_guard( '/b2b/v1/lookup' ) );
+		$this->assertNull( $this->dispatch_guard( '/beltoft-scanner/v1/lookup' ) );
+	}
+
+	/**
+	 * The scanner's namespace is beltoft-scanner/v1 since its 2.0; a logged-out
+	 * phone must reach it to get the 401 it expects, not the login page.
+	 */
+	public function test_the_scanner_namespace_is_reachable_logged_out_through_the_gate() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$this->assertFalse( LoginGate::should_gate_early( '/wp-json/beltoft-scanner/v1/lookup', false ) );
+		$this->assertTrue( LoginGate::should_gate_early( '/wp-json/b2b/v1/lookup', false ), 'The old namespace is gone; nothing answers it.' );
 	}
 
 	public function test_retail_rest_is_untouched() {

@@ -60,7 +60,7 @@ class LoginGate {
 	);
 
 	/** The scanner answers for its own REST namespace (see the allowlist). */
-	private const OWN_REST_PREFIX = '/b2b/v1';
+	private const OWN_REST_PREFIX = '/beltoft-scanner/v1';
 
 	public static function register(): void {
 		add_action( 'template_redirect', array( __CLASS__, 'maybe_redirect' ), 1 );
@@ -206,7 +206,7 @@ class LoginGate {
 			 * partner. The rest of /wp-json/ stays behind the gate, because WP
 			 * core's own routes would otherwise list this catalogue to anyone.
 			 */
-			'/wp-json/b2b/v1/',
+			'/wp-json/beltoft-scanner/v1/',
 			'/robots.txt',
 			'/favicon.ico',
 		) );
