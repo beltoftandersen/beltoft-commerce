@@ -30,6 +30,19 @@ class FormAction {
 	 * @param object $form Bricks form instance.
 	 */
 	public static function handle( $form ): void {
+		// See RegistrationLimit: the form was an unlimited mail relay.
+		if ( ! RegistrationLimit::allows() ) {
+			$form->set_result( array(
+				'action'  => self::ACTION,
+				'type'    => 'error',
+				'message' => __( 'Demasiados pedidos a partir desta ligação. Tente novamente mais tarde.', 'beltoft-commerce' ),
+			) );
+
+			return;
+		}
+
+		RegistrationLimit::record_attempt();
+
 		$fields   = $form->get_fields();
 		$settings = $form->get_settings();
 
@@ -62,6 +75,8 @@ class FormAction {
 
 			return;
 		}
+
+		RegistrationLimit::record_application();
 
 		$form->set_result( array(
 			'action'  => self::ACTION,
