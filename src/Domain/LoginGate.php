@@ -59,8 +59,12 @@ class LoginGate {
 		'rest_route', 'wc-ajax',
 	);
 
-	/** The scanner answers for its own REST namespace (see the allowlist). */
-	private const OWN_REST_PREFIX = '/beltoft-scanner/v1';
+	/**
+	 * The scanner answers for its own endpoints (see the allowlist). With the
+	 * trailing slash: without it the exemption also covered /beltoft-scanner/v10
+	 * and the bare namespace, whose route index lists every endpoint.
+	 */
+	private const OWN_REST_PREFIX = '/beltoft-scanner/v1/';
 
 	public static function register(): void {
 		add_action( 'template_redirect', array( __CLASS__, 'maybe_redirect' ), 1 );

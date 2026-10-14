@@ -92,6 +92,19 @@ class TradeBoundaryTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Only the scanner's endpoints are exempt. A prefix without the trailing
+	 * slash also let through /beltoft-scanner/v10... and the bare namespace,
+	 * whose route index lists every endpoint to a signed-out visitor.
+	 */
+	public function test_only_the_scanners_endpoints_are_exempt() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		foreach ( array( '/beltoft-scanner/v1', '/beltoft-scanner/v10/lookup', '/beltoft-scanner/v1x' ) as $route ) {
+			$this->assertWPError( $this->dispatch_guard( $route ), $route );
+		}
+	}
+
+	/**
 	 * The scanner's namespace is beltoft-scanner/v1 since its 2.0; a logged-out
 	 * phone must reach it to get the 401 it expects, not the login page.
 	 */
