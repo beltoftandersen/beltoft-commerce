@@ -56,6 +56,10 @@ class QueryResultCache {
 			'woocommerce_variation_set_stock',
 			'woocommerce_product_set_stock',
 			'set_object_terms',
+			// The rows carry group prices. They change by meta write (imports
+			// never save the product) and when a group sale opens or closes;
+			// SaleScheduler announces both here.
+			'beltoft_commerce_group_price_changed',
 		) as $hook ) {
 			add_action( $hook, array( __CLASS__, 'bump' ) );
 		}
