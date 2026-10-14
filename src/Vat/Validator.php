@@ -73,7 +73,7 @@ class Validator {
 			return $decision;
 		}
 
-		$result = ViesClient::check( $country, $number, $allow_remote );
+		$result = ViesClient::check( self::vies_code( $country ), $number, $allow_remote );
 
 		$decision->request_identifier = $result->request_identifier;
 		$decision->registered_name    = $result->registered_name;
@@ -101,8 +101,18 @@ class Validator {
 		return $decision;
 	}
 
+	/**
+	 * Greek VAT numbers carry EL, while billing addresses carry the ISO code
+	 * GR. Both mean Greece here; VIES is asked about EL (see vies_code()).
+	 */
+	private const GREECE_VAT_PREFIX = 'EL';
+
 	private static function country_of( string $raw, string $billing_country ): string {
 		$prefix = substr( $raw, 0, 2 );
+
+		if ( self::GREECE_VAT_PREFIX === $prefix ) {
+			return 'GR';
+		}
 
 		if ( in_array( $prefix, self::EU, true ) ) {
 			return $prefix;
@@ -112,6 +122,19 @@ class Validator {
 	}
 
 	private static function number_of( string $raw, string $country ): string {
-		return 0 === strpos( $raw, $country ) ? substr( $raw, 2 ) : $raw;
+		$prefixes = 'GR' === $country ? array( 'GR', self::GREECE_VAT_PREFIX ) : array( $country );
+
+		foreach ( $prefixes as $prefix ) {
+			if ( 0 === strpos( $raw, $prefix ) ) {
+				return substr( $raw, 2 );
+			}
+		}
+
+		return $raw;
+	}
+
+	/** The member state code VIES knows: EL for Greece, the ISO code otherwise. */
+	private static function vies_code( string $country ): string {
+		return 'GR' === $country ? self::GREECE_VAT_PREFIX : $country;
 	}
 }

@@ -144,4 +144,52 @@ class ValidatorTest extends WP_UnitTestCase {
 
 		$this->assertTrue( Validator::decide( 'ESB12345678', 'es' )->exempt );
 	}
+
+	/**
+	 * Greek VAT numbers carry EL, not the ISO code GR, and VIES only knows EL.
+	 * EL was not an EU prefix here, so "EL123456789" was sent as country GR
+	 * with the prefix still on the number, and VIES could never confirm it.
+	 */
+	public function test_a_greek_number_with_its_el_prefix_is_checked_as_el() {
+		$seen = array();
+		add_filter( 'pre_http_request', function ( $pre, $args ) use ( &$seen ) {
+			$seen[] = json_decode( (string) ( $args['body'] ?? '' ), true );
+
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode( array( 'valid' => true, 'requestIdentifier' => 'WAPI-GR', 'name' => 'ACME AE' ) ),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+			);
+		}, 10, 2 );
+
+		$d = Validator::decide( 'EL123456789', 'GR' );
+
+		$this->assertTrue( $d->exempt );
+		$this->assertSame( 'EL', $seen[0]['countryCode'] ?? null );
+		$this->assertSame( '123456789', $seen[0]['vatNumber'] ?? null );
+	}
+
+	/** Written with the ISO prefix, it is the same Greek number. */
+	public function test_a_greek_number_written_with_gr_is_checked_as_el() {
+		$seen = array();
+		add_filter( 'pre_http_request', function ( $pre, $args ) use ( &$seen ) {
+			$seen[] = json_decode( (string) ( $args['body'] ?? '' ), true );
+
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode( array( 'valid' => true, 'requestIdentifier' => 'WAPI-GR', 'name' => 'ACME AE' ) ),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+			);
+		}, 10, 2 );
+
+		$this->assertTrue( Validator::decide( 'GR123456789', 'GR' )->exempt );
+		$this->assertSame( 'EL', $seen[0]['countryCode'] ?? null );
+	}
+
+	/** EL is Greece: billed elsewhere it is a mismatch like any other. */
+	public function test_a_greek_number_billed_outside_greece_is_a_mismatch() {
+		$this->mock_vies( 'valid' );
+
+		$this->assertSame( 'country_mismatch', Validator::decide( 'EL123456789', 'PT' )->status );
+	}
 }
