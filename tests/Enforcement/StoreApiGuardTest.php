@@ -85,6 +85,37 @@ class StoreApiGuardTest extends WP_UnitTestCase {
 		$this->assertSame( 404, $this->fetch_status( $this->b2b_only ) );
 	}
 
+	private function fetch_slug_status( int $id, string $suffix ): int {
+		$slug = get_post_field( 'post_name', $id );
+
+		return rest_do_request( new WP_REST_Request( 'GET', '/wc/store/v1/products/' . $slug . $suffix ) )->get_status();
+	}
+
+	/**
+	 * WooCommerce's slug route accepts any non-space characters and runs them
+	 * through sanitize_title(), so "slug/" and "slug." still resolve to the
+	 * product. The guard's own identifier pattern did not match them.
+	 */
+	public function test_a_direct_fetch_by_slug_is_denied_whatever_is_appended() {
+		wp_set_current_user( $this->b2b_user );
+
+		foreach ( array( '', '/', '.' ) as $suffix ) {
+			$this->assertSame( 404, $this->fetch_slug_status( $this->retail_only, $suffix ), var_export( $suffix, true ) );
+		}
+	}
+
+	public function test_a_guest_cannot_fetch_a_b2b_only_product_by_a_decorated_slug() {
+		wp_set_current_user( 0 );
+
+		$this->assertSame( 404, $this->fetch_slug_status( $this->b2b_only, '.' ) );
+	}
+
+	public function test_a_permitted_fetch_by_slug_still_works() {
+		wp_set_current_user( $this->b2b_user );
+
+		$this->assertSame( 200, $this->fetch_slug_status( $this->both, '' ) );
+	}
+
 	public function test_a_permitted_direct_fetch_still_works() {
 		wp_set_current_user( $this->b2b_user );
 

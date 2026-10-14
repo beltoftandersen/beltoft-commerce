@@ -23,6 +23,56 @@ class StoreApiGuard {
 
 	public static function register(): void {
 		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'guard' ), 10, 3 );
+		add_filter( 'rest_request_after_callbacks', array( __CLASS__, 'guard_resolved' ), 10, 3 );
+	}
+
+	/**
+	 * The same check, on the product WooCommerce actually resolved.
+	 *
+	 * guard() has to guess from the URL which product is meant, and the
+	 * guess can be wrong: the slug route takes any non-space characters and
+	 * runs them through sanitize_title(), so "slug/" or "slug." reach the
+	 * product while failing guard()'s identifier pattern. Here the answer is
+	 * already in the response, so nothing needs guessing. guard() stays as
+	 * the cheap path that never builds the response at all.
+	 *
+	 * @param mixed            $response
+	 * @param array            $handler
+	 * @param \WP_REST_Request $request
+	 */
+	public static function guard_resolved( $response, $handler, $request ) {
+		if ( ! $response instanceof \WP_REST_Response || ! self::is_single_product_route( $handler ) ) {
+			return $response;
+		}
+
+		$data       = $response->get_data();
+		$product_id = is_array( $data ) && isset( $data['id'] ) ? (int) $data['id'] : 0;
+
+		if ( ! $product_id || CatalogAudience::can_view( get_current_user_id(), $product_id ) ) {
+			return $response;
+		}
+
+		return self::not_found();
+	}
+
+	/** The Store API routes that return one product: by id and by slug. */
+	private static function is_single_product_route( $handler ): bool {
+		$callback = $handler['callback'] ?? null;
+		$route    = is_array( $callback ) && is_object( $callback[0] ?? null ) ? get_class( $callback[0] ) : '';
+
+		return in_array( $route, array(
+			'Automattic\WooCommerce\StoreApi\Routes\V1\ProductsById',
+			'Automattic\WooCommerce\StoreApi\Routes\V1\ProductsBySlug',
+		), true );
+	}
+
+	private static function not_found(): \WP_Error {
+		// 404, not 403: a 403 confirms the product exists.
+		return new \WP_Error(
+			'woocommerce_rest_product_invalid_id',
+			__( 'Invalid product ID.', 'beltoft-commerce' ),
+			array( 'status' => 404 )
+		);
 	}
 
 	/**
@@ -59,12 +109,7 @@ class StoreApiGuard {
 			return $result;
 		}
 
-		// 404, not 403: a 403 confirms the product exists.
-		return new \WP_Error(
-			'woocommerce_rest_product_invalid_id',
-			__( 'Invalid product ID.', 'beltoft-commerce' ),
-			array( 'status' => 404 )
-		);
+		return self::not_found();
 	}
 
 	private static function resolve_product_id( string $identifier ): int {
