@@ -213,14 +213,14 @@ class LoginThrottle {
 	 * @return string 'ip', 'account', or '' for neither.
 	 */
 	private static function limit_hit( string $username ): string {
-		if ( (int) get_transient( self::IP_PREFIX . self::ip_key() ) >= self::MAX_PER_IP ) {
+		if ( self::count( self::IP_PREFIX . self::ip_key() ) >= self::MAX_PER_IP ) {
 			return 'ip';
 		}
 
 		$account = self::account_key( $username );
 
 		return '' !== $account
-			&& (int) get_transient( self::ACCOUNT_PREFIX . $account ) >= self::MAX_PER_ACCOUNT
+			&& self::count( self::ACCOUNT_PREFIX . $account ) >= self::MAX_PER_ACCOUNT
 				? 'account'
 				: '';
 	}
@@ -290,15 +290,40 @@ class LoginThrottle {
 		closelog();
 	}
 
+	/**
+	 * Count a failure without moving the end of the window.
+	 *
+	 * The window is deliberately not extended on each failure. A counter that
+	 * restarts on every attempt can be held open indefinitely, which turns a
+	 * guessing limit into a way of keeping somebody locked out. set_transient()
+	 * always restarts the expiry it is given, so the window's end is stored in
+	 * the value itself and each write only gets what is left of it - writing a
+	 * fresh WINDOW every time is exactly the restart this rules out.
+	 */
 	private static function bump( string $key ): void {
-		$count = (int) get_transient( $key );
+		$stored = get_transient( $key );
+		$now    = time();
 
-		/*
-		 * The window is deliberately not extended on each failure. A counter
-		 * that restarts on every attempt can be held open indefinitely, which
-		 * turns a guessing limit into a way of keeping somebody locked out.
-		 */
-		set_transient( $key, $count + 1, self::WINDOW );
+		$until = is_array( $stored ) && (int) ( $stored['until'] ?? 0 ) > $now
+			? (int) $stored['until']
+			: $now + self::WINDOW;
+
+		set_transient( $key, array(
+			'count' => self::count( $key ) + 1,
+			'until' => $until,
+		), max( 1, $until - $now ) );
+	}
+
+	/** Failures recorded in the window still running, 0 once it has ended. */
+	private static function count( string $key ): int {
+		$stored = get_transient( $key );
+
+		if ( is_array( $stored ) ) {
+			return (int) ( $stored['until'] ?? 0 ) > time() ? (int) ( $stored['count'] ?? 0 ) : 0;
+		}
+
+		// A counter written before the window was stored with it.
+		return (int) $stored;
 	}
 
 	/**

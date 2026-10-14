@@ -115,6 +115,45 @@ class LoginThrottleTest extends WP_UnitTestCase {
 		);
 	}
 
+	private function account_transient( string $username ): string {
+		$key = new ReflectionMethod( LoginThrottle::class, 'account_key' );
+		$key->setAccessible( true );
+
+		return 'beltoft_lt_ac_' . $key->invoke( null, $username );
+	}
+
+	/**
+	 * One wrong password every fourteen minutes used to restart the fifteen
+	 * minute window, holding a partner locked out for as long as somebody
+	 * cared to keep trying. A failure inside a window must not move its end.
+	 */
+	public function test_failures_during_a_window_do_not_extend_it() {
+		$username  = 'alvo@example.com';
+		$transient = $this->account_transient( $username );
+
+		// The state after eight failures, with one minute of the window left.
+		$this->fail_times( 8, $username );
+		$ends = time() + 60;
+		$value = get_transient( $transient );
+		$value = is_array( $value ) ? array_merge( $value, array( 'until' => $ends ) ) : $value;
+		set_transient( $transient, $value, 60 );
+
+		// The attacker's keep-alive.
+		$this->fail_times( 1, $username );
+
+		$this->assertLessThanOrEqual( $ends, (int) get_option( '_transient_timeout_' . $transient ) );
+	}
+
+	public function test_a_window_that_has_run_out_lets_the_partner_back_in() {
+		$username = 'alvo@example.com';
+		$this->fail_times( 8, $username );
+
+		update_option( '_transient_timeout_' . $this->account_transient( $username ), time() - 1 );
+
+		$user = new WP_User( 0 );
+		$this->assertSame( $user, LoginThrottle::maybe_block( $user, $username, 'segredo' ) );
+	}
+
 	public function test_getting_it_right_clears_the_slate() {
 		$username = 'parceiro@example.com';
 		$this->fail_times( 13, $username );
