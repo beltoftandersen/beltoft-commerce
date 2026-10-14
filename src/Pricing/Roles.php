@@ -51,10 +51,6 @@ class Roles {
 		 */
 		self::ensure( 'b2b_pending', $applicant, $caps );
 		self::ensure( 'b2b_customer', __( 'B2B Customer', 'beltoft-commerce' ), $caps );
-
-		// The till operator. Same capabilities as a customer - the role exists
-		// to select a pricing group and a stock pool, not to grant anything.
-		self::ensure( 'pos_operator', __( 'POS', 'beltoft-commerce' ), $caps );
 	}
 
 	/**

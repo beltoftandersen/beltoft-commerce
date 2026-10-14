@@ -135,7 +135,6 @@ msgid "Retail and B2B"
 msgstr "Retalho e B2B"
 
 #: src/Checkout/B2BPaymentMethods.php:98
-#: src/Pos/Tenders.php:22
 msgid "Bank transfer"
 msgstr "Transferência bancária"
 
@@ -175,7 +174,7 @@ msgstr "Número da nota de encomenda"
 msgid "If your company uses an internal reference, enter it here. It appears on the confirmation and on the order."
 msgstr "Se a sua empresa usa uma referência interna, indique-a aqui. Aparece na confirmação e na encomenda."
 
-#: src/Domain/LoginGate.php:143
+#: src/Domain/LoginGate.php:147
 msgid "Sign in to continue."
 msgstr "Inicie sessão para continuar."
 
@@ -306,39 +305,8 @@ msgstr "Verificação de IVA"
 msgid "Needs review"
 msgstr "Requer revisão"
 
-#: src/Pos/Checkout.php:261
-msgid "Walk-in customer"
-msgstr "Cliente de balcão"
-
-#: src/Pos/Tender.php:40
-msgid "Records how a counter sale was paid. No payment is processed."
-msgstr "Regista como foi paga uma venda ao balcão. Não é processado nenhum pagamento."
-
-#. translators: %s: the tender, e.g. Dinheiro.
-#: src/Pos/Tender.php:69
-#, php-format
-msgid "Counter sale paid: %s"
-msgstr "Venda ao balcão paga: %s"
-
-#: src/Pos/Tenders.php:19
-msgid "MB WAY"
-msgstr ""
-
-#: src/Pos/Tenders.php:20
-msgid "Card (Teya)"
-msgstr "Cartão (Teya)"
-
-#: src/Pos/Tenders.php:21
-msgid "Cash"
-msgstr "Dinheiro"
-
-#: src/Pricing/Registry.php:30
+#: src/Pricing/Registry.php:27
 msgid "B2B"
-msgstr ""
-
-#: src/Pricing/Registry.php:52
-#: src/Pricing/Roles.php:57
-msgid "POS"
 msgstr ""
 
 #: src/Pricing/Roles.php:42
@@ -770,32 +738,9 @@ msgstr "Eliminar esta encomenda guardada?"
 msgid "Delete"
 msgstr "Eliminar"
 
-#: src/Scanner/ScannerContext.php:97
+#: src/Scanner/ScannerContext.php:95
 msgid "The back-in-stock alert could not be saved. Please try again."
 msgstr "Não foi possível registar o aviso. Tente novamente."
-
-#. translators: %s: the group label, e.g. POS.
-#: src/Stock/AdminField.php:64
-#: src/Stock/AdminField.php:96
-#, php-format
-msgid "%s stock"
-msgstr "Stock %s"
-
-#: src/Stock/AdminField.php:66
-msgid "Counted separately from the shop stock above. Leave empty if it has never been counted - empty sells without a cap, 0 refuses the sale."
-msgstr "Contado separadamente do stock da loja acima. Deixe vazio se nunca tiver sido contado - vazio vende sem limite, 0 recusa a venda."
-
-#. translators: %d: number of products whose till stock has gone below zero.
-#: src/Stock/Recount.php:122
-#, php-format
-msgid "%d product has sold past its counted till stock. The sales went through; the count needs correcting."
-msgid_plural "%d products have sold past their counted till stock. The sales went through; the counts need correcting."
-msgstr[0] "%d produto vendeu acima do stock contado na caixa. As vendas foram concluídas; a contagem tem de ser corrigida."
-msgstr[1] "%d produtos venderam acima do stock contado na caixa. As vendas foram concluídas; as contagens têm de ser corrigidas."
-
-#: src/Stock/Recount.php:132
-msgid "Show them"
-msgstr "Mostrá-los"
 
 #: src/Vat/AccountEndpoint.php:86
 #: src/Vat/AccountEndpoint.php:93
@@ -891,19 +836,19 @@ msgstr "Guardar e verificar"
 msgid "Leave empty if you have no VAT number. A number from another European Union country is checked with the European Commission's VIES."
 msgstr "Deixe em branco se não tiver número de IVA. Um número de outro país da União Europeia é verificado no VIES da Comissão Europeia."
 
-#: src/Vat/Field.php:36
+#: src/Vat/Field.php:35
 msgid "VAT number (NIF/VAT)"
 msgstr "Número de contribuinte (NIF/VAT)"
 
-#: src/Vat/Field.php:71
+#: src/Vat/Field.php:65
 msgid "If you have an EU VAT number, enter it here. Leave empty for a normal purchase."
 msgstr "Se tem um número de IVA da UE, introduza-o aqui. Deixe vazio para uma compra normal."
 
-#: src/Vat/Field.php:111
+#: src/Vat/Field.php:105
 msgid "This VAT number is from a different country than your billing address. Change the billing country to the VAT number's country, or leave the field empty."
 msgstr "Este número de IVA é de um país diferente do da morada de faturação. Altere o país de faturação para o país do número de IVA, ou deixe o campo vazio."
 
-#: src/Vat/Field.php:116
+#: src/Vat/Field.php:110
 msgid "The VAT number you entered could not be validated. Please correct it or leave the field empty."
 msgstr "O número de IVA introduzido não pôde ser validado. Corrija-o ou deixe o campo vazio."
 
@@ -938,3 +883,4 @@ msgstr "Loja"
 #: templates/emails/b2b-application.php:35
 msgid "NIF/NIPC"
 msgstr ""
+

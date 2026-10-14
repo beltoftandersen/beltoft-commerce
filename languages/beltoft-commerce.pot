@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-14T10:03:33+00:00\n"
+"POT-Creation-Date: 2026-10-14T10:41:09+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: beltoft-commerce\n"
@@ -133,7 +133,6 @@ msgid "Retail and B2B"
 msgstr ""
 
 #: src/Checkout/B2BPaymentMethods.php:98
-#: src/Pos/Tenders.php:22
 msgid "Bank transfer"
 msgstr ""
 
@@ -173,7 +172,7 @@ msgstr ""
 msgid "If your company uses an internal reference, enter it here. It appears on the confirmation and on the order."
 msgstr ""
 
-#: src/Domain/LoginGate.php:143
+#: src/Domain/LoginGate.php:147
 msgid "Sign in to continue."
 msgstr ""
 
@@ -304,39 +303,8 @@ msgstr ""
 msgid "Needs review"
 msgstr ""
 
-#: src/Pos/Checkout.php:261
-msgid "Walk-in customer"
-msgstr ""
-
-#: src/Pos/Tender.php:40
-msgid "Records how a counter sale was paid. No payment is processed."
-msgstr ""
-
-#. translators: %s: the tender, e.g. Dinheiro.
-#: src/Pos/Tender.php:69
-#, php-format
-msgid "Counter sale paid: %s"
-msgstr ""
-
-#: src/Pos/Tenders.php:19
-msgid "MB WAY"
-msgstr ""
-
-#: src/Pos/Tenders.php:20
-msgid "Card (Teya)"
-msgstr ""
-
-#: src/Pos/Tenders.php:21
-msgid "Cash"
-msgstr ""
-
-#: src/Pricing/Registry.php:30
+#: src/Pricing/Registry.php:27
 msgid "B2B"
-msgstr ""
-
-#: src/Pricing/Registry.php:52
-#: src/Pricing/Roles.php:57
-msgid "POS"
 msgstr ""
 
 #: src/Pricing/Roles.php:42
@@ -768,31 +736,8 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: src/Scanner/ScannerContext.php:97
+#: src/Scanner/ScannerContext.php:95
 msgid "The back-in-stock alert could not be saved. Please try again."
-msgstr ""
-
-#. translators: %s: the group label, e.g. POS.
-#: src/Stock/AdminField.php:64
-#: src/Stock/AdminField.php:96
-#, php-format
-msgid "%s stock"
-msgstr ""
-
-#: src/Stock/AdminField.php:66
-msgid "Counted separately from the shop stock above. Leave empty if it has never been counted - empty sells without a cap, 0 refuses the sale."
-msgstr ""
-
-#. translators: %d: number of products whose till stock has gone below zero.
-#: src/Stock/Recount.php:122
-#, php-format
-msgid "%d product has sold past its counted till stock. The sales went through; the count needs correcting."
-msgid_plural "%d products have sold past their counted till stock. The sales went through; the counts need correcting."
-msgstr[0] ""
-msgstr[1] ""
-
-#: src/Stock/Recount.php:132
-msgid "Show them"
 msgstr ""
 
 #: src/Vat/AccountEndpoint.php:86
@@ -889,19 +834,19 @@ msgstr ""
 msgid "Leave empty if you have no VAT number. A number from another European Union country is checked with the European Commission's VIES."
 msgstr ""
 
-#: src/Vat/Field.php:36
+#: src/Vat/Field.php:35
 msgid "VAT number (NIF/VAT)"
 msgstr ""
 
-#: src/Vat/Field.php:71
+#: src/Vat/Field.php:65
 msgid "If you have an EU VAT number, enter it here. Leave empty for a normal purchase."
 msgstr ""
 
-#: src/Vat/Field.php:111
+#: src/Vat/Field.php:105
 msgid "This VAT number is from a different country than your billing address. Change the billing country to the VAT number's country, or leave the field empty."
 msgstr ""
 
-#: src/Vat/Field.php:116
+#: src/Vat/Field.php:110
 msgid "The VAT number you entered could not be validated. Please correct it or leave the field empty."
 msgstr ""
 

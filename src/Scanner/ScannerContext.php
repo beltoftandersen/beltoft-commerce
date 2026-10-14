@@ -31,12 +31,10 @@ class ScannerContext {
 	 * Who may scan on the trade list.
 	 *
 	 * b2b_pending is deliberately not here: an applicant can sign in before
-	 * anyone has approved them and must not price or order anything.
-	 *
-	 * pos_operator is here only because the till still orders from this list.
-	 * It goes when beltoft-pos registers the till's own page.
+	 * anyone has approved them and must not price or order anything. The till
+	 * scans on its own page, through beltoft-pos's own context.
 	 */
-	private const ROLES = array( 'b2b_customer', 'pos_operator' );
+	private const ROLES = array( 'b2b_customer' );
 
 	public static function register(): void {
 		add_filter( 'beltoft_scanner_contexts', array( __CLASS__, 'add_context' ) );

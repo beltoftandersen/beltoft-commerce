@@ -91,7 +91,7 @@ class RolesTest extends WP_UnitTestCase {
 
 	/**
 	 * Half a translated screen is worse than none: the Users filter bar shows
-	 * these three side by side.
+	 * these side by side.
 	 */
 	public function test_every_role_it_installs_gets_its_translated_name() {
 		Roles::install();
@@ -100,7 +100,6 @@ class RolesTest extends WP_UnitTestCase {
 
 		$this->assertSame( __( 'B2B (applicant)', 'beltoft-commerce' ), $roles['b2b_pending']['name'] );
 		$this->assertSame( __( 'B2B Customer', 'beltoft-commerce' ), $roles['b2b_customer']['name'] );
-		$this->assertSame( __( 'POS', 'beltoft-commerce' ), $roles['pos_operator']['name'] );
 	}
 
 	/**

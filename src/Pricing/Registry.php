@@ -14,9 +14,6 @@ defined( 'ABSPATH' ) || exit;
  */
 class Registry {
 
-	/** The till's group. Named because behaviour keys on it by name. */
-	public const POS = 'pos';
-
 	public static function retail_slug(): string {
 		return 'retail';
 	}
@@ -29,37 +26,10 @@ class Registry {
 			'b2b_standard' => array(
 				'label'  => __( 'B2B', 'beltoft-commerce' ),
 				'roles'  => array( 'b2b_customer' ),
-				// Own price meta, the shop's own stock, trade terms.
+				// Own price meta, trade terms. The till is not a group here:
+				// it lives in beltoft-pos, with its own role and stock pool.
 				'prices' => 'own',
-				'stock'  => 'shared',
 				'trade'  => true,
-			),
-			/*
-			 * The till. Retail prices and retail terms, its own stock.
-			 *
-			 * A group rather than a bare role because only a group can own a
-			 * stock pool - and its own stock is the whole point: what is on the
-			 * shelf is not what is in the warehouse, and neither may decrement
-			 * the other.
-			 *
-			 * It inherits prices instead of carrying its own, because the price
-			 * at the till IS the PVP - WooCommerce's own regular price. Giving
-			 * it group price meta would mean maintaining a second copy of every
-			 * price for no gain, and the fail-closed rule would make any product
-			 * anyone forgot silently unsellable.
-			 */
-			'pos'          => array(
-				'label'  => __( 'POS', 'beltoft-commerce' ),
-				'roles'  => array( 'pos_operator' ),
-				'prices'   => 'inherit',
-				'stock'    => 'own',
-				/*
-				 * Audience is retail's. The till sells the shop's catalogue:
-				 * untagged and "Retail and B2B" products, but not the B2B-only
-				 * ones - those exist for trade (mostruarios and the like) and
-				 * are not counter stock.
-				 */
-				'trade'    => false,
 			),
 		) );
 	}
@@ -69,8 +39,8 @@ class Registry {
 	 *
 	 * NOT the same question as "is this group retail?", though it was while
 	 * B2B was the only group. Net prices, trade shipping, reseller tags and
-	 * the trade catalogue all hang off this, and the till wants none of them
-	 * while still not being the retail group.
+	 * the trade catalogue all hang off this; a group that is not retail but
+	 * sells on retail terms sets 'trade' => false.
 	 */
 	public static function is_trade( string $slug ): bool {
 		if ( self::retail_slug() === $slug ) {
@@ -94,22 +64,6 @@ class Registry {
 		}
 
 		return 'inherit' === ( self::groups()[ $slug ]['prices'] ?? 'own' );
-	}
-
-	/**
-	 * Whether a group keeps a stock pool of its own.
-	 *
-	 * Groups that do not - retail and B2B - share WooCommerce's `_stock`, so
-	 * a trade order and a web order draw down the same shelf, which is what
-	 * they should do.
-	 */
-	public static function has_own_stock( string $slug ): bool {
-		return 'own' === ( self::groups()[ $slug ]['stock'] ?? 'shared' );
-	}
-
-	/** The stock meta key for a group that keeps its own pool. */
-	public static function stock_key( string $slug ): string {
-		return '_stock_group_' . $slug;
 	}
 
 	public static function has( string $slug ): bool {

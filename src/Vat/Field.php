@@ -3,7 +3,6 @@
 namespace BeltoftCommerce\Vat;
 
 use BeltoftCommerce\Support\Hosts;
-use BeltoftCommerce\Support\Session;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -43,17 +42,12 @@ class Field {
 	}
 
 	/**
-	 * Not at the till.
-	 *
-	 * This field belongs to an ACCOUNT: it prefills from the signed-in
-	 * customer and saves back to them. At a counter the account is the
-	 * operator's and the customer is whoever is standing there, so rendering it
-	 * would offer the operator's own VAT number for someone else's purchase and
-	 * then overwrite it with theirs. Pos\Checkout asks for a NIF per sale and
-	 * keeps it on the order instead.
+	 * The trade host's checkout. This field belongs to an ACCOUNT: it prefills
+	 * from the signed-in partner and saves back to them. The till, which sells
+	 * to whoever is at the counter, is beltoft-pos's and on its own host.
 	 */
 	private static function applies(): bool {
-		return Hosts::is_b2b_host() && ! Session::is_pos();
+		return Hosts::is_b2b_host();
 	}
 
 	public static function render( $checkout = null ): void {
