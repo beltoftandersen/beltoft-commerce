@@ -17,8 +17,8 @@ defined( 'ABSPATH' ) || exit;
  * the buyer back where they were.
  *
  * The ordering list, however, is re-rendered server side inside Bricks' REST
- * endpoint: on every pagination click, on every filter change, and - since
- * Frontend\TwoPhaseList - for the first paint as well. "The URL of the current
+ * endpoint: on every pagination click and every filter change (and, while
+ * Frontend\TwoPhaseList was enabled, for the first paint too). "The URL of the current
  * request" is then /wp-json/bricks/v1/query_result, so every button in the
  * returned markup carried
  *
