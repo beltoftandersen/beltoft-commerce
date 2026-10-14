@@ -185,7 +185,9 @@ class Repository {
 			$product   = wc_get_product( $variation ?: $parent );
 
 			if ( ! $product instanceof WC_Product ) {
-				$skipped[] = self::skipped_label( $parent, __( 'já não existe', 'beltoft-commerce' ) );
+				// A deleted product has no title left to read; the caller may
+				// pass the name it was ordered or saved under.
+				$skipped[] = self::skipped_label( $parent, __( 'já não existe', 'beltoft-commerce' ), null, (string) ( $item['name'] ?? '' ) );
 				continue;
 			}
 
@@ -251,8 +253,8 @@ class Repository {
 		return array( 'added' => $added, 'skipped' => $skipped );
 	}
 
-	private static function skipped_label( int $parent, string $why, ?WC_Product $product = null ): string {
-		$name = $product ? $product->get_name() : get_the_title( $parent );
+	private static function skipped_label( int $parent, string $why, ?WC_Product $product = null, string $known_name = '' ): string {
+		$name = $product ? $product->get_name() : ( '' !== $known_name ? $known_name : get_the_title( $parent ) );
 
 		return sprintf( '%s (%s)', wp_strip_all_tags( (string) $name ), $why );
 	}

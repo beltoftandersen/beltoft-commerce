@@ -155,21 +155,7 @@ class Reorder {
 
 		Actions::prepare_cart();
 
-		$items = array();
-
-		foreach ( $order->get_items() as $item ) {
-			$product = $item->get_product();
-
-			if ( ! $product ) {
-				continue;
-			}
-
-			$items[] = array(
-				'product_id'   => (int) $item->get_product_id(),
-				'variation_id' => (int) $item->get_variation_id(),
-				'quantity'     => (int) $item->get_quantity(),
-			);
-		}
+		$items = self::items_from_order( $order );
 
 		/*
 		 * Added to whatever is in the cart rather than replacing it. Somebody
@@ -182,6 +168,36 @@ class Reorder {
 
 		wp_safe_redirect( self::back_to() );
 		exit;
+	}
+
+	/**
+	 * Every line of the order, deleted products included.
+	 *
+	 * A line whose product no longer exists used to be dropped here, before
+	 * restore_items() could list it as skipped - so a forty-line order came
+	 * back as thirty-seven with no word about the other three. Each line
+	 * carries the name it was ordered under, which is all that is left to
+	 * report a deleted product by.
+	 *
+	 * @return array<int, array{product_id:int, variation_id:int, quantity:int, name:string}>
+	 */
+	public static function items_from_order( WC_Order $order ): array {
+		$items = array();
+
+		foreach ( $order->get_items() as $item ) {
+			if ( ! $item instanceof \WC_Order_Item_Product ) {
+				continue;
+			}
+
+			$items[] = array(
+				'product_id'   => (int) $item->get_product_id(),
+				'variation_id' => (int) $item->get_variation_id(),
+				'quantity'     => (int) $item->get_quantity(),
+				'name'         => (string) $item->get_name(),
+			);
+		}
+
+		return $items;
 	}
 
 	/**
