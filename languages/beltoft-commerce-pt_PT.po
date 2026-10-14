@@ -1,0 +1,940 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Beltoft Commerce 0.1.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/beltoft-commerce\n"
+"Last-Translator: \n"
+"Language-Team: Portuguese (Portugal)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-10-11T06:24:14+00:00\n"
+"PO-Revision-Date: 2026-10-11T06:24:14+00:00\n"
+"Language: pt_PT\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: beltoft-commerce\n"
+
+#: src/Vat/Field.php:36
+msgid "VAT number (NIF/VAT)"
+msgstr "Número de contribuinte (NIF/VAT)"
+
+#: src/Vat/Field.php:71
+msgid "If you have an EU VAT number, enter it here. Leave empty for a normal purchase."
+msgstr "Se tem um número de IVA da UE, introduza-o aqui. Deixe vazio para uma compra normal."
+
+#: src/Vat/Field.php:99
+msgid "The VAT number you entered could not be validated. Please correct it or leave the field empty."
+msgstr "O número de IVA introduzido não pôde ser validado. Corrija-o ou deixe o campo vazio."
+
+#. translators: %s: error detail from the VIES service
+#: src/Vat/OrderEvidence.php:63
+#, php-format
+msgid "VAT number could not be verified: VIES was unreachable (%s). IVA has been charged and this order needs manual review."
+msgstr "Não foi possível verificar o número de IVA: o VIES está indisponível (%s). O IVA foi cobrado e esta encomenda necessita de revisão manual."
+
+#: src/Enforcement/CartGuard.php:33
+msgid "This product is not available on your account."
+msgstr "Este produto não está disponível na sua conta."
+
+#: src/Pricing/Roles.php:53
+msgid "B2B Customer"
+msgstr "Cliente B2B"
+
+#: src/Pricing/Roles.php:42
+msgid "B2B (applicant)"
+msgstr "B2B (candidato)"
+
+#. Plugin Name of the plugin
+#: beltoft-commerce.php
+msgid "Beltoft Commerce"
+msgstr ""
+
+#. Description of the plugin
+#: beltoft-commerce.php
+msgid "B2B/B2C pricing groups, catalog audience, domain routing and VAT validation."
+msgstr "Grupos de preços B2B/B2C, público do catálogo, encaminhamento por domínio e validação de IVA."
+
+#. Author of the plugin
+#: beltoft-commerce.php
+msgid "beltoft.net"
+msgstr ""
+
+#: src/Account/Reorder.php:105
+#: src/Account/Reorder.php:121
+msgid "Encomendar novamente"
+msgstr ""
+
+#. translators: %s: pricing group label
+#: src/Admin/PriceFields.php:38
+#, php-format
+msgid "%s regular price"
+msgstr "Preço normal %s"
+
+#. translators: %s: pricing group label
+#: src/Admin/PriceFields.php:44
+#, php-format
+msgid "%s sale price"
+msgstr "Preço promocional %s"
+
+#. translators: %s: pricing group label
+#: src/Admin/PriceFields.php:50
+#: src/Admin/PriceFields.php:56
+#, php-format
+msgid "%s sale dates"
+msgstr "Datas da promoção %s"
+
+#: src/Admin/PriceFields.php:113
+msgid "Stored value. Nothing is derived from the retail price."
+msgstr "Valor guardado. Nada é calculado a partir do preço de retalho."
+
+#: src/Bricks/HostCondition.php:30
+msgid "Host (retail / B2B)"
+msgstr "Domínio (retalho / B2B)"
+
+#: src/Bricks/HostCondition.php:35
+#: src/Bricks/HostCondition.php:38
+msgid "is"
+msgstr "é"
+
+#: src/Bricks/HostCondition.php:36
+msgid "is not"
+msgstr "não é"
+
+#: src/Bricks/HostCondition.php:43
+msgid "Retail host"
+msgstr "Domínio de retalho"
+
+#: src/Bricks/HostCondition.php:44
+msgid "B2B host"
+msgstr "Domínio B2B"
+
+#: src/Bricks/HostCondition.php:46
+msgid "Select host"
+msgstr "Selecione o domínio"
+
+#: src/Catalog/Taxonomy.php:51
+#: src/Catalog/Taxonomy.php:53
+#: src/Catalog/Taxonomy.php:54
+msgid "Audience"
+msgstr "Público"
+
+#: src/Catalog/Taxonomy.php:55
+msgid "All audiences"
+msgstr "Todos os públicos"
+
+#: src/Catalog/Taxonomy.php:56
+msgid "Search audiences"
+msgstr "Pesquisar públicos"
+
+#: src/Catalog/Taxonomy.php:57
+msgid "No audiences found"
+msgstr "Nenhum público encontrado"
+
+#: src/Catalog/Taxonomy.php:58
+msgid "Add audience"
+msgstr "Adicionar público"
+
+#: src/Catalog/Taxonomy.php:59
+msgid "Edit audience"
+msgstr "Editar público"
+
+#: src/Catalog/Taxonomy.php:60
+msgid "Update audience"
+msgstr "Atualizar público"
+
+#: src/Catalog/Taxonomy.php:61
+msgid "Parent audience"
+msgstr "Público superior"
+
+#: src/Catalog/Taxonomy.php:62
+msgid "Parent audience:"
+msgstr "Público superior:"
+
+#: src/Catalog/Taxonomy.php:79
+msgid "Retail only (default)"
+msgstr "Apenas retalho (predefinido)"
+
+#: src/Catalog/Taxonomy.php:133
+msgid "B2B only"
+msgstr "Apenas B2B"
+
+#: src/Catalog/Taxonomy.php:134
+msgid "Retail and B2B"
+msgstr "Retalho e B2B"
+
+#: src/Checkout/B2BPaymentMethods.php:98
+#: src/Pos/Tenders.php:22
+msgid "Transferência bancária"
+msgstr ""
+
+#: src/Checkout/B2BPaymentMethods.php:106
+msgid "Enviamos os dados bancários e a referência da encomenda com a confirmação. A encomenda é preparada após a confirmação do pagamento."
+msgstr ""
+
+#: src/Checkout/BankDetailsGuard.php:70
+msgid "Transferência bancária sem dados."
+msgstr ""
+
+#: src/Checkout/BankDetailsGuard.php:71
+msgid "Os parceiros só podem pagar por transferência, e a conta bancária não está preenchida — quem encomenda não recebe o IBAN nem a referência."
+msgstr ""
+
+#: src/Checkout/BankDetailsGuard.php:73
+msgid "Preencher os dados bancários"
+msgstr ""
+
+#: src/Checkout/BankDetailsGuard.php:90
+msgid "Entramos em contacto com os dados para a transferência e a referência da encomenda. A encomenda é preparada após a confirmação do pagamento."
+msgstr ""
+
+#: src/Checkout/ItemCodes.php:60
+msgid "SKU"
+msgstr ""
+
+#: src/Checkout/ItemCodes.php:70
+msgid "EAN"
+msgstr ""
+
+#: src/Checkout/PurchaseOrder.php:65
+msgid "Se a sua empresa usa uma referência interna, indique-a aqui. Aparece na confirmação e na encomenda."
+msgstr ""
+
+#: src/Domain/LoginThrottle.php:123
+msgid "Demasiadas tentativas. Aguarde alguns minutos antes de tentar novamente."
+msgstr ""
+
+#: src/Email/B2BApplicationApprovedEmail.php:17
+msgid "Registo B2B aprovado"
+msgstr ""
+
+#: src/Email/B2BApplicationApprovedEmail.php:18
+msgid "Enviado ao cliente quando o registo de parceiro é aprovado."
+msgstr ""
+
+#: src/Email/B2BApplicationApprovedEmail.php:26
+msgid "O seu registo foi aprovado — {site_title}"
+msgstr ""
+
+#: src/Email/B2BApplicationApprovedEmail.php:30
+msgid "Bem-vindo, {company}"
+msgstr ""
+
+#: src/Email/B2BApplicationApprovedEmail.php:34
+msgid "O seu registo como parceiro foi aprovado. Já pode iniciar sessão e encomendar com os preços da sua conta."
+msgstr ""
+
+#: src/Email/B2BApplicationReceivedEmail.php:18
+msgid "Registo B2B recebido"
+msgstr ""
+
+#: src/Email/B2BApplicationReceivedEmail.php:19
+msgid "Enviado ao candidato assim que o registo de parceiro é submetido."
+msgstr ""
+
+#: src/Email/B2BApplicationReceivedEmail.php:27
+msgid "Recebemos o seu registo — {site_title}"
+msgstr ""
+
+#: src/Email/B2BApplicationReceivedEmail.php:31
+msgid "Recebemos o seu registo"
+msgstr ""
+
+#: src/Email/B2BApplicationReceivedEmail.php:35
+msgid "Obrigado pelo seu registo como parceiro. Vamos analisar os dados da sua empresa e enviamos uma resposta assim que a análise estiver concluída. Não é necessário fazer mais nada de momento."
+msgstr ""
+
+#: src/Email/B2BApplicationRejectedEmail.php:21
+msgid "Registo B2B não aprovado"
+msgstr ""
+
+#: src/Email/B2BApplicationRejectedEmail.php:22
+msgid "Enviado ao candidato quando o registo de parceiro não é aprovado."
+msgstr ""
+
+#: src/Email/B2BApplicationRejectedEmail.php:30
+msgid "Sobre o seu registo — {site_title}"
+msgstr ""
+
+#: src/Email/B2BApplicationRejectedEmail.php:34
+msgid "O seu registo não foi aprovado"
+msgstr ""
+
+#. translators: %s: the reason recorded by the shop.
+#: src/Email/B2BApplicationRejectedEmail.php:45
+#, php-format
+msgid "Motivo: %s"
+msgstr ""
+
+#. translators: %s: product name
+#: src/Enforcement/CartGuard.php:59
+#, php-format
+msgid "\"%s\" is no longer available on your account and has been removed."
+msgstr "\"%s\" já não está disponível na sua conta e foi removido."
+
+#: src/Enforcement/CartGuard.php:60
+msgid "A product"
+msgstr "Um produto"
+
+#: src/Enforcement/StoreApiGuard.php:65
+msgid "Invalid product ID."
+msgstr "ID de produto inválido."
+
+#: src/Frontend/FilterCollapse.php:263
+msgid "Filtros"
+msgstr ""
+
+#: src/Frontend/LoopQuantity.php:129
+#: src/Frontend/LoopQuantity.php:247
+msgid "Quantidade"
+msgstr ""
+
+#: src/Frontend/LoopQuantity.php:133
+#: src/Frontend/LoopQuantity.php:249
+msgid "Diminuir quantidade"
+msgstr ""
+
+#: src/Frontend/LoopQuantity.php:134
+#: src/Frontend/LoopQuantity.php:250
+msgid "Aumentar quantidade"
+msgstr ""
+
+#: src/Frontend/LoopQuantity.php:169
+msgid "Esgotado"
+msgstr ""
+
+#. translators: %d: number of distinct GTINs across a product's variations.
+#: src/Frontend/ResellerTags.php:380
+#, php-format
+msgid "%d código"
+msgid_plural "%d códigos"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Frontend/ResellerTags.php:391
+msgid "Grátis"
+msgstr ""
+
+#. translators: 1: pricing group label, 2: number of products
+#: src/Monitoring/Alerts.php:52
+#, php-format
+msgid "%1$s — %2$d product(s) visible to this group with no price:"
+msgstr "%1$s — %2$d produto(s) visível(eis) para este grupo sem preço:"
+
+#: src/Monitoring/Alerts.php:76
+#: src/Monitoring/Alerts.php:156
+msgid "Products are missing a group price"
+msgstr "Há produtos sem preço de grupo"
+
+#. translators: 1: pricing group label, 2: number of products
+#: src/Monitoring/Alerts.php:100
+#, php-format
+msgid "%1$s — %2$d product(s) priced for this group but not tagged for it, so this group never sees them:"
+msgstr "%1$s — %2$d produto(s) com preço para este grupo, mas sem o público deste grupo atribuído, pelo que este grupo nunca os vê:"
+
+#: src/Monitoring/Alerts.php:124
+#: src/Monitoring/Alerts.php:157
+msgid "Products are priced for a group that cannot see them"
+msgstr "Há produtos com preço para um grupo que não os pode ver"
+
+#: src/Monitoring/VatReviewQueue.php:69
+msgid "VAT check"
+msgstr "Verificação de IVA"
+
+#: src/Monitoring/VatReviewQueue.php:88
+msgid "Needs review"
+msgstr "Requer revisão"
+
+#: src/Pos/Checkout.php:184
+msgid "Cliente de balcão"
+msgstr ""
+
+#: src/Pos/Tender.php:40
+msgid "Records how a counter sale was paid. No payment is processed."
+msgstr "Regista como foi paga uma venda ao balcão. Não é processado nenhum pagamento."
+
+#. translators: %s: the tender, e.g. Dinheiro.
+#: src/Pos/Tender.php:69
+#, php-format
+msgid "Counter sale paid: %s"
+msgstr "Venda ao balcão paga: %s"
+
+#: src/Pos/Tenders.php:19
+msgid "MB WAY"
+msgstr ""
+
+#: src/Pos/Tenders.php:20
+msgid "Cartão (Teya)"
+msgstr ""
+
+#: src/Pos/Tenders.php:21
+msgid "Dinheiro"
+msgstr ""
+
+#: src/Pricing/Registry.php:30
+msgid "B2B"
+msgstr ""
+
+#: src/Pricing/Registry.php:52
+#: src/Pricing/Roles.php:57
+msgid "POS"
+msgstr ""
+
+#. translators: %s: maximum upload size, e.g. "64 MB".
+#: src/QuickOrder/Page.php:160
+#, php-format
+msgid "O envio excede o limite do servidor (%s). Reduza o ficheiro e tente novamente."
+msgstr ""
+
+#: src/QuickOrder/Page.php:196
+msgid "Escolha primeiro o ficheiro .xlsx que quer importar."
+msgstr ""
+
+#. translators: %s: maximum upload size, e.g. "64 MB".
+#: src/QuickOrder/Page.php:213
+#, php-format
+msgid "O ficheiro excede o limite de envio (%s)."
+msgstr ""
+
+#: src/QuickOrder/Page.php:229
+msgid "Não foi possível ler o ficheiro enviado."
+msgstr ""
+
+#: src/QuickOrder/Page.php:238
+msgid "Este formato não é suportado. Guarde a folha como .xlsx no Excel (Ficheiro → Guardar como) e envie novamente."
+msgstr ""
+
+#: src/QuickOrder/Page.php:264
+msgid "A folha não trazia quantidades. Preencha a coluna Quantidade e envie outra vez."
+msgstr ""
+
+#: src/QuickOrder/Page.php:269
+msgid "Não foram encontradas linhas. Escreva uma referência e uma quantidade por linha."
+msgstr ""
+
+#: src/QuickOrder/Page.php:273
+msgid "Não foram encontradas linhas para encomendar. Verifique as referências e quantidades."
+msgstr ""
+
+#. translators: %d: number of lines added to the cart.
+#: src/QuickOrder/Page.php:447
+#, php-format
+msgid "%d linha adicionada ao carrinho."
+msgid_plural "%d linhas adicionadas ao carrinho."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/QuickOrder/Page.php:612
+msgid "Colar referências"
+msgstr ""
+
+#: src/QuickOrder/Page.php:614
+msgid "Uma referência e quantidade por linha"
+msgstr ""
+
+#: src/QuickOrder/Page.php:620
+msgid "Aceita SKU ou código de barras. Separe com tab, vírgula, ponto e vírgula ou espaço."
+msgstr ""
+
+#: src/QuickOrder/Page.php:625
+msgid "Adicionar ao carrinho"
+msgstr ""
+
+#: src/QuickOrder/Page.php:631
+msgid "Folha de cálculo"
+msgstr ""
+
+#: src/QuickOrder/Page.php:636
+msgid "Descarregar a sua folha"
+msgstr ""
+
+#: src/QuickOrder/Page.php:638
+msgid "Já com os seus preços e referências."
+msgstr ""
+
+#: src/QuickOrder/Page.php:640
+msgid "Preencha a coluna Quantidade."
+msgstr ""
+
+#: src/QuickOrder/Page.php:642
+msgid "Traga a folha de volta para aqui."
+msgstr ""
+
+#: src/QuickOrder/Page.php:645
+msgid "Arraste a folha para aqui"
+msgstr ""
+
+#: src/QuickOrder/Page.php:646
+msgid "ou clique para escolher no computador (.xlsx)"
+msgstr ""
+
+#: src/QuickOrder/Page.php:647
+msgid "Toque para escolher a folha (.xlsx)"
+msgstr ""
+
+#: src/QuickOrder/Page.php:657
+msgid "Remover"
+msgstr ""
+
+#: src/QuickOrder/Page.php:669
+msgid "Importar e adicionar ao carrinho"
+msgstr ""
+
+#: src/QuickOrder/Report.php:109
+msgid "Referência desconhecida."
+msgstr ""
+
+#: src/QuickOrder/Report.php:111
+msgid "Sem stock de momento."
+msgstr ""
+
+#: src/QuickOrder/Report.php:113
+msgid "Não foi possível adicionar esta linha."
+msgstr ""
+
+#: src/QuickOrder/Report.php:117
+msgid "Não disponível na sua conta."
+msgstr ""
+
+#: src/QuickOrder/Sheet/Reader.php:44
+#: src/QuickOrder/Sheet/Reader.php:94
+#: src/QuickOrder/Sheet/Reader.php:112
+msgid "O ficheiro não é um .xlsx válido."
+msgstr ""
+
+#: src/QuickOrder/Sheet/Reader.php:67
+#: src/QuickOrder/Sheet/Reader.php:74
+msgid "A folha está danificada. Descarregue uma nova folha."
+msgstr ""
+
+#: src/QuickOrder/Sheet/Reader.php:103
+msgid "A folha é demasiado grande."
+msgstr ""
+
+#: src/QuickOrder/Sheet/Reader.php:200
+msgid "A folha não tem as colunas SKU e Quantidade. Descarregue uma nova folha."
+msgstr ""
+
+#: src/QuickOrder/Sheet/Writer.php:97
+msgid "Em stock"
+msgstr ""
+
+#: src/QuickOrder/Sheet/Writer.php:98
+msgid "Sem stock"
+msgstr ""
+
+#: src/Registration/AdminUsers.php:140
+msgid "B2B por aprovar"
+msgstr ""
+
+#: src/Registration/AdminUsers.php:141
+msgid "B2B rejeitados"
+msgstr ""
+
+#: src/Registration/AdminUsers.php:192
+#: src/Registration/AdminUsers.php:334
+msgid "Registo B2B"
+msgstr ""
+
+#: src/Registration/AdminUsers.php:214
+msgid "Por aprovar"
+msgstr ""
+
+#: src/Registration/AdminUsers.php:215
+msgid "Aprovado"
+msgstr ""
+
+#: src/Registration/AdminUsers.php:216
+msgid "Rejeitado"
+msgstr ""
+
+#: src/Registration/AdminUsers.php:226
+msgid "NIF"
+msgstr ""
+
+#: src/Registration/AdminUsers.php:237
+msgid "Aprovar registo B2B"
+msgstr ""
+
+#: src/Registration/AdminUsers.php:238
+msgid "Rejeitar registo B2B"
+msgstr ""
+
+#. translators: %d: number of accounts.
+#: src/Registration/AdminUsers.php:287
+#, php-format
+msgid "%d registo aprovado."
+msgid_plural "%d registos aprovados."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: number of accounts.
+#: src/Registration/AdminUsers.php:289
+#, php-format
+msgid "%d registo rejeitado."
+msgid_plural "%d registos rejeitados."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Registration/AdminUsers.php:337
+#: src/Registration/Fields.php:130
+msgid "Nome da loja"
+msgstr ""
+
+#: src/Registration/AdminUsers.php:348
+msgid "Estado"
+msgstr ""
+
+#: src/Registration/Fields.php:30
+msgid "Email"
+msgstr ""
+
+#: src/Registration/Fields.php:42
+msgid "Número de contribuinte (NIF/NIPC)"
+msgstr ""
+
+#: src/Registration/Fields.php:75
+msgid "Apelido"
+msgstr ""
+
+#: src/Registration/Fields.php:81
+msgid "Morada"
+msgstr ""
+
+#: src/Registration/Fields.php:87
+msgid "Código postal"
+msgstr ""
+
+#: src/Registration/Fields.php:93
+msgid "Localidade do código postal"
+msgstr ""
+
+#: src/Registration/Fields.php:99
+msgid "País"
+msgstr ""
+
+#: src/Registration/Fields.php:106
+msgid "Distrito"
+msgstr ""
+
+#: src/Registration/Fields.php:118
+msgid "Telefone"
+msgstr ""
+
+#: src/Registration/Fields.php:141
+msgid "Website URL"
+msgstr "Endereço do website"
+
+#: src/Registration/FormAction.php:69
+msgid "Recebemos o seu registo. Enviámos-lhe um email e entraremos em contacto após a análise."
+msgstr ""
+
+#. translators: %s: field label.
+#: src/Registration/Registrar.php:41
+#, php-format
+msgid "Preencha o campo \"%s\"."
+msgstr ""
+
+#: src/Registration/Registrar.php:51
+msgid "Indique um endereço de email válido."
+msgstr ""
+
+#: src/Registration/Registrar.php:55
+msgid "Já existe uma conta com este email."
+msgstr ""
+
+#: src/Registration/Registrar.php:160
+#: src/Registration/Registrar.php:171
+msgid "O número de contribuinte indicado não é válido."
+msgstr ""
+
+#: src/SavedCart/AccountEndpoint.php:71
+#: src/SavedCart/AccountEndpoint.php:76
+#: src/SavedCart/AccountEndpoint.php:83
+#: src/SavedCart/Ui.php:80
+msgid "Encomendas guardadas"
+msgstr ""
+
+#: src/SavedCart/AccountEndpoint.php:84
+msgid "Abra uma encomenda guardada para a colocar no carrinho, ou junte-a ao que já tem."
+msgstr ""
+
+#. translators: %s: the name the partner gave this order.
+#: src/SavedCart/Actions.php:77
+#, php-format
+msgid "Encomenda guardada como «%s»."
+msgstr ""
+
+#: src/SavedCart/Actions.php:111
+msgid "Não foi possível abrir essa encomenda."
+msgstr ""
+
+#. translators: %d: how many lines were put back on the order.
+#: src/SavedCart/Actions.php:118
+#, php-format
+msgid "%d linha adicionada à encomenda."
+msgid_plural "%d linhas adicionadas à encomenda."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: comma-separated list of products that could not be added.
+#: src/SavedCart/Actions.php:125
+#, php-format
+msgid "Não foi possível adicionar: %s."
+msgstr ""
+
+#: src/SavedCart/Actions.php:138
+msgid "Encomenda guardada eliminada."
+msgstr ""
+
+#: src/SavedCart/Repository.php:32
+msgid "Inicie sessão para guardar a encomenda."
+msgstr ""
+
+#: src/SavedCart/Repository.php:36
+msgid "A encomenda está vazia."
+msgstr ""
+
+#. translators: %d: how many saved orders are allowed.
+#: src/SavedCart/Repository.php:44
+#, php-format
+msgid "Só pode guardar %d encomendas. Elimine uma antes de guardar outra."
+msgstr ""
+
+#: src/SavedCart/Repository.php:76
+msgid "Não foi possível guardar."
+msgstr ""
+
+#: src/SavedCart/Repository.php:188
+msgid "já não existe"
+msgstr ""
+
+#: src/SavedCart/Repository.php:194
+msgid "já não está disponível"
+msgstr ""
+
+#: src/SavedCart/Repository.php:199
+msgid "já não está à venda"
+msgstr ""
+
+#: src/SavedCart/Repository.php:206
+#: src/SavedCart/Repository.php:215
+msgid "sem stock"
+msgstr ""
+
+#: src/SavedCart/Repository.php:239
+msgid "não foi possível adicionar"
+msgstr ""
+
+#. translators: %s: today's date.
+#: src/SavedCart/Repository.php:265
+#, php-format
+msgid "Encomenda de %s"
+msgstr ""
+
+#: src/SavedCart/Ui.php:89
+msgid "Fechar"
+msgstr ""
+
+#: src/SavedCart/Ui.php:101
+msgid "Nome da encomenda"
+msgstr ""
+
+#: src/SavedCart/Ui.php:104
+msgid "Guardar a encomenda atual como…"
+msgstr ""
+
+#: src/SavedCart/Ui.php:105
+msgid "Guardar"
+msgstr ""
+
+#: src/SavedCart/Ui.php:110
+msgid "Ainda não guardou nenhuma encomenda."
+msgstr ""
+
+#. translators: 1: number of lines, 2: date the order was saved.
+#: src/SavedCart/Ui.php:121
+#, php-format
+msgid "%1$d linha · %2$s"
+msgid_plural "%1$d linhas · %2$s"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/SavedCart/Ui.php:156
+msgid "Substituir"
+msgstr ""
+
+#: src/SavedCart/Ui.php:166
+msgid "Juntar"
+msgstr ""
+
+#: src/SavedCart/Ui.php:171
+msgid "Eliminar esta encomenda guardada?"
+msgstr ""
+
+#: src/SavedCart/Ui.php:176
+msgid "Eliminar"
+msgstr ""
+
+#. translators: %s: the group label, e.g. POS.
+#: src/Stock/AdminField.php:64
+#: src/Stock/AdminField.php:96
+#, php-format
+msgid "%s stock"
+msgstr "Stock %s"
+
+#: src/Stock/AdminField.php:66
+msgid "Counted separately from the shop stock above. Leave empty if it has never been counted - empty sells without a cap, 0 refuses the sale."
+msgstr "Contado separadamente do stock da loja acima. Deixe vazio se nunca tiver sido contado - vazio vende sem limite, 0 recusa a venda."
+
+#. translators: %d: number of products whose till stock has gone below zero.
+#: src/Stock/Recount.php:122
+#, php-format
+msgid "%d product has sold past its counted till stock. The sales went through; the count needs correcting."
+msgid_plural "%d products have sold past their counted till stock. The sales went through; the counts need correcting."
+msgstr[0] "%d produto vendeu acima do stock contado na caixa. As vendas foram concluídas; a contagem tem de ser corrigida."
+msgstr[1] "%d produtos venderam acima do stock contado na caixa. As vendas foram concluídas; as contagens têm de ser corrigidas."
+
+#: src/Stock/Recount.php:132
+msgid "Show them"
+msgstr "Mostrá-los"
+
+#: src/Vat/AccountEndpoint.php:86
+#: src/Vat/AccountEndpoint.php:93
+#: src/Vat/AccountEndpoint.php:266
+msgid "Dados fiscais"
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:183
+msgid "Não foi possível ler um número no que escreveu. O número anterior não foi alterado."
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:187
+msgid "O número de contribuinte indicado não é válido. O número anterior não foi alterado."
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:190
+msgid "Este número de IVA não foi reconhecido pelo VIES. O número anterior não foi alterado."
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:195
+msgid "Número de IVA removido da sua conta."
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:199
+msgid "Número guardado. Não foi possível contactar o VIES neste momento, por isso ainda não está confirmado."
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:203
+msgid "Número de IVA confirmado pelo VIES e guardado."
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:207
+msgid "Número guardado. Não é um número de IVA da União Europeia, por isso não há autoliquidação."
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:210
+msgid "Número de contribuinte guardado."
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:229
+msgid "Número registado. Não é um número de IVA da União Europeia, por isso as faturas levam IVA à taxa portuguesa."
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:234
+msgid "Confirmado pelo VIES. As suas faturas são emitidas com autoliquidação, sem IVA português."
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:236
+msgid "Número português. Não é enviado ao VIES e as suas faturas levam IVA à taxa portuguesa."
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:238
+msgid "Ainda não confirmado — o VIES não respondeu da última vez. Guarde novamente mais tarde para tentar outra vez."
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:240
+msgid "O VIES não reconheceu este número."
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:242
+msgid "Sem número de IVA associado. As suas faturas levam IVA à taxa portuguesa."
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:268
+msgid "O número que usamos para emitir as suas faturas. Alterá-lo aqui verifica-o outra vez."
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:270
+msgid "Estado:"
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:273
+msgid "Registado como:"
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:280
+msgid "Verificado em:"
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:289
+msgid "Número de contribuinte (NIF/NIPC) ou número de IVA europeu"
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:295
+msgid "Guardar e verificar"
+msgstr ""
+
+#: src/Vat/AccountEndpoint.php:298
+msgid "Deixe em branco se não tiver número de IVA. Um número de outro país da União Europeia é verificado no VIES da Comissão Europeia."
+msgstr ""
+
+#: src/Vat/OrderEvidence.php:64
+msgid "no detail"
+msgstr "sem detalhe"
+
+#. translators: %s: tax rate percentage, e.g. "23".
+#: src/Vat/RateLabel.php:48
+#, php-format
+msgid "IVA %s%%"
+msgstr ""
+
+#: templates/emails/b2b-application.php:26
+msgid "Dados do registo"
+msgstr ""
+
+#: templates/emails/b2b-application.php:29
+msgid "Empresa"
+msgstr ""
+
+#: templates/emails/b2b-application.php:32
+msgid "Loja"
+msgstr ""
+
+#: templates/emails/b2b-application.php:35
+msgid "NIF/NIPC"
+msgstr ""
+
+#: src/Checkout/PurchaseOrder.php:44
+msgid "Número da nota de encomenda"
+msgstr ""
+
+#: src/Email/B2BApplicationRejectedEmail.php:38
+msgid "Analisámos o seu registo como parceiro e não foi possível aprová-lo de momento. A sua conta continua ativa e pode comprar normalmente na loja."
+msgstr ""
+
+#: src/Registration/AdminUsers.php:342
+#: src/Registration/Fields.php:124
+msgid "Informação da empresa"
+msgstr ""
+
+#: src/Registration/Fields.php:36
+msgid "Nome da empresa"
+msgstr ""
+
+#: src/Registration/Fields.php:69
+msgid "Nome"
+msgstr ""
+
+#: src/Registration/Fields.php:147
+msgid "Palavra-passe"
+msgstr ""

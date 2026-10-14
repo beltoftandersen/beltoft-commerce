@@ -1,0 +1,153 @@
+<?php
+
+use BeltoftCommerce\Domain\LoginGate;
+use BeltoftCommerce\Support\Hosts;
+
+class LoginGateTest extends WP_UnitTestCase {
+
+	public function tearDown(): void {
+		unset( $_SERVER['HTTP_HOST'] );
+		wp_set_current_user( 0 );
+		parent::tearDown();
+	}
+
+	public function test_logged_out_b2b_request_is_gated() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$this->assertTrue( LoginGate::should_gate( '/loja/' ) );
+	}
+
+	public function test_logged_in_b2b_request_is_not_gated() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+		wp_set_current_user( $this->factory->user->create() );
+
+		$this->assertFalse( LoginGate::should_gate( '/loja/' ) );
+	}
+
+	public function test_retail_host_is_never_gated() {
+		$_SERVER['HTTP_HOST'] = Hosts::retail();
+
+		$this->assertFalse( LoginGate::should_gate( '/loja/' ) );
+	}
+
+	public function test_search_is_gated_on_b2b() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$this->assertTrue( LoginGate::should_gate( '/' ) );
+	}
+
+	/**
+	 * @dataProvider allowlisted_paths
+	 */
+	public function test_allowlisted_paths_are_reachable_logged_out( string $path ) {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$this->assertFalse( LoginGate::should_gate( $path ), $path . ' should be reachable' );
+	}
+
+	public function test_early_gate_blocks_a_logged_out_b2b_request() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$this->assertTrue( LoginGate::should_gate_early( '/loja/', false ) );
+	}
+
+	public function test_early_gate_lets_a_cookie_bearing_request_through() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		// Permissive by design: the authoritative gate re-checks properly.
+		$this->assertFalse( LoginGate::should_gate_early( '/loja/', true ) );
+	}
+
+	public function test_early_gate_never_touches_the_retail_host() {
+		$_SERVER['HTTP_HOST'] = Hosts::retail();
+
+		$this->assertFalse( LoginGate::should_gate_early( '/loja/', false ) );
+	}
+
+	public function test_early_gate_respects_the_allowlist() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$this->assertFalse( LoginGate::should_gate_early( '/wp-login.php', false ) );
+	}
+
+	public static function allowlisted_paths(): array {
+		return array(
+			array( LoginGate::LOGIN_PATH ),
+			array( '/wp-login.php' ),
+			array( '/wp-admin/' ),
+			array( '/wp-admin/admin-ajax.php' ),
+			array( '/a-minha-conta/recuperar-palavra-passe/' ),
+			array( '/conta/recuperar-palavra-passe/' ),
+			// The account area's old home. Still allowlisted so reset links
+			// already in inboxes reach the 301 that forwards them.
+			array( '/conta-b2b/recuperar-palavra-passe/' ),
+			array( '/robots.txt' ),
+			array( '/favicon.ico' ),
+		);
+	}
+
+	/**
+	 * The login page must never gate itself.
+	 *
+	 * Without this the gate redirects to a path it also blocks, and the
+	 * browser follows the loop until it gives up. Cheap to assert, and the
+	 * symptom is total: nobody can log in on the B2B host at all.
+	 */
+	public function test_the_login_page_is_not_gated() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$this->assertFalse( LoginGate::should_gate( LoginGate::LOGIN_PATH ) );
+		$this->assertFalse( LoginGate::should_gate_early( LoginGate::LOGIN_PATH, false ) );
+	}
+
+	/**
+	 * The allowlisted recovery path must be the one WooCommerce actually links to.
+	 *
+	 * This is the regression test for a bug the previous version of this file
+	 * encoded rather than caught: the allowlist read '/minha-conta/perdeu-password/'
+	 * and so did the data provider above, so both agreed with each other and
+	 * neither agreed with the site. The real page is '/a-minha-conta/' with the
+	 * 'lost-password' endpoint, so a logged-out B2B customer who clicked the
+	 * reset link was redirected back to the login page, forever.
+	 *
+	 * Deriving the path from WooCommerce here means a slug change breaks this
+	 * test instead of breaking password recovery silently.
+	 */
+	public function test_the_real_woocommerce_lost_password_url_is_reachable() {
+		if ( ! function_exists( 'wc_lostpassword_url' ) ) {
+			$this->markTestSkipped( 'WooCommerce is not loaded.' );
+		}
+
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$path = wp_parse_url( (string) wc_lostpassword_url(), PHP_URL_PATH );
+
+		if ( empty( $path ) || '/' === $path ) {
+			// The test database has no My Account page configured, so there is
+			// no URL to check against. Real installs do; this assertion is for
+			// them. The literal-path assertion below always runs.
+			$this->markTestSkipped( 'No WooCommerce My Account page in this fixture.' );
+		}
+
+		$this->assertFalse(
+			LoginGate::should_gate( $path ),
+			$path . ' is the URL WooCommerce links to and must not be gated.'
+		);
+	}
+
+	/**
+	 * The path that never existed must not be in the allowlist any more.
+	 *
+	 * Runs everywhere, including a fixture with no WooCommerce pages, so the
+	 * old value cannot quietly come back if someone restores it from an older
+	 * copy of this file.
+	 */
+	public function test_the_nonexistent_lost_password_path_is_not_allowlisted() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$this->assertTrue(
+			LoginGate::should_gate( '/minha-conta/perdeu-password/' ),
+			'This path does not exist on this install and must not be allowlisted.'
+		);
+	}
+}

@@ -1,0 +1,30 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Beltoft Commerce\n"
+"Language: es_ES\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "VAT number (NIF/VAT)"
+msgstr "Número de IVA (NIF/VAT)"
+
+msgid "If you have an EU VAT number, enter it here. Leave empty for a normal purchase."
+msgstr "Si tiene un número de IVA de la UE, introdúzcalo aquí. Déjelo vacío para una compra normal."
+
+msgid "The VAT number you entered could not be validated. Please correct it or leave the field empty."
+msgstr "El número de IVA introducido no se ha podido validar. Corríjalo o deje el campo vacío."
+
+msgid "VAT number could not be verified: VIES was unreachable (%s). IVA has been charged and this order needs manual review."
+msgstr "No se ha podido verificar el número de IVA: VIES no está disponible (%s). Se ha cobrado el IVA y este pedido requiere revisión manual."
+
+msgid "This product is not available on your account."
+msgstr "Este producto no está disponible en su cuenta."
+
+msgid "B2B Customer"
+msgstr "Cliente B2B"
+
+msgid "B2B (applicant)"
+msgstr "B2B (candidatura)"
+
