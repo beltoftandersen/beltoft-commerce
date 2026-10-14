@@ -33,6 +33,23 @@ class AdminUsers {
 		add_action( 'edit_user_profile', array( __CLASS__, 'profile_panel' ) );
 		add_action( 'personal_options_update', array( __CLASS__, 'save_profile' ) );
 		add_action( 'edit_user_profile_update', array( __CLASS__, 'save_profile' ) );
+		add_filter( 'woocommerce_shop_manager_editable_roles', array( __CLASS__, 'shop_manager_roles' ) );
+	}
+
+	/**
+	 * Shop managers decide B2B applications too.
+	 *
+	 * WooCommerce lets a shop manager edit only users whose roles are all on
+	 * this list, by default just 'customer', so approving or rejecting from the
+	 * Users screen did nothing for them - "0 approved", with no reason given.
+	 * Applicants and partners are customers of the shop like any other;
+	 * administrators stay off the list.
+	 *
+	 * @param mixed $roles
+	 * @return array
+	 */
+	public static function shop_manager_roles( $roles ): array {
+		return array_values( array_unique( array_merge( (array) $roles, array( 'b2b_pending', 'b2b_customer' ) ) ) );
 	}
 
 	/**
