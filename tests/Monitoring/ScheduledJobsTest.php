@@ -1,22 +1,18 @@
 <?php
 
-use BeltoftCommerce\Monitoring\MissingPriceScan;
 use BeltoftCommerce\Pricing\SaleScheduler;
 
 /**
- * The plugin's recurring jobs are scheduled by the plugin itself.
+ * The group sale boundary job is scheduled by the plugin itself.
  *
- * Nothing called their schedule() methods: there is no activation hook, and
- * deployment copies files rather than activating anything. The sale boundary
- * job ran on staging only because somebody scheduled it by hand, and the
- * missing-price scan - the §2.5 alert naming SKUs without a group price - had
- * never run at all.
+ * Nothing called SaleScheduler::schedule(): there is no activation hook, and
+ * deployment copies files rather than activating anything. The job ran on
+ * staging only because somebody scheduled it by hand.
  */
 class ScheduledJobsTest extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
-		wp_clear_scheduled_hook( MissingPriceScan::HOOK );
 		wp_clear_scheduled_hook( SaleScheduler::BOUNDARY_HOOK );
 	}
 
@@ -36,12 +32,6 @@ class ScheduledJobsTest extends WP_UnitTestCase {
 		}
 	}
 
-	public function test_the_missing_price_scan_is_scheduled_by_an_ordinary_request() {
-		$this->run_init();
-
-		$this->assertNotFalse( wp_next_scheduled( MissingPriceScan::HOOK ) );
-	}
-
 	public function test_the_group_sale_boundary_job_is_scheduled_by_an_ordinary_request() {
 		$this->run_init();
 
@@ -55,7 +45,7 @@ class ScheduledJobsTest extends WP_UnitTestCase {
 
 		$events = array_filter(
 			_get_cron_array(),
-			fn( $hooks ) => isset( $hooks[ MissingPriceScan::HOOK ] )
+			fn( $hooks ) => isset( $hooks[ SaleScheduler::BOUNDARY_HOOK ] )
 		);
 
 		$this->assertCount( 1, $events );

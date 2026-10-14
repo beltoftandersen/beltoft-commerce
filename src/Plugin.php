@@ -118,19 +118,14 @@ class Plugin {
 		Vat\AccountEndpoint::register();
 		Shipping\B2BMethods::register();
 
-		Monitoring\MissingPriceScan::register();
-		Monitoring\OrphanedPriceScan::register();
-		Monitoring\Alerts::register();
 		Monitoring\VatReviewQueue::register();
 
 		/*
-		 * The recurring jobs schedule themselves. There is no activation step
-		 * to do it - deployment copies files - so without this the missing-price
-		 * scan never ran and the sale boundary job existed only where someone
-		 * had scheduled it by hand. Both check wp_next_scheduled() first, which
-		 * reads the already-loaded cron option, so this costs one array lookup.
+		 * The group sale boundary job schedules itself. There is no activation
+		 * step to do it - deployment copies files - so it existed only where
+		 * someone had scheduled it by hand. schedule() checks wp_next_scheduled()
+		 * first, which reads the already-loaded cron option: one array lookup.
 		 */
-		add_action( 'init', array( Monitoring\MissingPriceScan::class, 'schedule' ) );
 		add_action( 'init', array( Pricing\SaleScheduler::class, 'schedule' ) );
 
 		if ( is_admin() ) {
