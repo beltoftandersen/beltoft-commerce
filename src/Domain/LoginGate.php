@@ -67,6 +67,15 @@ class LoginGate {
 	private const OWN_REST_PREFIX = '/beltoft-scanner/v1/';
 
 	public static function register(): void {
+		/*
+		 * On wp_loaded, before anything answers the request. WooCommerce runs
+		 * ?wc-ajax= on template_redirect priority 0 and its form handlers
+		 * (add to cart, coupons, checkout) on wp_loaded, so a gate at
+		 * template_redirect 1 came too late for both - and the early gate
+		 * only looks at a cookie's name, so any wordpress_logged_in_* cookie
+		 * reached them logged out. template_redirect stays as the backstop.
+		 */
+		add_action( 'wp_loaded', array( __CLASS__, 'maybe_redirect_loaded' ), 0 );
 		add_action( 'template_redirect', array( __CLASS__, 'maybe_redirect' ), 1 );
 		// Before StoreApiGuard and QueryResultCache, which also answer here.
 		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'guard_rest' ), 5, 3 );
@@ -103,6 +112,16 @@ class LoginGate {
 	private static function allowlisted( string $path, array $query ): bool {
 		if ( self::selects_other_content( $query ) ) {
 			return false;
+		}
+
+		/*
+		 * The login and application pages themselves, not what lies under
+		 * them: as prefixes they let /entrar/anything/ (and /entrar/../loja/
+		 * sent unnormalised) render a trade 404 with the trade header to a
+		 * logged-out visitor.
+		 */
+		if ( in_array( untrailingslashit( $path ) . '/', array( self::LOGIN_PATH, self::REGISTER_PATH ), true ) ) {
+			return true;
 		}
 
 		foreach ( self::allowlist() as $allowed ) {
@@ -154,9 +173,8 @@ class LoginGate {
 	 * recovery to work at all.
 	 */
 	private static function allowlist(): array {
+		// The login and application pages are matched exactly, in allowlisted().
 		return (array) apply_filters( 'beltoft_commerce_b2b_public_paths', array(
-			self::LOGIN_PATH,
-			self::REGISTER_PATH,
 			'/wp-login.php',
 			/*
 			 * LoginGate runs before HostRoutes, so it must let wp-admin through
@@ -276,6 +294,28 @@ class LoginGate {
 		header( 'Location: https://' . Hosts::b2b() . self::LOGIN_PATH, true, 302 );
 		header( 'Cache-Control: no-store, private' );
 		exit;
+	}
+
+	/**
+	 * The gate on wp_loaded, for front-end requests only: cron and the admin
+	 * endpoints have their own checks, and REST answers 401 itself
+	 * (guard_rest) rather than redirecting an API client to a login page.
+	 *
+	 * Not wp_doing_ajax(): WooCommerce defines DOING_AJAX for ?wc-ajax= on
+	 * init, which would wave through exactly the requests this is for.
+	 */
+	public static function maybe_redirect_loaded(): void {
+		if ( wp_doing_cron() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+			return;
+		}
+
+		$path = self::effective_path( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ) );
+
+		if ( 0 === strpos( $path, '/wp-json/' ) || 0 === strpos( $path, '/wp-admin/' ) ) {
+			return;
+		}
+
+		self::maybe_redirect();
 	}
 
 	public static function maybe_redirect(): void {

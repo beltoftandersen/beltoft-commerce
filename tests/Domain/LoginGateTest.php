@@ -150,4 +150,32 @@ class LoginGateTest extends WP_UnitTestCase {
 			'This path does not exist on this install and must not be allowlisted.'
 		);
 	}
+
+	/** The login and application pages themselves, nothing beneath them. */
+	public function test_paths_under_the_login_page_are_gated() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$this->assertFalse( LoginGate::should_gate( '/entrar/' ) );
+		$this->assertFalse( LoginGate::should_gate( '/entrar' ) );
+		$this->assertFalse( LoginGate::should_gate( '/registo/' ) );
+		$this->assertTrue( LoginGate::should_gate( '/entrar/x/' ) );
+		$this->assertTrue( LoginGate::should_gate( '/registo/qualquer/' ) );
+		$this->assertTrue( LoginGate::should_gate( '/entrar/../loja/' ) );
+	}
+
+	/**
+	 * The gate runs on wp_loaded, before WooCommerce's ?wc-ajax= handler
+	 * (template_redirect 0) and its form handlers (wp_loaded) answer.
+	 */
+	public function test_the_gate_runs_before_woocommerce_answers() {
+		$this->assertSame( 0, has_action( 'wp_loaded', array( LoginGate::class, 'maybe_redirect_loaded' ) ) );
+		$this->assertGreaterThan( 0, (int) has_action( 'wp_loaded', array( 'WC_Form_Handler', 'add_to_cart_action' ) ) );
+	}
+
+	public function test_wc_ajax_is_gated_logged_out() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$this->assertTrue( LoginGate::should_gate( '/', array( 'wc-ajax' => 'get_refreshed_fragments' ) ) );
+		$this->assertTrue( LoginGate::should_gate( '/entrar/', array( 'wc-ajax' => 'checkout' ) ) );
+	}
 }
