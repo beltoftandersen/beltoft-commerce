@@ -116,4 +116,48 @@ class LookupIndexTest extends WP_UnitTestCase {
 
 		$this->assertSame( '20.0000', $this->row( $this->retail_only_id, 'b2b_standard' )->min_price );
 	}
+
+	private function variation_priced( string $price ): int {
+		foreach ( wc_get_product( $this->variable_id )->get_children() as $id ) {
+			if ( $price === get_post_meta( $id, '_price_group_b2b_standard', true ) ) {
+				return (int) $id;
+			}
+		}
+
+		$this->fail( 'fixture' );
+	}
+
+	/** A disabled variation leaves the range, though no group price was written. */
+	public function test_disabling_a_variation_narrows_the_range() {
+		LookupIndex::update_for_product( $this->variable_id );
+
+		$cheap = wc_get_product( $this->variation_priced( '60' ) );
+		$cheap->set_status( 'private' );
+		$cheap->save();
+		LookupIndex::flush_pending();
+
+		$this->assertSame( '70.0000', $this->row( $this->variable_id, 'b2b_standard' )->min_price );
+	}
+
+	public function test_deleting_a_variation_narrows_the_range() {
+		LookupIndex::update_for_product( $this->variable_id );
+
+		wp_delete_post( $this->variation_priced( '70' ), true );
+		LookupIndex::flush_pending();
+
+		$this->assertSame( '60.0000', $this->row( $this->variable_id, 'b2b_standard' )->max_price );
+	}
+
+	public function test_a_new_priced_variation_widens_the_range() {
+		LookupIndex::update_for_product( $this->variable_id );
+
+		$variation = new WC_Product_Variation();
+		$variation->set_parent_id( $this->variable_id );
+		$variation->set_regular_price( '200' );
+		$variation->save();
+		update_post_meta( $variation->get_id(), '_price_group_b2b_standard', '90' );
+		LookupIndex::flush_pending();
+
+		$this->assertSame( '90.0000', $this->row( $this->variable_id, 'b2b_standard' )->max_price );
+	}
 }

@@ -72,8 +72,60 @@ class LookupIndex {
 		return $exists;
 	}
 
+	/** Parents whose row is rebuilt at the end of the request. @var array<int,true> */
+	private static array $pending = array();
+
 	public static function register(): void {
 		add_action( 'beltoft_commerce_group_price_changed', array( __CLASS__, 'on_price_changed' ), 10, 2 );
+
+		/*
+		 * A variable product's range also changes when a variation is added,
+		 * disabled, trashed or deleted - none of which writes a group price,
+		 * so the row kept the range of variations nobody could buy any more.
+		 * WooCommerce re-syncs the parent at shutdown in each case; the row
+		 * is rebuilt after that (see flush_pending()), once per parent.
+		 */
+		add_action( 'woocommerce_variable_product_sync_data', array( __CLASS__, 'queue_product' ) );
+		add_action( 'woocommerce_new_product_variation', array( __CLASS__, 'queue_variation' ) );
+		add_action( 'woocommerce_update_product_variation', array( __CLASS__, 'queue_variation' ) );
+		add_action( 'before_delete_post', array( __CLASS__, 'queue_variation' ) );
+		add_action( 'trashed_post', array( __CLASS__, 'queue_variation' ) );
+		add_action( 'untrashed_post', array( __CLASS__, 'queue_variation' ) );
+		add_action( 'shutdown', array( __CLASS__, 'flush_pending' ), 20 );
+	}
+
+	/** @param mixed $product */
+	public static function queue_product( $product ): void {
+		$id = $product instanceof \WC_Product ? $product->get_id() : (int) $product;
+
+		if ( $id ) {
+			self::$pending[ $id ] = true;
+		}
+	}
+
+	/** @param mixed $variation_id */
+	public static function queue_variation( $variation_id ): void {
+		$variation_id = (int) $variation_id;
+
+		if ( ! $variation_id || 'product_variation' !== get_post_type( $variation_id ) ) {
+			return;
+		}
+
+		$parent = wp_get_post_parent_id( $variation_id );
+
+		if ( $parent ) {
+			self::$pending[ (int) $parent ] = true;
+		}
+	}
+
+	/** Rebuild the queued rows. Runs at shutdown; callable directly (tests, CLI). */
+	public static function flush_pending(): void {
+		$ids           = array_keys( self::$pending );
+		self::$pending = array();
+
+		foreach ( $ids as $id ) {
+			self::update_for_product( (int) $id );
+		}
 	}
 
 	public static function on_price_changed( int $product_id, $parent_id = 0 ): void {
@@ -133,7 +185,8 @@ class LookupIndex {
 			foreach ( $product->get_children() as $child_id ) {
 				$child = wc_get_product( $child_id );
 
-				if ( ! $child ) {
+				// A disabled variation is not for sale; its price is no part of the range.
+				if ( ! $child || 'publish' !== $child->get_status() ) {
 					continue;
 				}
 
