@@ -131,6 +131,11 @@ class HostRoutes {
 			return false;
 		}
 
+		return self::is_b2b_only_path( $path );
+	}
+
+	/** Whether a path belongs to the trade host, whichever host is asking. */
+	public static function is_b2b_only_path( string $path ): bool {
 		/*
 		 * WordPress resolves pages case-insensitively and after URL-decoding,
 		 * so /B2B-loja/ and /%62%32b-loja/ rendered the trade page here - and,

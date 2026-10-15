@@ -23,6 +23,7 @@ class Plugin {
 		add_action( 'template_redirect', array( Domain\HostRoutes::class, 'maybe_redirect_resolved' ), 2 );
 		Domain\LoginThrottle::register();
 		Domain\SeoGuards::register();
+		Domain\TradePages::register();
 		Domain\CacheRules::register();
 		Domain\OrderHost::register();
 		Domain\WebhookSource::register();

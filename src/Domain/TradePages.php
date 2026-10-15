@@ -1,0 +1,92 @@
+<?php
+
+namespace BeltoftCommerce\Domain;
+
+use BeltoftCommerce\Support\Hosts;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * The trade pages stay off the retail host's REST API and oEmbed.
+ *
+ * HostRoutes moves anyone who opens a trade page on retail to the trade host,
+ * but WordPress also describes every published page through /wp/v2/pages
+ * (list, ?slug=, by id) and the oEmbed endpoint - title, slug, author - to
+ * anyone. The pages are the ones HostRoutes already claims for the trade
+ * host. Editors still see them, so the builder and the block editor work.
+ */
+class TradePages {
+
+	/** @var int[]|null */
+	private static ?array $ids = null;
+
+	public static function register(): void {
+		add_filter( 'rest_page_query', array( __CLASS__, 'exclude_from_query' ) );
+		add_filter( 'rest_request_after_callbacks', array( __CLASS__, 'hide_single' ), 10, 3 );
+		add_filter( 'oembed_request_post_id', array( __CLASS__, 'hide_oembed' ) );
+	}
+
+	private static function applies(): bool {
+		return ! Hosts::is_b2b_host() && ! current_user_can( 'edit_pages' );
+	}
+
+	/** Published pages whose path belongs to the trade host (HostRoutes::should_redirect()). @return int[] */
+	public static function ids(): array {
+		if ( null !== self::$ids ) {
+			return self::$ids;
+		}
+
+		$ids = array();
+
+		foreach ( get_posts( array( 'post_type' => 'page', 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids' ) ) as $id ) {
+			if ( HostRoutes::is_b2b_only_path( '/' . trim( (string) get_page_uri( (int) $id ), '/' ) . '/' ) ) {
+				$ids[] = (int) $id;
+			}
+		}
+
+		return self::$ids = $ids;
+	}
+
+	/** @param array $args */
+	public static function exclude_from_query( $args ) {
+		if ( ! is_array( $args ) || ! self::applies() || ! self::ids() ) {
+			return $args;
+		}
+
+		$args['post__not_in'] = array_merge( array_map( 'intval', (array) ( $args['post__not_in'] ?? array() ) ), self::ids() );
+
+		return $args;
+	}
+
+	/**
+	 * /wp/v2/pages/<id>, judged on the page the route resolved. Not through
+	 * rest_prepare_page: get_item() cannot take an error from there.
+	 *
+	 * @param mixed            $response
+	 * @param array            $handler
+	 * @param \WP_REST_Request $request
+	 * @return mixed
+	 */
+	public static function hide_single( $response, $handler = array(), $request = null ) {
+		$callback   = is_array( $handler ) ? ( $handler['callback'] ?? null ) : null;
+		$controller = is_array( $callback ) ? ( $callback[0] ?? null ) : null;
+
+		if ( ! $response instanceof \WP_REST_Response || ! $controller instanceof \WP_REST_Posts_Controller || 'get_item' !== ( $callback[1] ?? '' ) ) {
+			return $response;
+		}
+
+		$data = $response->get_data();
+		$id   = is_array( $data ) ? (int) ( $data['id'] ?? 0 ) : 0;
+
+		if ( ! $id || 'page' !== get_post_type( $id ) || ! self::applies() || ! in_array( $id, self::ids(), true ) ) {
+			return $response;
+		}
+
+		return new \WP_Error( 'rest_post_invalid_id', __( 'Invalid post ID.' ), array( 'status' => 404 ) ); // phpcs:ignore WordPress.WP.I18n.MissingArgDomain -- core's own message.
+	}
+
+	/** @param mixed $post_id */
+	public static function hide_oembed( $post_id ) {
+		return self::applies() && in_array( (int) $post_id, self::ids(), true ) ? 0 : $post_id;
+	}
+}
