@@ -17,12 +17,18 @@ defined( 'ABSPATH' ) || exit;
  * handed every trade page view.
  *
  * WHERE THIS APPLIES, AND WHERE IT MUST NOT. Front-end requests to the trade
- * host, and nothing else. wp-admin, cron, REST and AJAX all keep the full set,
- * because that is where these plugins do their real work: follow-up emails are
+ * host, and nothing else. wp-admin, cron, REST and admin-ajax.php keep the full
+ * set, because that is where these plugins do their real work: follow-up emails are
  * sent on cron, an order placed through checkout fires hooks a gateway may
  * still need to see, and an administrator editing a product on this host must
  * have every plugin that owns a field on that screen. Unloading a plugin from
  * the request that saves data is how data gets lost.
+ *
+ * WooCommerce's own ?wc-ajax= requests (fragments, add to cart, the trade
+ * checkout) are front-end requests to this host and DO get the short list:
+ * DOING_AJAX is defined for them only on init, long after this has run. None
+ * of the plugins below takes part in a trade checkout - payment is bank
+ * transfer and points are retail-only - so that is the intended reading.
  *
  * WHY THE LIST IS SHORT AND NAMED. Every entry is a plugin checked against what
  * the trade site does, not a guess:
