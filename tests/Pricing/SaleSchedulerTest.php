@@ -92,4 +92,29 @@ class SaleSchedulerTest extends WP_UnitTestCase {
 
 		$this->assertNotFalse( wp_next_scheduled( 'beltoft_commerce_group_sale_boundary' ) );
 	}
+
+	/** Only a window that opened or closed since the last run is invalidated. */
+	public function test_only_crossed_boundaries_are_invalidated() {
+		$changed = array();
+		$record  = static function ( $id ) use ( &$changed ) {
+			$changed[] = (int) $id;
+		};
+
+		$other = ( new WC_Product_Simple() );
+		$other->save();
+
+		update_option( SaleScheduler::LAST_RUN_OPTION, time() - HOUR_IN_SECONDS );
+		update_post_meta( $this->simple_id, '_sale_price_dates_from_group_b2b_standard', time() - 10 * MINUTE_IN_SECONDS );
+		update_post_meta( $other->get_id(), '_sale_price_dates_to_group_b2b_standard', time() + 30 * DAY_IN_SECONDS );
+
+		add_action( 'beltoft_commerce_group_price_changed', $record );
+		SaleScheduler::run_boundary();
+
+		$this->assertSame( array( $this->simple_id ), $changed );
+
+		// The next run starts where this one ended: nothing new has crossed.
+		$changed = array();
+		SaleScheduler::run_boundary();
+		$this->assertSame( array(), $changed );
+	}
 }

@@ -19,6 +19,9 @@ defined( 'ABSPATH' ) || exit;
  */
 class SaleScheduler {
 
+	/** When run_boundary() last looked, so the next run covers exactly the time since. */
+	public const LAST_RUN_OPTION = 'beltoft_commerce_sale_boundary_last_run';
+
 	public const BOUNDARY_HOOK = 'beltoft_commerce_group_sale_boundary';
 
 	public static function register(): void {
@@ -98,15 +101,25 @@ class SaleScheduler {
 
 		$placeholders = implode( ',', array_fill( 0, count( $keys ), '%s' ) );
 
-		// Any product carrying a group sale date at all. The set is small
-		// (only scheduled campaigns) so this is cheaper than reasoning
-		// about which boundary has just been crossed.
+		/*
+		 * Only the products whose window opened or closed since the last run.
+		 * It used to be every product carrying a sale date, every hour: each
+		 * one's WooCommerce transients deleted, its index row rebuilt and the
+		 * trade-list cache dropped, whether anything had changed or not - the
+		 * retail product caches included. A first run looks back a day.
+		 */
+		$now  = time();
+		$last = (int) get_option( self::LAST_RUN_OPTION, 0 );
+		$from = $last > 0 ? $last : $now - DAY_IN_SECONDS;
+
 		$ids = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT DISTINCT post_id FROM {$wpdb->postmeta} WHERE meta_key IN ({$placeholders}) AND meta_value <> ''",
-				$keys
+				"SELECT DISTINCT post_id FROM {$wpdb->postmeta} WHERE meta_key IN ({$placeholders}) AND meta_value <> '' AND CAST( meta_value AS UNSIGNED ) > %d AND CAST( meta_value AS UNSIGNED ) <= %d",
+				array_merge( $keys, array( $from, $now ) )
 			)
 		);
+
+		update_option( self::LAST_RUN_OPTION, $now, false );
 
 		foreach ( $ids as $id ) {
 			self::invalidate( (int) $id );
