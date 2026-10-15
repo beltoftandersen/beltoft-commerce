@@ -67,7 +67,13 @@ class HostChrome {
 		 * where each item returns you to where you already are.
 		 */
 		if ( self::is_gate_page() ) {
-			unset( $active_templates['header'], $active_templates['footer'] );
+			/*
+			 * 0, not unset(): Bricks reads both keys unguarded in four places
+			 * and treats only a value above 0 as a template, so removing them
+			 * logged undefined-index warnings on every login page view.
+			 */
+			$active_templates['header'] = 0;
+			$active_templates['footer'] = 0;
 
 			return $active_templates;
 		}

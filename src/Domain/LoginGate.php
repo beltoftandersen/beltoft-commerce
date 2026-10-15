@@ -153,6 +153,12 @@ class LoginGate {
 			return $result;
 		}
 
+		// WP-CLI is not a visitor: WooCommerce's CLI builds its commands from
+		// internal REST requests, which this refused under --url=<trade host>.
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			return $result;
+		}
+
 		if ( 0 === strpos( $request->get_route(), self::OWN_REST_PREFIX ) ) {
 			return $result;
 		}

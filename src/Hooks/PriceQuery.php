@@ -33,6 +33,12 @@ class PriceQuery {
 			return $clauses;
 		}
 
+		// No table yet (see Support\Installer): sort and filter as WooCommerce
+		// would rather than join a table that is not there.
+		if ( ! LookupIndex::table_exists() ) {
+			return $clauses;
+		}
+
 		$group = PricingContext::current();
 		$table = LookupIndex::table();
 

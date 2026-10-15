@@ -70,4 +70,16 @@ class SeoGuardsTest extends WP_UnitTestCase {
 		$_SERVER['HTTP_HOST'] = Hosts::retail();
 		$this->assertTrue( SeoGuards::disable_sitemaps_on_b2b( true ) );
 	}
+
+	/** Everything production's physical robots.txt says, so deleting it changes nothing. */
+	public function test_the_retail_rules_match_production() {
+		$rules = SeoGuards::retail_robots_rules();
+
+		foreach ( array( 'Disallow: /loja/produto-categorias-*', 'Disallow: /loja/produto-marcas-*', 'User-agent: GPTBot', 'User-agent: ClaudeBot', 'User-agent: Amazonbot' ) as $line ) {
+			$this->assertStringContainsString( $line . "\n", $rules );
+		}
+
+		$this->assertStringEndsWith( "User-agent: Amazonbot\nDisallow: /\n", $rules );
+		$this->assertStringNotContainsString( 'Sitemap:', $rules, 'Slim SEO adds it' );
+	}
 }

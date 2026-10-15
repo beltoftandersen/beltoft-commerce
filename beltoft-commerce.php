@@ -7,6 +7,7 @@
  * Text Domain: beltoft-commerce
  * Domain Path: /languages
  * Requires PHP: 8.3
+ * Requires Plugins: woocommerce
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -30,3 +31,6 @@ spl_autoload_register( function ( $class ) {
 } );
 
 add_action( 'plugins_loaded', array( 'BeltoftCommerce\\Plugin', 'init' ) );
+
+// Roles, the price lookup table and its first fill (Support\Installer).
+register_activation_hook( __FILE__, array( 'BeltoftCommerce\\Support\\Installer', 'install' ) );

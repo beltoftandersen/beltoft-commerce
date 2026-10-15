@@ -20,6 +20,15 @@ $_tests_dir = getenv( 'WP_TESTS_DIR' ) ?: '/tmp/wordpress-tests-lib';
 
 require_once $_tests_dir . '/includes/functions.php';
 
+// The host mu-plugin works only while beltoft-commerce is active; the test
+// install loads the plugin by path, so say it is.
+tests_add_filter( 'option_active_plugins', function ( $plugins ) {
+	$plugins   = (array) $plugins;
+	$plugins[] = 'beltoft-commerce/beltoft-commerce.php';
+
+	return array_values( array_unique( $plugins ) );
+} );
+
 tests_add_filter( 'muplugins_loaded', function () {
 	// The staging mu-plugin is not in the test install's mu-plugins directory,
 	// so load it explicitly, before WooCommerce, as the real one does.

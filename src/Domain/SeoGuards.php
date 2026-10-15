@@ -40,18 +40,39 @@ class SeoGuards {
 	 * it cannot crawl.
 	 */
 	/**
-	 * The retail host's own rules, previously held in a physical robots.txt.
+	 * The retail host's own rules, as production's physical robots.txt holds
+	 * them (2026-10-15) - all of them, the filtered archive paths and the AI
+	 * crawler block included, so deleting that file at deploy changes nothing.
+	 * The Sitemap line is not here: Slim SEO adds it.
 	 */
 	public static function retail_robots_rules(): string {
-		return implode( "\n", array(
+		$ai_crawlers = array(
+			'CCBot', 'Scrapy', 'ChatGPT-User', 'GPTBot', 'Google-Extended', 'Applebot-Extended',
+			'anthropic-ai', 'ClaudeBot', 'Omgilibot', 'Omgili', 'FacebookBot', 'Diffbot', 'Bytespider',
+			'ImagesiftBot', 'PerplexityBot', 'cohere-ai', 'Meta-ExternalAgent', 'Meta-ExternalFetcher',
+			'Timpibot', 'barkrowler', 'Amazonbot',
+		);
+
+		$lines = array(
 			'User-agent: *',
 			'Disallow: /wp-admin/',
 			'Disallow: /*add-to-cart=*',
 			'Disallow: /*?add-to-cart=*',
 			'Disallow: /*add_to_wishlist=*',
 			'Disallow: /wishlist/WOOSW/',
+			'Disallow: /loja/produto-categorias-*',
+			'Disallow: /loja/produto-marcas-*',
 			'Allow: /wp-admin/admin-ajax.php',
-		) ) . "\n";
+			'',
+		);
+
+		foreach ( $ai_crawlers as $agent ) {
+			$lines[] = 'User-agent: ' . $agent;
+		}
+
+		$lines[] = 'Disallow: /';
+
+		return implode( "\n", $lines ) . "\n";
 	}
 
 	public static function replace_default_robots( $output, $public ) {
