@@ -56,7 +56,9 @@ class CatalogAudience {
 	 * cache that outlived the truth would be worse than no cache.
 	 */
 	public static function register(): void {
-		foreach ( array( 'set_object_terms', 'woocommerce_update_product', 'woocommerce_new_product', 'clean_post_cache', 'transition_post_status' ) as $hook ) {
+		// deleted_term_relationships: wp_remove_object_terms() fires neither of
+		// the first two.
+		foreach ( array( 'set_object_terms', 'deleted_term_relationships', 'woocommerce_update_product', 'woocommerce_new_product', 'clean_post_cache', 'transition_post_status' ) as $hook ) {
 			add_action( $hook, array( __CLASS__, 'flush' ) );
 		}
 
@@ -203,6 +205,16 @@ class CatalogAudience {
 	 * data instead of protecting it.
 	 */
 	public static function serves_staff(): bool {
+		/*
+		 * WP-CLI is staff - wp post list, the wc commands, replay scripts - but
+		 * not while it runs cron (`wp cron event run` defines DOING_CRON): a job
+		 * building a feed or a cache warm-up list must see the shop as a
+		 * visitor does.
+		 */
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			return ! wp_doing_cron();
+		}
+
 		if ( ! current_user_can( 'edit_products' ) ) {
 			return false;
 		}
@@ -217,16 +229,13 @@ class CatalogAudience {
 		 * shop, and staff browsing it see what its customers see - otherwise
 		 * page one of a list was filtered and page two was not.
 		 *
-		 * Not WP-CLI as such: cron runs through `wp cron event run` here, and
-		 * a job building a feed or a cache warm-up list must see the shop as a
-		 * visitor does. CLI code that needs everything says so with
-		 * beltoft_bypass_audience.
+		 * batch/v1 carries wp/v2 sub-requests made by the editor.
 		 */
 		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 			$wp    = $GLOBALS['wp'] ?? null;
 			$route = $wp instanceof \WP ? (string) ( $wp->query_vars['rest_route'] ?? '' ) : '';
 
-			return (bool) preg_match( '#^/(wc/v\d|wp/v2|wc-admin|wc-analytics)(/|$)#', (string) $route );
+			return (bool) preg_match( '#^/(wc/v\d|wp/v2|wc-admin|wc-analytics|batch/v1)(/|$)#i', (string) $route );
 		}
 
 		return false;
