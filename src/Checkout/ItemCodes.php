@@ -77,13 +77,20 @@ class ItemCodes {
 	}
 
 	/**
-	 * A variation with no code of its own inherits its parent's - the same
-	 * fallback the ordering list makes, so the two never disagree.
+	 * A product's EAN, from whichever key holds it.
+	 *
+	 * A variation with no code of its own inherits its parent's. The ordering
+	 * list (Frontend\ResellerTags) and the scanned-code match
+	 * (Frontend\VariationRows) read through here too, so the list, the search
+	 * and the cart never disagree - the list used to read the core key only and
+	 * printed a bare "EAN:" for products whose code sits in _alg_ean.
+	 *
+	 * @param bool $inherit Fall back to the parent's code.
 	 */
-	private static function ean( WC_Product $product ): string {
+	public static function ean( WC_Product $product, bool $inherit = true ): string {
 		$ids = array( $product->get_id() );
 
-		if ( $product->get_parent_id() ) {
+		if ( $inherit && $product->get_parent_id() ) {
 			$ids[] = $product->get_parent_id();
 		}
 

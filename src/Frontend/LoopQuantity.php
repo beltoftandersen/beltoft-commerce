@@ -392,9 +392,18 @@ class LoopQuantity {
 		if ( ! self::applies() ) {
 			return;
 		}
+
+		$strings = array(
+			/* translators: %d: units in stock */
+			'only'      => __( 'Only %d in stock.', 'beltoft-commerce' ),
+			/* translators: %d: units in stock */
+			'failedCap' => __( 'Could not add. Only %d in stock.', 'beltoft-commerce' ),
+			'failed'    => __( 'This line could not be added.', 'beltoft-commerce' ),
+		);
 		?>
 <script>
 (function(){
+	var t=<?php echo wp_json_encode( $strings, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE ); ?>;
 	function sync(input){
 		var row=input.closest('.brxe-product-add-to-cart');
 		if(!row)return;
@@ -417,7 +426,7 @@ class LoopQuantity {
 		var el=host.querySelector('.beltoft-loop-note');
 		if(isNaN(max)||val<=max){ if(el)el.remove(); return; }
 		if(!el){ el=document.createElement('span'); el.className='beltoft-loop-note'; el.setAttribute('role','status'); host.appendChild(el); }
-		el.textContent='Apenas '+max+' em stock.';
+		el.textContent=t.only.replace('%d',max);
 	}
 	document.addEventListener('input',function(e){
 		var input=e.target.closest('.beltoft-loop-qty__input');
@@ -473,7 +482,7 @@ class LoopQuantity {
 					var el=host.querySelector('.beltoft-loop-note');
 					if(!el){el=document.createElement('span');el.className='beltoft-loop-note';el.setAttribute('role','status');host.appendChild(el);}
 					var cap=qty&&parseInt(qty.max,10);
-					el.textContent=cap?('N\u00e3o foi poss\u00edvel adicionar. Apenas '+cap+' em stock.'):'N\u00e3o foi poss\u00edvel adicionar esta linha.';
+					el.textContent=cap?t.failedCap.replace('%d',cap):t.failed;
 					add.classList.remove('is-busy');
 					add.removeAttribute('aria-busy');
 					return;

@@ -2,31 +2,19 @@
 
 namespace BeltoftCommerce\Frontend;
 
-use BeltoftCommerce\Pricing\PricingContext;
-use BeltoftCommerce\Pricing\PriceResolver;
-use BeltoftCommerce\Pricing\Registry;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * What the buyer pays, what they can sell it for, and what they keep.
- *
- * A wholesale line item is three numbers, not one. The B2B price answers "what
- * does this cost me"; it does not answer "is this worth stocking". A reseller
- * decides from the margin, and asking them to hold the retail price in their
- * head while scanning two hundred rows is asking them to do arithmetic the page
- * already has the inputs for.
+ * Product and cart facts for the trade list, as Bricks dynamic data tags.
  *
  * DELIVERED AS DYNAMIC DATA TAGS, not markup, so the figures are available to
  * anyone building in Bricks:
  *
- *   {beltoft_ean}        the GTIN/EAN, from WooCommerce's own _global_unique_id
+ *   {beltoft_ean}        the EAN, as the cart shows it (Checkout\ItemCodes)
  *   {beltoft_cart_shipping} the cart's shipping cost, read from the cart
  *   {beltoft_cart_product_id} the product behind the current cart line
- *   {beltoft_cart_codes}    that line's SKU and EAN, as one string
  *   {beltoft_rrp}        the retail price - the recommended resale price
- *   {beltoft_margin}     retail minus the group price, in currency
- *   {beltoft_margin_pct} the same as a percentage of the retail price
  *   {beltoft_summary}    the product's short text; for a variation its own
  *                        description, else the parent's short description
  *   {beltoft_buy}        the product list's quantity stepper and add button
@@ -35,15 +23,10 @@ defined( 'ABSPATH' ) || exit;
  * RETAIL IS THE RECOMMENDED PRICE, and that is a deliberate reading: this store
  * sells the same SKUs to the public, so its own shelf price is the defensible
  * recommendation rather than an invented RRP field nobody maintains.
- *
- * EVERY TAG RESOLVES FOR THE VIEWER'S OWN GROUP through PriceResolver, so a
- * future second B2B tier gets correct margins with no change here. A viewer on
- * retail pricing has no margin to show and gets an empty string - not a zero,
- * which would read as "no profit" rather than "not applicable".
  */
 class ResellerTags {
 
-	private const TAGS = array( 'beltoft_rrp', 'beltoft_margin', 'beltoft_margin_pct', 'beltoft_ean', 'beltoft_cart_shipping', 'beltoft_cart_product_id', 'beltoft_cart_codes', 'beltoft_summary', 'beltoft_buy' );
+	private const TAGS = array( 'beltoft_rrp', 'beltoft_ean', 'beltoft_cart_shipping', 'beltoft_cart_product_id', 'beltoft_summary', 'beltoft_buy' );
 
 	public static function register(): void {
 		add_filter( 'bricks/dynamic_data/render_tag', array( __CLASS__, 'render_tag' ), 10, 3 );
@@ -110,7 +93,7 @@ class ResellerTags {
 	 * product walked its children rebuilding those - because wc_get_product()
 	 * keeps nothing between calls. After the audience checks were memoised
 	 * these tags were the largest remaining source of that work on the trade
-	 * list. A price, a margin and a barcode cannot change while a page is
+	 * list. A price and a barcode cannot change while a page is
 	 * being drawn.
 	 *
 	 * @var array<string,string>
@@ -181,10 +164,6 @@ class ResellerTags {
 			return self::cart_product_id();
 		}
 
-		if ( 'beltoft_cart_codes' === $name ) {
-			return self::cart_codes();
-		}
-
 		$product = $post_id ? self::product_for( $post_id ) : null;
 
 		if ( ! $product instanceof \WC_Product ) {
@@ -193,7 +172,7 @@ class ResellerTags {
 
 		/*
 		 * The code, not a price, so it is answered before the price work below
-		 * and is not suppressed by the retail-viewer and margin guards.
+		 * and is not held back when there is no retail price.
 		 *
 		 * A variable parent carries no GTIN of its own - the barcode belongs to
 		 * the thing in the box - so the parent falls back to its children's
@@ -213,34 +192,10 @@ class ResellerTags {
 			return LoopQuantity::buy_control( $product );
 		}
 
+		// beltoft_rrp.
 		$retail = self::retail_price( $product );
 
-		if ( $retail <= 0 ) {
-			return '';
-		}
-
-		if ( 'beltoft_rrp' === $name ) {
-			return wc_price( $retail );
-		}
-
-		$group = PricingContext::current();
-
-		// A retail viewer has no wholesale price, so there is no margin to state.
-		if ( ! Registry::is_trade( $group ) ) {
-			return '';
-		}
-
-		$paid = self::group_price( $product, $group );
-
-		if ( $paid <= 0 || $paid >= $retail ) {
-			return '';
-		}
-
-		if ( 'beltoft_margin' === $name ) {
-			return wc_price( $retail - $paid );
-		}
-
-		return round( ( ( $retail - $paid ) / $retail ) * 100 ) . '%';
+		return $retail > 0 ? wc_price( $retail ) : '';
 	}
 
 	/**
@@ -271,33 +226,6 @@ class ResellerTags {
 			}
 
 			$price = (float) $child->get_regular_price( 'edit' );
-
-			if ( $price > 0 && ( 0.0 === $lowest || $price < $lowest ) ) {
-				$lowest = $price;
-			}
-		}
-
-		return $lowest;
-	}
-
-	/**
-	 * The viewer's own price, from the same child the retail figure came from.
-	 */
-	private static function group_price( \WC_Product $product, string $group ): float {
-		if ( ! $product->is_type( 'variable' ) ) {
-			return (float) PriceResolver::resolve( $product, $group );
-		}
-
-		$lowest = 0.0;
-
-		foreach ( $product->get_children() as $child_id ) {
-			$child = self::product_for( (int) $child_id );
-
-			if ( ! $child instanceof \WC_Product ) {
-				continue;
-			}
-
-			$price = (float) PriceResolver::resolve( $child, $group );
 
 			if ( $price > 0 && ( 0.0 === $lowest || $price < $lowest ) ) {
 				$lowest = $price;
@@ -340,9 +268,9 @@ class ResellerTags {
 		return (string) apply_filters( 'woocommerce_short_description', $text );
 	}
 
-	/** WooCommerce 9.2+ stores the GTIN/EAN/UPC/ISBN in `_global_unique_id`. */
+	/** The product's EAN as the cart shows it (Checkout\ItemCodes::ean()). */
 	private static function gtin( \WC_Product $product ): string {
-		$own = trim( (string) $product->get_global_unique_id() );
+		$own = \BeltoftCommerce\Checkout\ItemCodes::ean( $product );
 
 		if ( '' !== $own ) {
 			return $own;
@@ -361,7 +289,7 @@ class ResellerTags {
 				continue;
 			}
 
-			$code = trim( (string) $child->get_global_unique_id() );
+			$code = \BeltoftCommerce\Checkout\ItemCodes::ean( $child, false );
 
 			if ( '' !== $code ) {
 				$codes[ $code ] = true;
@@ -421,42 +349,5 @@ class ResellerTags {
 		}
 
 		return $id ? (string) $id : '';
-	}
-
-	/**
-	 * The codes for the cart line being looped, as one line of text.
-	 *
-	 * One element rather than two: the panel is ~280px wide and a buyer
-	 * checking a line against a delivery note reads them together anyway.
-	 */
-	private static function cart_codes(): string {
-		$id = (int) self::cart_product_id();
-
-		if ( ! $id ) {
-			return '';
-		}
-
-		$product = self::product_for( (int) $id );
-
-		if ( ! $product ) {
-			return '';
-		}
-
-		$parts = array();
-		$sku   = trim( (string) $product->get_sku() );
-		$ean   = self::gtin( $product );
-
-		if ( '' !== $sku ) {
-			$parts[] = 'SKU: ' . $sku;
-		}
-
-		if ( '' !== $ean ) {
-			$parts[] = 'EAN: ' . $ean;
-		}
-
-		// A newline, not a separator: at ~116px the panel cannot fit both codes
-		// on one line, and a wrapped EAN breaks mid-number, which is unreadable
-		// on a code you are checking against a delivery note.
-		return implode( "\n", $parts );
 	}
 }

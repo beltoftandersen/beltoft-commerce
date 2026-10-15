@@ -45,4 +45,21 @@ class HostConditionTest extends WP_UnitTestCase {
 
 		$this->assertNotEmpty( wp_list_filter( $options, array( 'key' => 'beltoft_host' ) ) );
 	}
+
+	/** The callback Bricks really calls, both comparisons. */
+	public function test_result_answers_for_its_own_key_and_inverts_on_not_equal() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$this->assertTrue( HostCondition::result( false, 'beltoft_host', array( 'value' => 'b2b', 'compare' => '==' ) ) );
+		$this->assertFalse( HostCondition::result( true, 'beltoft_host', array( 'value' => 'b2b', 'compare' => '!=' ) ) );
+		$this->assertSame( 'untouched', HostCondition::result( 'untouched', 'some_other_condition', array() ) );
+	}
+
+	/** Another host the install answers on is neither retail nor trade. */
+	public function test_neither_condition_matches_on_another_host() {
+		$_SERVER['HTTP_HOST'] = 'other.example.invalid';
+
+		$this->assertFalse( HostCondition::evaluate( array( 'value' => 'retail' ) ) );
+		$this->assertFalse( HostCondition::evaluate( array( 'value' => 'b2b' ) ) );
+	}
 }

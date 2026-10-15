@@ -208,7 +208,7 @@ class VariationRows {
 	private static function identifies( \WC_Product_Variation $variation, string $term ): bool {
 		$needle = strtolower( $term );
 
-		foreach ( array( $variation->get_sku(), $variation->get_global_unique_id() ) as $code ) {
+		foreach ( array( $variation->get_sku(), \BeltoftCommerce\Checkout\ItemCodes::ean( $variation, false ) ) as $code ) {
 			$code = strtolower( trim( (string) $code ) );
 
 			if ( '' !== $code && $code === $needle ) {
