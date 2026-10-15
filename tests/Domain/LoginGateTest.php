@@ -178,4 +178,33 @@ class LoginGateTest extends WP_UnitTestCase {
 		$this->assertTrue( LoginGate::should_gate( '/', array( 'wc-ajax' => 'get_refreshed_fragments' ) ) );
 		$this->assertTrue( LoginGate::should_gate( '/entrar/', array( 'wc-ajax' => 'checkout' ) ) );
 	}
+
+	/** Query vars and WooCommerce form fields in a POST body count like the URL's. */
+	public function test_a_post_body_naming_other_content_is_gated() {
+		$_SERVER['HTTP_HOST']      = Hosts::b2b();
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_SERVER['REQUEST_URI']    = '/entrar/';
+
+		foreach ( array( array( 'pagename' => 'b2b-loja' ), array( 'woocommerce_checkout_place_order' => '1' ), array( 'add-to-cart' => '12' ) ) as $body ) {
+			$_POST = $body;
+
+			$gate = new ReflectionMethod( LoginGate::class, 'request_vars' );
+			$gate->setAccessible( true );
+
+			$this->assertTrue( LoginGate::should_gate( '/entrar/', $gate->invoke( null, '/entrar/' ) ), wp_json_encode( $body ) );
+		}
+
+		// The lost-password form's own fields still reach its page.
+		$_POST = array( 'user_login' => 'x', 'wc_reset_password' => 'true' );
+		$this->assertFalse( LoginGate::should_gate( '/conta/recuperar-palavra-passe/', $gate->invoke( null, '/conta/recuperar-palavra-passe/' ) ) );
+
+		$_POST                     = array();
+		$_SERVER['REQUEST_METHOD'] = 'GET';
+	}
+
+	public function test_add_to_cart_on_the_login_page_is_gated() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$this->assertTrue( LoginGate::should_gate( '/entrar/', array( 'add-to-cart' => '12' ) ) );
+	}
 }

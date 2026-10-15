@@ -57,6 +57,9 @@ class LoginGate {
 		'feed', 'm', 'year', 'monthnum', 'day', 'w', 'sitemap', 'post_format',
 		'product', 'product_cat', 'product_tag', 'product_brand',
 		'rest_route', 'wc-ajax',
+		// WooCommerce's form handlers, which act on any page they are sent to.
+		'add-to-cart', 'woocommerce_checkout_place_order', 'apply_coupon', 'remove_coupon',
+		'update_cart', 'order_again', 'pay_for_order', 'woocommerce_pay',
 	);
 
 	/**
@@ -96,6 +99,25 @@ class LoginGate {
 		}
 
 		return wp_parse_url( $request_uri, PHP_URL_PATH ) ?: '/';
+	}
+
+	/**
+	 * What the request asks for: its query string and, for a POST, its body.
+	 *
+	 * WordPress reads public query vars from the body as well (WP::parse_request)
+	 * and WooCommerce's checkout handler runs on any page a POST names it on,
+	 * so a logged-out POST /entrar/ with pagename=... rendered that page and one
+	 * with the checkout fields placed an order. Only the names are compared.
+	 */
+	private static function request_vars( string $request_uri ): array {
+		$vars = self::query_of( $request_uri );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- only key names are read, to refuse the request.
+		if ( 'POST' === strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) ) && is_array( $_POST ) ) {
+			$vars += array_fill_keys( array_map( 'strval', array_keys( $_POST ) ), '' ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		}
+
+		return $vars;
 	}
 
 	private static function query_of( string $request_uri ): array {
@@ -281,7 +303,7 @@ class LoginGate {
 	public static function maybe_redirect_early(): void {
 		$request_uri = (string) ( $_SERVER['REQUEST_URI'] ?? '/' );
 		$path        = self::effective_path( $request_uri );
-		$query       = self::query_of( $request_uri );
+		$query       = self::request_vars( $request_uri );
 
 		$has_auth_cookie = false;
 
@@ -327,7 +349,7 @@ class LoginGate {
 	public static function maybe_redirect(): void {
 		$request_uri = (string) ( $_SERVER['REQUEST_URI'] ?? '/' );
 
-		if ( ! self::should_gate( self::effective_path( $request_uri ), self::query_of( $request_uri ) ) ) {
+		if ( ! self::should_gate( self::effective_path( $request_uri ), self::request_vars( $request_uri ) ) ) {
 			return;
 		}
 
