@@ -160,4 +160,24 @@ class LookupIndexTest extends WP_UnitTestCase {
 
 		$this->assertSame( '90.0000', $this->row( $this->variable_id, 'b2b_standard' )->max_price );
 	}
+
+	/** Run from cron (no user, retail context), the backfill still covers B2B-only products. */
+	public function test_backfill_includes_b2b_only_products() {
+		BeltoftCommerce\Catalog\Taxonomy::register();
+
+		$trade = new WC_Product_Simple();
+		$trade->set_regular_price( '10' );
+		$trade->set_status( 'publish' );
+		$trade->save();
+		BeltoftCommerce\Catalog\Taxonomy::set_audience( $trade->get_id(), BeltoftCommerce\Catalog\Taxonomy::B2B );
+		update_post_meta( $trade->get_id(), '_price_group_b2b_standard', '4' );
+
+		global $wpdb;
+		$wpdb->query( 'DELETE FROM ' . LookupIndex::table() );
+		wp_set_current_user( 0 );
+
+		LookupIndex::backfill();
+
+		$this->assertNotNull( $this->row( $trade->get_id(), 'b2b_standard' ) );
+	}
 }

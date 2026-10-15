@@ -208,4 +208,51 @@ class AudienceExposureTest extends WP_UnitTestCase {
 		$this->assertNotContains( $retail, $ids );
 		$this->assertContains( $trade, $ids );
 	}
+
+	/** get_posts() suppresses posts_* filters; the audience must hold there too. */
+	public function test_a_mixed_get_posts_lookup_is_filtered_for_retail() {
+		list( $parent, $variation ) = $this->variable( 'Trade variable', Taxonomy::B2B );
+
+		$ids = get_posts( array(
+			'post_type'   => array( 'product', 'product_variation' ),
+			'post_status' => 'publish',
+			'numberposts' => -1,
+			'fields'      => 'ids',
+		) );
+
+		$this->assertNotContains( $this->b2b_only, $ids );
+		$this->assertNotContains( $parent, $ids );
+		$this->assertNotContains( $variation, $ids );
+		$this->assertContains( $this->retail_only, $ids );
+	}
+
+	/**
+	 * A product's own children are looked up by post_parent and cached for
+	 * everyone; they are not filtered (the product itself is).
+	 */
+	public function test_a_products_own_variations_are_not_filtered() {
+		list( $parent, $variation ) = $this->variable( 'Trade variable', Taxonomy::B2B );
+
+		$ids = get_posts( array(
+			'post_type'   => 'product_variation',
+			'post_parent' => $parent,
+			'numberposts' => -1,
+			'fields'      => 'ids',
+		) );
+
+		$this->assertSame( array( $variation ), array_map( 'intval', $ids ) );
+	}
+
+	/** Staff working in wp-admin (its AJAX included) see the whole catalogue. */
+	public function test_staff_in_admin_see_every_variation() {
+		list( , $variation ) = $this->variable( 'Trade variable', Taxonomy::B2B );
+		$query = static fn() => get_posts( array( 'post_type' => 'product_variation', 'numberposts' => -1, 'fields' => 'ids' ) );
+
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'shop_manager' ) ) );
+		$this->assertNotContains( $variation, $query(), 'on the shop a shop manager shops like anyone' );
+
+		set_current_screen( 'edit-product' );
+		$this->assertContains( $variation, $query() );
+		set_current_screen( 'front' );
+	}
 }

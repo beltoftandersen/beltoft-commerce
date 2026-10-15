@@ -93,6 +93,72 @@ class CatalogAudience {
 		self::$view     = array();
 		self::$purchase = array();
 		self::$products = array();
+		self::$hidden   = array();
+	}
+
+	/** @var array<string,int[]> Products outside each audience, keyed trade|retail. */
+	private static array $hidden = array();
+
+	/**
+	 * The products a session may not see: for retail the B2B-only ones, for
+	 * trade every product not in its audience (untagged ones included).
+	 * For filters that need ids rather than a tax_query - see QueryFilter.
+	 *
+	 * @return int[]
+	 */
+	public static function hidden_product_ids( bool $trade ): array {
+		$key = $trade ? 'trade' : 'retail';
+
+		if ( isset( self::$hidden[ $key ] ) ) {
+			return self::$hidden[ $key ];
+		}
+
+		global $wpdb;
+
+		$slugs  = $trade ? Taxonomy::b2b_visible_slugs() : Taxonomy::retail_hidden_slugs();
+		$tagged = $wpdb->prepare(
+			"SELECT tr.object_id FROM {$wpdb->term_relationships} tr
+			INNER JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
+			INNER JOIN {$wpdb->terms} t ON t.term_id = tt.term_id
+			WHERE tt.taxonomy = %s AND t.slug IN (" . implode( ',', array_fill( 0, count( $slugs ), '%s' ) ) . ')',
+			array_merge( array( Taxonomy::TAXONOMY ), $slugs )
+		);
+
+		$ids = $trade
+			? $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'product' AND ID NOT IN ( {$tagged} )" ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- prepared above.
+			: $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'product' AND ID IN ( {$tagged} )" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- prepared above.
+
+		return self::$hidden[ $key ] = array_map( 'intval', $ids );
+	}
+
+	/**
+	 * Whether this request is staff managing the catalogue rather than a
+	 * visitor shopping it: wp-admin and its AJAX, the authenticated REST API
+	 * (not the Store API, which is the shop), WP-CLI. Such requests see the
+	 * whole catalogue - the variations panel of a B2B-only product, an ERP
+	 * reading upsells to write them back - since hiding products there loses
+	 * data instead of protecting it.
+	 */
+	public static function serves_staff(): bool {
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			return true;
+		}
+
+		if ( ! current_user_can( 'edit_products' ) ) {
+			return false;
+		}
+
+		if ( is_admin() ) {
+			return true;
+		}
+
+		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			$store_api = function_exists( 'WC' ) && method_exists( WC(), 'is_store_api_request' ) && WC()->is_store_api_request();
+
+			return ! $store_api;
+		}
+
+		return false;
 	}
 
 	/** wc_get_product() with a per-request memory. Read-only use only. */

@@ -23,12 +23,8 @@ defined( 'ABSPATH' ) || exit;
  */
 class QueryFilter {
 
-	/** Query var carrying the audience clause for queries a tax_query cannot express. */
-	private const WHERE_VAR = 'beltoft_audience_where';
-
 	public static function register(): void {
 		add_action( 'pre_get_posts', array( __CLASS__, 'filter' ), 20 );
-		add_filter( 'posts_where', array( __CLASS__, 'where' ), 10, 2 );
 	}
 
 	public static function filter( $query ): void {
@@ -36,8 +32,9 @@ class QueryFilter {
 			return;
 		}
 
-		// The admin must see the whole catalog to manage it.
-		if ( is_admin() && ! wp_doing_ajax() ) {
+		// The admin must see the whole catalog to manage it, and so must staff
+		// working through admin AJAX or the REST API (CatalogAudience::serves_staff()).
+		if ( ( is_admin() && ! wp_doing_ajax() ) || CatalogAudience::serves_staff() ) {
 			return;
 		}
 
@@ -74,11 +71,13 @@ class QueryFilter {
 		 * no audience term of their own: a tax_query would let every variation
 		 * of a B2B-only product through to retail (the Store API's
 		 * ?type=variation and ?sku= lookups), and on a trade session drop
-		 * every variation and every non-product result. Those are filtered in
-		 * SQL instead, by each row's own type - see where().
+		 * every variation and every non-product result. Those are filtered by
+		 * id instead - products outside the audience and their variations -
+		 * which also holds for get_posts(), whose suppress_filters would skip
+		 * a posts_where clause.
 		 */
 		if ( ! self::is_products_only( $query ) ) {
-			$query->set( self::WHERE_VAR, $restricted ? 'trade' : 'retail' );
+			self::exclude_by_id( $query, $restricted );
 
 			return;
 		}
@@ -147,42 +146,27 @@ class QueryFilter {
 	}
 
 	/**
-	 * The audience clause for a query whose rows are not all products: a
-	 * product by its own term, a variation by its parent's, anything else
-	 * untouched.
+	 * Leave out the products this session may not see, and their variations.
 	 *
-	 * @param string    $where
-	 * @param \WP_Query $query
+	 * Not for a lookup of one product's own variations (post_parent set):
+	 * WooCommerce reads a product's children that way and caches the answer
+	 * in a transient every session shares, so a filtered answer would follow
+	 * the product to everyone. Whether that product may be seen at all is
+	 * decided on the product itself.
 	 */
-	public static function where( $where, $query ) {
-		if ( ! $query instanceof \WP_Query ) {
-			return $where;
+	private static function exclude_by_id( \WP_Query $query, bool $trade ): void {
+		if ( '' !== (string) $query->get( 'post_parent' ) ) {
+			return;
 		}
 
-		$mode = $query->get( self::WHERE_VAR );
+		$hidden = CatalogAudience::hidden_product_ids( $trade );
 
-		if ( 'trade' !== $mode && 'retail' !== $mode ) {
-			return $where;
+		if ( ! $hidden ) {
+			return;
 		}
 
-		global $wpdb;
-
-		$slugs = 'trade' === $mode ? Taxonomy::b2b_visible_slugs() : Taxonomy::retail_hidden_slugs();
-		$in    = 'trade' === $mode ? 'IN' : 'NOT IN';
-
-		$tagged = $wpdb->prepare(
-			"SELECT tr.object_id FROM {$wpdb->term_relationships} tr
-			INNER JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
-			INNER JOIN {$wpdb->terms} t ON t.term_id = tt.term_id
-			WHERE tt.taxonomy = %s AND t.slug IN (" . implode( ',', array_fill( 0, count( $slugs ), '%s' ) ) . ')',
-			array_merge( array( Taxonomy::TAXONOMY ), $slugs )
-		);
-
-		$posts = $wpdb->posts;
-
-		return $where . " AND ( ( {$posts}.post_type = 'product' AND {$posts}.ID {$in} ( {$tagged} ) )"
-			. " OR ( {$posts}.post_type = 'product_variation' AND {$posts}.post_parent {$in} ( {$tagged} ) )"
-			. " OR {$posts}.post_type NOT IN ( 'product', 'product_variation' ) )";
+		$query->set( 'post__not_in', array_values( array_unique( array_merge( array_map( 'intval', (array) $query->get( 'post__not_in' ) ), $hidden ) ) ) );
+		$query->set( 'post_parent__not_in', array_values( array_unique( array_merge( array_map( 'intval', (array) $query->get( 'post_parent__not_in' ) ), $hidden ) ) ) );
 	}
 
 	private static function is_product_query( \WP_Query $query ): bool {

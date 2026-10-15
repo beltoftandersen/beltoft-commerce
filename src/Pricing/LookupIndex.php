@@ -213,10 +213,17 @@ class LookupIndex {
 			return 0;
 		}
 
-		$ids = wc_get_products( array(
-			'limit'  => -1,
-			'return' => 'ids',
-			'status' => array( 'publish', 'private' ),
+		/*
+		 * Every product, whoever is asking: this runs from cron, which has no
+		 * user and so reads as retail, and the audience filter would leave the
+		 * B2B-only products - the ones that most need a trade price row - out.
+		 */
+		$ids = get_posts( array(
+			'post_type'               => 'product',
+			'post_status'             => array( 'publish', 'private' ),
+			'numberposts'             => -1,
+			'fields'                  => 'ids',
+			'beltoft_bypass_audience' => true,
 		) );
 
 		foreach ( $ids as $id ) {

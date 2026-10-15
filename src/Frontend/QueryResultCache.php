@@ -82,7 +82,9 @@ class QueryResultCache {
 	public static function bump(): void {
 		if ( ! self::$dirty ) {
 			self::$dirty = true;
-			add_action( 'shutdown', array( __CLASS__, 'commit' ), 0 );
+			// Last: WooCommerce syncs variable parents at shutdown 10, and the
+			// save that sync makes is a change too.
+			add_action( 'shutdown', array( __CLASS__, 'commit' ), PHP_INT_MAX - 1 );
 		}
 	}
 

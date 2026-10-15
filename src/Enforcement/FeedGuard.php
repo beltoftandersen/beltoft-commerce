@@ -42,7 +42,9 @@ class FeedGuard {
 		 * B2B-only products to retail visitors as related products - on cached
 		 * pages - and to any feed built from cron, which has no user.
 		 */
-		if ( ! is_array( $ids ) ) {
+		// Staff reading through the REST API or admin (an ERP round trip
+		// writing upsells back) get them all; hiding some there deletes them.
+		if ( ! is_array( $ids ) || CatalogAudience::serves_staff() ) {
 			return $ids;
 		}
 
