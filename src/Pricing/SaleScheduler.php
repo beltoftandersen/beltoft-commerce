@@ -119,10 +119,12 @@ class SaleScheduler {
 			)
 		);
 
-		update_option( self::LAST_RUN_OPTION, $now, false );
-
 		foreach ( $ids as $id ) {
 			self::invalidate( (int) $id );
 		}
+
+		// Only once every product is done: a run that dies part-way is
+		// repeated from the same point next hour, not skipped.
+		update_option( self::LAST_RUN_OPTION, $now, false );
 	}
 }

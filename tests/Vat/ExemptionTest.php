@@ -31,6 +31,7 @@ class ExemptionTest extends WP_UnitTestCase {
 		Exemption::reset();
 		wp_set_current_user( 0 );
 		WC()->customer = $this->customer;
+		WC()->cart->empty_cart();
 		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
@@ -282,8 +283,45 @@ class ExemptionTest extends WP_UnitTestCase {
 		$this->assertTrue( Exemption::is_exempt() );
 	}
 
+	/** Something to ship, so the destination is the shipping address. */
+	private function shippable_cart(): void {
+		$product = new WC_Product_Simple();
+		$product->set_regular_price( '10' );
+		$product->set_status( 'publish' );
+		$product->save();
+		BeltoftCommerce\Catalog\Taxonomy::register();
+		BeltoftCommerce\Catalog\Taxonomy::set_audience( $product->get_id(), BeltoftCommerce\Catalog\Taxonomy::BOTH );
+		update_post_meta( $product->get_id(), '_price_group_b2b_standard', '6' );
+
+		$this->assertNotFalse( WC()->cart->add_to_cart( $product->get_id() ), 'fixture: in the cart' );
+
+		// The test install has no shipping methods, and without one WooCommerce
+		// says nothing needs shipping. A real trade checkout has them.
+		( new WC_Shipping_Zone( 0 ) )->add_shipping_method( 'flat_rate' );
+		WC_Cache_Helper::get_transient_version( 'shipping', true );
+		delete_transient( 'wc_shipping_method_count_legacy' );
+		delete_transient( 'wc_shipping_method_count' );
+		$this->assertTrue( WC()->cart->needs_shipping(), 'fixture: something to ship' );
+
+		// Adding to the cart worked the totals out once already; start fresh.
+		Exemption::reset();
+	}
+
+	/** Nothing to ship: an earlier pickup choice in the session does not decide. */
+	public function test_a_cart_with_nothing_to_ship_ignores_the_shipping_choice() {
+		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
+		$this->cache_vies( 'ES', 'B12345678', 'valid' );
+		$this->billing_in( 'ES' );
+		WC()->session->set( 'chosen_shipping_methods', array( 'local_pickup:6' ) );
+
+		$this->assertTrue( Exemption::is_exempt() );
+
+		WC()->session->set( 'chosen_shipping_methods', array() );
+	}
+
 	/** Goods that stay in Portugal are a domestic sale, whatever the number. */
 	public function test_a_portuguese_delivery_address_charges_iva() {
+		$this->shippable_cart();
 		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
 		$this->cache_vies( 'ES', 'B12345678', 'valid' );
 		$this->billing_in( 'ES' );
@@ -293,6 +331,7 @@ class ExemptionTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_pickup_in_the_shop_charges_iva() {
+		$this->shippable_cart();
 		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
 		$this->cache_vies( 'ES', 'B12345678', 'valid' );
 		$this->billing_in( 'ES' );
@@ -305,6 +344,7 @@ class ExemptionTest extends WP_UnitTestCase {
 	}
 
 	public function test_delivery_to_the_numbers_country_is_exempt() {
+		$this->shippable_cart();
 		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
 		$this->cache_vies( 'ES', 'B12345678', 'valid' );
 		$this->billing_in( 'ES' );

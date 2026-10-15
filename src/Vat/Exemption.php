@@ -258,6 +258,12 @@ class Exemption {
 	 * the checkout form before the totals), else the billing country.
 	 */
 	private static function destination(): string {
+		// Nothing to ship: the session's last chosen method (WooCommerce never
+		// clears it) and shipping address say nothing about this order.
+		if ( function_exists( 'WC' ) && WC()->cart && ! WC()->cart->needs_shipping() ) {
+			return strtoupper( self::country() );
+		}
+
 		$methods = function_exists( 'WC' ) && WC()->session ? (array) WC()->session->get( 'chosen_shipping_methods', array() ) : array();
 
 		foreach ( $methods as $method ) {

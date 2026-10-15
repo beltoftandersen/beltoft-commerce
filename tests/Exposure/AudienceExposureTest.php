@@ -246,7 +246,7 @@ class AudienceExposureTest extends WP_UnitTestCase {
 	/** Staff working in wp-admin (its AJAX included) see the whole catalogue. */
 	public function test_staff_in_admin_see_every_variation() {
 		list( , $variation ) = $this->variable( 'Trade variable', Taxonomy::B2B );
-		$query = static fn() => get_posts( array( 'post_type' => 'product_variation', 'numberposts' => -1, 'fields' => 'ids' ) );
+		$query = static fn() => ( new WP_Query( array( 'post_type' => 'product_variation', 'posts_per_page' => -1, 'fields' => 'ids' ) ) )->posts;
 
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'shop_manager' ) ) );
 		$this->assertNotContains( $variation, $query(), 'on the shop a shop manager shops like anyone' );
@@ -254,5 +254,24 @@ class AudienceExposureTest extends WP_UnitTestCase {
 		set_current_screen( 'edit-product' );
 		$this->assertContains( $variation, $query() );
 		set_current_screen( 'front' );
+	}
+
+	/** include=, on_sale= and parent= narrow by id; the audience still holds. */
+	/** @dataProvider anonymous_equivalent_contexts */
+	public function test_narrowing_by_id_does_not_reach_a_b2b_only_product( string $context ) {
+		list( $parent, $variation ) = $this->variable( 'Trade variable', Taxonomy::B2B );
+		$this->apply_context( $context );
+
+		$this->assertNotContains( $this->b2b_only, $this->store_ids( 'include[]=' . $this->b2b_only . '&include[]=' . $this->retail_only ) );
+		$this->assertContains( $this->retail_only, $this->store_ids( 'include[]=' . $this->b2b_only . '&include[]=' . $this->retail_only ) );
+		$this->assertNotContains( $variation, $this->store_ids( 'type=variation&parent[]=' . $parent ) );
+		$this->assertNotContains( $variation, $this->store_ids( 'type=variation&include[]=' . $variation ) );
+	}
+
+	/** Another plugin's own variation lookup (get_posts) is not a listing and is left alone. */
+	public function test_a_variation_only_get_posts_lookup_is_not_filtered() {
+		list( , $variation ) = $this->variable( 'Trade variable', Taxonomy::B2B );
+
+		$this->assertContains( $variation, get_posts( array( 'post_type' => 'product_variation', 'numberposts' => -1, 'fields' => 'ids' ) ) );
 	}
 }

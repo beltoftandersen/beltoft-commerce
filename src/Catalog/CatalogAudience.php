@@ -159,13 +159,14 @@ class CatalogAudience {
 	private static array $hidden = array();
 
 	/**
-	 * The products a session may not see: for retail the B2B-only ones, for
-	 * trade every product not in its audience (untagged ones included).
-	 * For filters that need ids rather than a tax_query - see QueryFilter.
+	 * The products a session may not see - for retail the B2B-only ones, for
+	 * trade every product not in its audience (untagged ones included) -
+	 * and the variations of those products. For filters that need ids rather
+	 * than a tax_query - see QueryFilter.
 	 *
 	 * @return int[]
 	 */
-	public static function hidden_product_ids( bool $trade ): array {
+	public static function hidden_ids( bool $trade ): array {
 		$key = $trade ? 'trade' : 'retail';
 
 		if ( isset( self::$hidden[ $key ] ) ) {
@@ -183,9 +184,12 @@ class CatalogAudience {
 			array_merge( array( Taxonomy::TAXONOMY ), $slugs )
 		);
 
-		$ids = $trade
-			? $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'product' AND ID NOT IN ( {$tagged} )" ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- prepared above.
-			: $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'product' AND ID IN ( {$tagged} )" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- prepared above.
+		$products = $trade
+			? "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'product' AND ID NOT IN ( {$tagged} )"
+			: "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'product' AND ID IN ( {$tagged} )";
+
+		// The products, and their variations.
+		$ids = $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE ( post_type = 'product' AND ID IN ( {$products} ) ) OR ( post_type = 'product_variation' AND post_parent IN ( {$products} ) )" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- prepared above.
 
 		return self::$hidden[ $key ] = array_map( 'intval', $ids );
 	}
@@ -199,10 +203,6 @@ class CatalogAudience {
 	 * data instead of protecting it.
 	 */
 	public static function serves_staff(): bool {
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			return true;
-		}
-
 		if ( ! current_user_can( 'edit_products' ) ) {
 			return false;
 		}
@@ -211,10 +211,22 @@ class CatalogAudience {
 			return true;
 		}
 
+		/*
+		 * The management APIs only. The Store API and Bricks' own routes
+		 * (query_result: the trade list's pagination and filters) are the
+		 * shop, and staff browsing it see what its customers see - otherwise
+		 * page one of a list was filtered and page two was not.
+		 *
+		 * Not WP-CLI as such: cron runs through `wp cron event run` here, and
+		 * a job building a feed or a cache warm-up list must see the shop as a
+		 * visitor does. CLI code that needs everything says so with
+		 * beltoft_bypass_audience.
+		 */
 		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-			$store_api = function_exists( 'WC' ) && method_exists( WC(), 'is_store_api_request' ) && WC()->is_store_api_request();
+			$wp    = $GLOBALS['wp'] ?? null;
+			$route = $wp instanceof \WP ? (string) ( $wp->query_vars['rest_route'] ?? '' ) : '';
 
-			return ! $store_api;
+			return (bool) preg_match( '#^/(wc/v\d|wp/v2|wc-admin|wc-analytics)(/|$)#', (string) $route );
 		}
 
 		return false;

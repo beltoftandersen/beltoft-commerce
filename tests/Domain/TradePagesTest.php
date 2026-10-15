@@ -43,4 +43,11 @@ class TradePagesTest extends WP_UnitTestCase {
 
 		$this->assertSame( 200, $this->get( '/wp/v2/pages/' . $this->trade )->get_status() );
 	}
+
+	/** include= becomes post__in, which WordPress lets override post__not_in. */
+	public function test_include_does_not_bring_a_trade_page_back() {
+		$ids = wp_list_pluck( $this->get( '/wp/v2/pages', array( 'include' => array( $this->trade, $this->retail ) ) )->get_data(), 'id' );
+
+		$this->assertSame( array( $this->retail ), array_map( 'intval', $ids ) );
+	}
 }

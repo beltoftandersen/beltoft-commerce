@@ -24,6 +24,13 @@ class TradePages {
 		add_filter( 'rest_page_query', array( __CLASS__, 'exclude_from_query' ) );
 		add_filter( 'rest_request_after_callbacks', array( __CLASS__, 'hide_single' ), 10, 3 );
 		add_filter( 'oembed_request_post_id', array( __CLASS__, 'hide_oembed' ) );
+		add_action( 'save_post_page', array( __CLASS__, 'forget' ) );
+		add_action( 'deleted_post', array( __CLASS__, 'forget' ) );
+	}
+
+	/** A page saved or removed may change which pages are trade pages. */
+	public static function forget(): void {
+		self::$ids = null;
 	}
 
 	private static function applies(): bool {
@@ -50,6 +57,14 @@ class TradePages {
 	/** @param array $args */
 	public static function exclude_from_query( $args ) {
 		if ( ! is_array( $args ) || ! self::applies() || ! self::ids() ) {
+			return $args;
+		}
+
+		// include= becomes post__in, which makes WordPress ignore post__not_in.
+		if ( ! empty( $args['post__in'] ) ) {
+			$kept             = array_values( array_diff( array_map( 'intval', (array) $args['post__in'] ), self::ids() ) );
+			$args['post__in'] = $kept ? $kept : array( 0 );
+
 			return $args;
 		}
 

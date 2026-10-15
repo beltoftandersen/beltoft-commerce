@@ -110,27 +110,64 @@ class QueryFilter {
 	}
 
 	/**
-	 * Leave out the products this session may not see, and their variations.
+	 * Leave out the products this session may not see, and their variations,
+	 * by id.
 	 *
-	 * Not for a lookup of one product's own variations (post_parent set):
-	 * WooCommerce reads a product's children that way and caches the answer
-	 * in a transient every session shares, so a filtered answer would follow
-	 * the product to everyone. Whether that product may be seen at all is
-	 * decided on the product itself.
+	 * The ids cover the variations as well as the products, and are applied
+	 * to whichever id narrowing the query already has: WordPress ignores
+	 * post__not_in when p or post__in is set, and post_parent__not_in when
+	 * post_parent__in is, so the Store API's include=, on_sale= and parent=
+	 * used to walk straight past an exclusion list.
+	 *
+	 * Not for:
+	 * - a lookup of one product's own variations (post_parent): WooCommerce
+	 *   reads a product's children that way and caches the answer in a
+	 *   transient every session shares, so a filtered answer would follow the
+	 *   product to everyone. Whether that product may be seen is decided on
+	 *   the product itself;
+	 * - a variation-only get_posts() (suppress_filters): that is a plugin's
+	 *   own lookup (subscriptions linked to a product, stock purges), not a
+	 *   listing, and those were never filtered. Mixed product + variation
+	 *   lookups are, as their product half always was.
 	 */
 	private static function exclude_by_id( \WP_Query $query, bool $trade ): void {
 		if ( '' !== (string) $query->get( 'post_parent' ) ) {
 			return;
 		}
 
-		$hidden = CatalogAudience::hidden_product_ids( $trade );
+		$types = array_values( array_unique( (array) $query->get( 'post_type' ) ) );
+
+		if ( array( 'product_variation' ) === $types && $query->get( 'suppress_filters' ) ) {
+			return;
+		}
+
+		$hidden = CatalogAudience::hidden_ids( $trade );
 
 		if ( ! $hidden ) {
 			return;
 		}
 
+		$p = (int) $query->get( 'p' );
+
+		if ( $p ) {
+			if ( in_array( $p, $hidden, true ) ) {
+				$query->set( 'p', 0 );
+				$query->set( 'post__in', array( 0 ) );
+			}
+
+			return;
+		}
+
+		$in = array_map( 'intval', (array) $query->get( 'post__in' ) );
+
+		if ( $in ) {
+			$kept = array_values( array_diff( $in, $hidden ) );
+			$query->set( 'post__in', $kept ? $kept : array( 0 ) );
+
+			return;
+		}
+
 		$query->set( 'post__not_in', array_values( array_unique( array_merge( array_map( 'intval', (array) $query->get( 'post__not_in' ) ), $hidden ) ) ) );
-		$query->set( 'post_parent__not_in', array_values( array_unique( array_merge( array_map( 'intval', (array) $query->get( 'post_parent__not_in' ) ), $hidden ) ) ) );
 	}
 
 	private static function is_product_query( \WP_Query $query ): bool {
