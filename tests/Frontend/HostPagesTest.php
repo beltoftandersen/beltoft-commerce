@@ -9,8 +9,12 @@ class HostPagesTest extends WP_UnitTestCase {
 	private int $loja   = 0;
 	private int $termos = 0;
 
+	/** REQUEST_URI as the test found it; later tests (the Store API's) read it. */
+	private ?string $request_uri = null;
+
 	public function setUp(): void {
 		parent::setUp();
+		$this->request_uri = $_SERVER['REQUEST_URI'] ?? null;
 		$this->loja   = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'b2b-loja' ) );
 		$this->termos = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'b2b-termos-condicoes' ) );
 		update_option( HostPages::OPTION, array( 'loja' => $this->loja, 'termos-condicoes' => $this->termos ) );
@@ -19,7 +23,14 @@ class HostPagesTest extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		delete_option( HostPages::OPTION );
-		unset( $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI'] );
+		unset( $_SERVER['HTTP_HOST'] );
+
+		if ( null === $this->request_uri ) {
+			unset( $_SERVER['REQUEST_URI'] );
+		} else {
+			$_SERVER['REQUEST_URI'] = $this->request_uri;
+		}
+
 		parent::tearDown();
 	}
 

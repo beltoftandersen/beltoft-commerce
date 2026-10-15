@@ -5,6 +5,28 @@ use BeltoftCommerce\Support\Hosts;
 
 class CheckoutResumeTest extends WP_UnitTestCase {
 
+	/**
+	 * WooCommerce memoises "is this the checkout page" in a static for the
+	 * request, and a test suite is one request: a checkout rendered by an
+	 * earlier test made every later page a checkout.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+		$this->forget_checkout_page();
+	}
+
+	/** Each page visited is asked afresh. */
+	public function go_to( $url ) {
+		parent::go_to( $url );
+		$this->forget_checkout_page();
+	}
+
+	private function forget_checkout_page(): void {
+		$memo = new ReflectionProperty( \Automattic\WooCommerce\Blocks\Utils\CartCheckoutUtils::class, 'is_checkout_page' );
+		$memo->setAccessible( true );
+		$memo->setValue( null, null );
+	}
+
 	public function tearDown(): void {
 		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
