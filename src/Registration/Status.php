@@ -33,9 +33,20 @@ class Status {
 	public static function get( int $user_id ): string {
 		$status = (string) get_user_meta( $user_id, self::META_STATUS, true );
 
-		return in_array( $status, array( self::PENDING, self::APPROVED, self::REJECTED ), true )
-			? $status
-			: self::PENDING;
+		if ( in_array( $status, array( self::PENDING, self::APPROVED, self::REJECTED ), true ) ) {
+			return $status;
+		}
+
+		/*
+		 * No decision recorded. An account that already holds the wholesale
+		 * role was given it directly (the user editor, an import) and is a
+		 * partner: calling it pending labelled live partners "Awaiting
+		 * approval" and offered approve and reject as if it were an
+		 * application.
+		 */
+		$roles = (array) ( get_userdata( $user_id )->roles ?? array() );
+
+		return in_array( 'b2b_customer', $roles, true ) ? self::APPROVED : self::PENDING;
 	}
 
 	public static function is_pending_decision( int $user_id ): bool {

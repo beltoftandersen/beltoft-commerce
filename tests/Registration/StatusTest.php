@@ -100,4 +100,14 @@ class StatusTest extends WP_UnitTestCase {
 		$this->assertTrue( Status::approve( $id ) );
 		$this->assertSame( Status::APPROVED, Status::get( $id ) );
 	}
+
+	/** A partner given the role directly has no recorded decision and is not an applicant. */
+	public function test_a_partner_with_no_recorded_decision_is_approved() {
+		$partner   = self::factory()->user->create( array( 'role' => 'b2b_customer' ) );
+		$applicant = self::factory()->user->create( array( 'role' => 'b2b_pending' ) );
+
+		$this->assertSame( Status::APPROVED, Status::get( $partner ) );
+		$this->assertSame( Status::PENDING, Status::get( $applicant ) );
+		$this->assertFalse( Status::is_pending_decision( $partner ) );
+	}
 }
