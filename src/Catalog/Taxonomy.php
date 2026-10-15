@@ -167,13 +167,18 @@ class Taxonomy {
 			$product_id = (int) $parent;
 		}
 
-		$terms = wp_get_object_terms( $product_id, self::TAXONOMY, array( 'fields' => 'slugs' ) );
+		/*
+		 * get_the_terms(), not wp_get_object_terms(): it reads the term
+		 * relationship cache, so filtering a list of search hits or related
+		 * products costs no query per product. Setting a term clears it.
+		 */
+		$terms = get_the_terms( $product_id, self::TAXONOMY );
 
 		if ( is_wp_error( $terms ) || ! $terms ) {
 			return self::RETAIL;
 		}
 
-		$slug = (string) reset( $terms );
+		$slug = (string) reset( $terms )->slug;
 
 		return in_array( $slug, self::audiences(), true ) ? $slug : self::RETAIL;
 	}

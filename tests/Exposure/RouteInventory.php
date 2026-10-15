@@ -44,9 +44,26 @@ class RouteInventory {
 		);
 	}
 
-	/** Everything in the product namespace. */
+	/**
+	 * WordPress's own routes for the product post type. No price, but a
+	 * product's title and content: the single-item route is audience-guarded
+	 * (StoreApiGuard), the listing goes through QueryFilter, and the
+	 * revision and autosave routes need edit rights.
+	 */
+	public static function core_product(): array {
+		return array(
+			'/wp/v2/product',
+			'/wp/v2/product/(?P<id>[\d]+)',
+			'/wp/v2/product/(?P<parent>[\d]+)/revisions',
+			'/wp/v2/product/(?P<parent>[\d]+)/revisions/(?P<id>[\d]+)',
+			'/wp/v2/product/(?P<id>[\d]+)/autosaves',
+			'/wp/v2/product/(?P<parent>[\d]+)/autosaves/(?P<id>[\d]+)',
+		);
+	}
+
+	/** Everything in the product namespace, and WordPress's product routes. */
 	public static function all_product_namespace(): array {
-		return array_merge( self::product_bearing(), self::product_taxonomy() );
+		return array_merge( self::product_bearing(), self::product_taxonomy(), self::core_product() );
 	}
 
 	/** Core WordPress routes reachable anonymously. */

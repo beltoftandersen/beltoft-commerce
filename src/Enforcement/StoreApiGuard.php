@@ -24,6 +24,25 @@ class StoreApiGuard {
 	public static function register(): void {
 		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'guard' ), 10, 3 );
 		add_filter( 'rest_request_after_callbacks', array( __CLASS__, 'guard_resolved' ), 10, 3 );
+		add_filter( 'oembed_request_post_id', array( __CLASS__, 'guard_oembed' ) );
+	}
+
+	/**
+	 * The oEmbed endpoint (/wp-json/oembed/1.0/embed?url=) describes any
+	 * published post by URL - title, excerpt, image - so a product outside
+	 * the visitor's audience is answered as if the URL named nothing.
+	 *
+	 * @param int $post_id
+	 * @return int
+	 */
+	public static function guard_oembed( $post_id ) {
+		$post_id = (int) $post_id;
+
+		if ( ! $post_id || ! in_array( get_post_type( $post_id ), array( 'product', 'product_variation' ), true ) ) {
+			return $post_id;
+		}
+
+		return CatalogAudience::can_view( get_current_user_id(), $post_id ) ? $post_id : 0;
 	}
 
 	/**
@@ -52,18 +71,45 @@ class StoreApiGuard {
 			return $response;
 		}
 
+		// The editor's own route: whoever may edit the product may load it.
+		if ( ( $handler['callback'][0] ?? null ) instanceof \WP_REST_Posts_Controller && current_user_can( 'edit_post', $product_id ) ) {
+			return $response;
+		}
+
 		return self::not_found();
 	}
 
-	/** The Store API routes that return one product: by id and by slug. */
+	/**
+	 * The routes that return one product: the Store API's by id and by slug,
+	 * and WordPress's own /wp/v2/product/<id>, which reads the post directly
+	 * and served a B2B-only product's title and content to anyone.
+	 */
 	private static function is_single_product_route( $handler ): bool {
 		$callback = $handler['callback'] ?? null;
-		$route    = is_array( $callback ) && is_object( $callback[0] ?? null ) ? get_class( $callback[0] ) : '';
 
-		return in_array( $route, array(
+		if ( ! is_array( $callback ) || ! is_object( $callback[0] ?? null ) ) {
+			return false;
+		}
+
+		$route = get_class( $callback[0] );
+
+		if ( in_array( $route, array(
 			'Automattic\WooCommerce\StoreApi\Routes\V1\ProductsById',
 			'Automattic\WooCommerce\StoreApi\Routes\V1\ProductsBySlug',
-		), true );
+		), true ) ) {
+			return true;
+		}
+
+		return $callback[0] instanceof \WP_REST_Posts_Controller
+			&& 'get_item' === ( $callback[1] ?? '' )
+			&& in_array( self::controller_post_type( $callback[0] ), array( 'product', 'product_variation' ), true );
+	}
+
+	/** The post type a core posts controller serves (its property is protected). */
+	private static function controller_post_type( \WP_REST_Posts_Controller $controller ): string {
+		$schema = $controller->get_item_schema();
+
+		return (string) ( $schema['title'] ?? '' );
 	}
 
 	private static function not_found(): \WP_Error {

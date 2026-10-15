@@ -20,11 +20,12 @@ class SearchIndex {
 		add_filter( 'relevanssi_hits_filter', array( __CLASS__, 'filter_hits' ) );
 	}
 
+	/*
+	 * Every session, retail included: a guest searching the whole site got
+	 * B2B-only products from the shared index, since the early return for
+	 * retail assumed retail saw everything.
+	 */
 	public static function filter_hits( $hits ) {
-		if ( ! CatalogAudience::restricts_current_request() ) {
-			return $hits;
-		}
-
 		if ( ! is_array( $hits ) || ! isset( $hits[0] ) || ! is_array( $hits[0] ) ) {
 			return $hits;
 		}
@@ -40,7 +41,7 @@ class SearchIndex {
 					return true;
 				}
 
-				if ( 'product' !== get_post_type( $id ) ) {
+				if ( ! in_array( get_post_type( $id ), array( 'product', 'product_variation' ), true ) ) {
 					return true;
 				}
 

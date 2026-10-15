@@ -61,15 +61,56 @@ class SearchAndFeedsTest extends WP_UnitTestCase {
 		$this->assertContains( $this->both, $ids );
 	}
 
-	public function test_search_hits_are_untouched_for_a_guest() {
+	/**
+	 * A guest's search reaches the same shared index, and a B2B-only product
+	 * must not come back from it; everything else is left as found.
+	 */
+	public function test_a_guest_search_drops_only_b2b_only_products() {
 		wp_set_current_user( 0 );
+		$b2b_only = $this->make( Taxonomy::B2B );
 
 		$hits = SearchIndex::filter_hits( array( array(
 			(object) array( 'ID' => $this->retail_only ),
 			(object) array( 'ID' => $this->both ),
+			(object) array( 'ID' => $b2b_only ),
 		) ) );
 
-		$this->assertCount( 2, $hits[0] );
+		$this->assertSame( array( $this->retail_only, $this->both ), wp_list_pluck( $hits[0], 'ID' ) );
+	}
+
+	/** Related products, upsells and feeds for retail: B2B-only ones are dropped. */
+	public function test_a_guest_never_gets_a_b2b_only_related_product() {
+		wp_set_current_user( 0 );
+		$b2b_only = $this->make( Taxonomy::B2B );
+
+		$this->assertSame(
+			array( $this->retail_only, $this->both ),
+			apply_filters( 'woocommerce_related_products', array( $this->retail_only, $this->both, $b2b_only ), 1, array() )
+		);
+	}
+
+	/**
+	 * Upsells and cross-sells through the getters WooCommerce really filters,
+	 * in view context only: the product editor still sees and keeps them all.
+	 */
+	public function test_upsells_and_cross_sells_follow_the_audience() {
+		$b2b_only = $this->make( Taxonomy::B2B );
+
+		$product = wc_get_product( $this->both );
+		$product->set_upsell_ids( array( $this->retail_only, $b2b_only ) );
+		$product->set_cross_sell_ids( array( $this->retail_only, $b2b_only ) );
+		$product->save();
+		$product = wc_get_product( $this->both );
+
+		wp_set_current_user( 0 );
+		$this->assertSame( array( $this->retail_only ), $product->get_upsell_ids() );
+		$this->assertSame( array( $this->retail_only ), $product->get_cross_sell_ids() );
+
+		wp_set_current_user( $this->b2b_user );
+		$this->assertSame( array( $b2b_only ), $product->get_upsell_ids() );
+		$this->assertSame( array( $b2b_only ), $product->get_cross_sell_ids() );
+
+		$this->assertSame( array( $this->retail_only, $b2b_only ), $product->get_upsell_ids( 'edit' ) );
 	}
 
 	public function test_a_feed_excludes_out_of_audience_products() {

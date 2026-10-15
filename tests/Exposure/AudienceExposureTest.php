@@ -126,4 +126,86 @@ class AudienceExposureTest extends WP_UnitTestCase {
 
 		$this->assertSame( 200, $status );
 	}
+
+	/** WordPress's own product route reads the post directly. */
+	/** @dataProvider anonymous_equivalent_contexts */
+	public function test_the_core_product_route_denies_a_b2b_only_product( string $context ) {
+		$this->apply_context( $context );
+
+		$response = rest_do_request( new WP_REST_Request( 'GET', '/wp/v2/product/' . $this->b2b_only ) );
+
+		$this->assertSame( 404, $response->get_status() );
+		$this->assertStringNotContainsString( $this->b2b_only_name, (string) wp_json_encode( $response->get_data() ) );
+	}
+
+	public function test_the_core_product_route_still_serves_a_retail_product() {
+		$this->assertSame( 200, rest_do_request( new WP_REST_Request( 'GET', '/wp/v2/product/' . $this->retail_only ) )->get_status() );
+	}
+
+	/** Whoever may edit the product loads it in the editor, whatever their audience. */
+	public function test_an_editor_may_load_a_b2b_only_product() {
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
+
+		$this->assertSame( 200, rest_do_request( new WP_REST_Request( 'GET', '/wp/v2/product/' . $this->b2b_only ) )->get_status() );
+	}
+
+	/** oEmbed describes any URL it is given; not a product outside the audience. */
+	public function test_oembed_does_not_describe_a_b2b_only_product() {
+		$this->assertSame( 0, apply_filters( 'oembed_request_post_id', $this->b2b_only, get_permalink( $this->b2b_only ) ) );
+		$this->assertSame( $this->retail_only, apply_filters( 'oembed_request_post_id', $this->retail_only, get_permalink( $this->retail_only ) ) );
+	}
+
+	private function variable( string $name, ?string $audience ): array {
+		$parent = new WC_Product_Variable();
+		$parent->set_name( $name );
+		$parent->set_status( 'publish' );
+		$parent->save();
+
+		if ( $audience ) {
+			Taxonomy::set_audience( $parent->get_id(), $audience );
+		}
+
+		$variation = new WC_Product_Variation();
+		$variation->set_parent_id( $parent->get_id() );
+		$variation->set_regular_price( '10' );
+		$variation->set_sku( 'VAR-' . $parent->get_id() );
+		$variation->set_status( 'publish' );
+		$variation->save();
+
+		return array( $parent->get_id(), $variation->get_id() );
+	}
+
+	private function store_ids( string $query ): array {
+		$response = rest_do_request( new WP_REST_Request( 'GET', '/wc/store/v1/products' ) );
+		$request  = new WP_REST_Request( 'GET', '/wc/store/v1/products' );
+		parse_str( $query, $params );
+		$request->set_query_params( $params );
+
+		return array_map( 'intval', wp_list_pluck( json_decode( wp_json_encode( rest_do_request( $request )->get_data() ), true ), 'id' ) );
+	}
+
+	/** Variations carry no audience term; they are judged by their parent. */
+	/** @dataProvider anonymous_equivalent_contexts */
+	public function test_variations_of_a_b2b_only_product_are_not_listed_to_retail( string $context ) {
+		list( , $hidden ) = $this->variable( 'Trade variable', Taxonomy::B2B );
+		list( , $shown )  = $this->variable( 'Retail variable', null );
+		$this->apply_context( $context );
+
+		$ids = $this->store_ids( 'type=variation&per_page=100' );
+
+		$this->assertNotContains( $hidden, $ids );
+		$this->assertContains( $shown, $ids );
+		$this->assertNotContains( $hidden, $this->store_ids( 'sku=VAR-' . wp_get_post_parent_id( $hidden ) ) );
+	}
+
+	public function test_a_b2b_session_lists_only_variations_of_its_catalogue() {
+		list( , $retail ) = $this->variable( 'Retail variable', null );
+		list( , $trade )  = $this->variable( 'Trade variable', Taxonomy::BOTH );
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'b2b_customer' ) ) );
+
+		$ids = $this->store_ids( 'type=variation&per_page=100' );
+
+		$this->assertNotContains( $retail, $ids );
+		$this->assertContains( $trade, $ids );
+	}
 }

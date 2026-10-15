@@ -17,10 +17,19 @@ class FeedGuard {
 	public static function register(): void {
 		add_filter( 'beltoft_commerce_feed_product_ids', array( __CLASS__, 'filter_ids' ) );
 
-		// Related products and cross-sells are built from their own query.
+		/*
+		 * Related products, upsells and cross-sells are built with
+		 * wc_get_product() from stored ids, not a product WP_Query, so
+		 * QueryFilter never sees them. The upsell and cross-sell hooks used to
+		 * be woocommerce_upsell_ids / woocommerce_cross_sell_ids, which
+		 * WooCommerce never fires; these are the getters' view-context filters
+		 * (the product editor reads in edit context and still sees them all)
+		 * and the cart's own cross-sell list.
+		 */
 		add_filter( 'woocommerce_related_products', array( __CLASS__, 'filter_ids' ) );
-		add_filter( 'woocommerce_cross_sell_ids', array( __CLASS__, 'filter_ids' ) );
-		add_filter( 'woocommerce_upsell_ids', array( __CLASS__, 'filter_ids' ) );
+		add_filter( 'woocommerce_product_get_upsell_ids', array( __CLASS__, 'filter_ids' ) );
+		add_filter( 'woocommerce_product_get_cross_sell_ids', array( __CLASS__, 'filter_ids' ) );
+		add_filter( 'woocommerce_cart_crosssell_ids', array( __CLASS__, 'filter_ids' ) );
 	}
 
 	/**
@@ -28,7 +37,12 @@ class FeedGuard {
 	 * @return int[]
 	 */
 	public static function filter_ids( $ids ) {
-		if ( ! is_array( $ids ) || ! CatalogAudience::restricts_current_request() ) {
+		/*
+		 * Every session, retail included. Returning early outside trade sent
+		 * B2B-only products to retail visitors as related products - on cached
+		 * pages - and to any feed built from cron, which has no user.
+		 */
+		if ( ! is_array( $ids ) ) {
 			return $ids;
 		}
 

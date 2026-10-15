@@ -5,8 +5,6 @@ namespace BeltoftCommerce\Enforcement;
 use BeltoftCommerce\Catalog\CatalogAudience;
 use BeltoftCommerce\Catalog\Taxonomy;
 
-
-
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -25,8 +23,12 @@ defined( 'ABSPATH' ) || exit;
  */
 class QueryFilter {
 
+	/** Query var carrying the audience clause for queries a tax_query cannot express. */
+	private const WHERE_VAR = 'beltoft_audience_where';
+
 	public static function register(): void {
 		add_action( 'pre_get_posts', array( __CLASS__, 'filter' ), 20 );
+		add_filter( 'posts_where', array( __CLASS__, 'where' ), 10, 2 );
 	}
 
 	public static function filter( $query ): void {
@@ -45,10 +47,9 @@ class QueryFilter {
 
 		/*
 		 * An explicit opt-out for internal queries that must see the whole
-		 * catalog regardless of who is asking — the missing-price scan runs
-		 * from cron with no user, which resolves to retail context, and
-		 * would otherwise have this filter hide exactly the B2B-only
-		 * products it exists to find.
+		 * catalog regardless of who is asking - a job run from cron has no
+		 * user, resolves to retail context, and would otherwise have this
+		 * filter hide the B2B-only products.
 		 *
 		 * Only ever set this on a query whose results are not rendered to a
 		 * visitor.
@@ -65,6 +66,20 @@ class QueryFilter {
 		// product exists the guest query is left exactly as it was rather
 		// than carrying a join that excludes nothing.
 		if ( ! $restricted && ! self::published_b2b_only_products_exist() ) {
+			return;
+		}
+
+		/*
+		 * Variations, and product queries mixed with other post types, carry
+		 * no audience term of their own: a tax_query would let every variation
+		 * of a B2B-only product through to retail (the Store API's
+		 * ?type=variation and ?sku= lookups), and on a trade session drop
+		 * every variation and every non-product result. Those are filtered in
+		 * SQL instead, by each row's own type - see where().
+		 */
+		if ( ! self::is_products_only( $query ) ) {
+			$query->set( self::WHERE_VAR, $restricted ? 'trade' : 'retail' );
+
 			return;
 		}
 
@@ -131,6 +146,45 @@ class QueryFilter {
 		return ! empty( $ids );
 	}
 
+	/**
+	 * The audience clause for a query whose rows are not all products: a
+	 * product by its own term, a variation by its parent's, anything else
+	 * untouched.
+	 *
+	 * @param string    $where
+	 * @param \WP_Query $query
+	 */
+	public static function where( $where, $query ) {
+		if ( ! $query instanceof \WP_Query ) {
+			return $where;
+		}
+
+		$mode = $query->get( self::WHERE_VAR );
+
+		if ( 'trade' !== $mode && 'retail' !== $mode ) {
+			return $where;
+		}
+
+		global $wpdb;
+
+		$slugs = 'trade' === $mode ? Taxonomy::b2b_visible_slugs() : Taxonomy::retail_hidden_slugs();
+		$in    = 'trade' === $mode ? 'IN' : 'NOT IN';
+
+		$tagged = $wpdb->prepare(
+			"SELECT tr.object_id FROM {$wpdb->term_relationships} tr
+			INNER JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
+			INNER JOIN {$wpdb->terms} t ON t.term_id = tt.term_id
+			WHERE tt.taxonomy = %s AND t.slug IN (" . implode( ',', array_fill( 0, count( $slugs ), '%s' ) ) . ')',
+			array_merge( array( Taxonomy::TAXONOMY ), $slugs )
+		);
+
+		$posts = $wpdb->posts;
+
+		return $where . " AND ( ( {$posts}.post_type = 'product' AND {$posts}.ID {$in} ( {$tagged} ) )"
+			. " OR ( {$posts}.post_type = 'product_variation' AND {$posts}.post_parent {$in} ( {$tagged} ) )"
+			. " OR {$posts}.post_type NOT IN ( 'product', 'product_variation' ) )";
+	}
+
 	private static function is_product_query( \WP_Query $query ): bool {
 		$post_type = $query->get( 'post_type' );
 
@@ -140,7 +194,18 @@ class QueryFilter {
 
 		$post_type = is_array( $post_type ) ? $post_type : array( $post_type );
 
-		return in_array( 'product', $post_type, true );
+		return (bool) array_intersect( array( 'product', 'product_variation' ), $post_type );
+	}
+
+	/** Whether every row the query can return is a product (not a variation, not another type). */
+	private static function is_products_only( \WP_Query $query ): bool {
+		$post_type = $query->get( 'post_type' );
+
+		if ( empty( $post_type ) ) {
+			return true; // A product-only taxonomy archive, see is_product_query().
+		}
+
+		return array( 'product' ) === array_values( array_unique( (array) $post_type ) );
 	}
 
 	/**

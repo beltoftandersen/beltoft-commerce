@@ -138,7 +138,7 @@ class PriceExposureTest extends WP_UnitTestCase {
 		$product_routes = array_values( array_filter(
 			$registered,
 			function ( $route ) {
-				return (bool) preg_match( '#^/wc/store/v1/products#', $route );
+				return (bool) preg_match( '#^/wc/store/v1/products|^/wp/v2/product(_variation)?(/|$)#', $route );
 			}
 		) );
 
