@@ -160,6 +160,7 @@ class Reader {
 	private static function rows( string $xml, array $strings ): array {
 		$rows   = array();
 		$map    = null;
+		$number = 0;
 		$reader = new \XMLReader();
 		$reader->XML( $xml );
 
@@ -168,8 +169,15 @@ class Reader {
 				continue;
 			}
 
-			$row    = new \SimpleXMLElement( $reader->readOuterXml() );
-			$number = (int) $row['r'];
+			$row = new \SimpleXMLElement( $reader->readOuterXml() );
+
+			/*
+			 * The r attribute is optional in the format and some generators
+			 * leave it out. Keyed on it alone, every such row was row 0 and
+			 * only the sheet's last line survived. Without it, a row is the
+			 * one after the previous.
+			 */
+			$number = isset( $row['r'] ) ? (int) $row['r'] : $number + 1;
 
 			if ( null === $map ) {
 				$header = self::cell_values( $row, $strings, null );
@@ -213,11 +221,13 @@ class Reader {
 	 * @return array<string, string> Column letter => value.
 	 */
 	private static function cell_values( \SimpleXMLElement $row, array $strings, ?array $letters ): array {
-		$cells = array();
+		$cells  = array();
+		$column = 0;
 
 		foreach ( $row->c as $cell ) {
-			$ref    = (string) $cell['r'];
-			$letter = preg_replace( '/\d/', '', $ref );
+			// A cell without its r reference is the column after the previous one.
+			$column = isset( $cell['r'] ) ? self::column_number( preg_replace( '/\d/', '', (string) $cell['r'] ) ) : $column + 1;
+			$letter = self::column_letter( $column );
 
 			if ( null !== $letters && ! in_array( $letter, $letters, true ) ) {
 				continue;
@@ -238,6 +248,30 @@ class Reader {
 		}
 
 		return $cells;
+	}
+
+	/** "A" => 1, "AA" => 27. */
+	private static function column_number( string $letters ): int {
+		$number = 0;
+
+		foreach ( str_split( strtoupper( $letters ) ) as $char ) {
+			$number = $number * 26 + ( ord( $char ) - 64 );
+		}
+
+		return $number;
+	}
+
+	/** 1 => "A", 27 => "AA". */
+	private static function column_letter( int $number ): string {
+		$letters = '';
+
+		while ( $number > 0 ) {
+			$mod     = ( $number - 1 ) % 26;
+			$letters = chr( 65 + $mod ) . $letters;
+			$number  = intdiv( $number - $mod - 1, 26 );
+		}
+
+		return $letters;
 	}
 
 	/**

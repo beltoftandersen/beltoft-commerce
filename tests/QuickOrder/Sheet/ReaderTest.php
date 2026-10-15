@@ -169,4 +169,37 @@ class ReaderTest extends WP_UnitTestCase {
 			unlink( $file );
 		}
 	}
+
+	/**
+	 * Rows and cells without their optional r attribute, as some generators
+	 * write them: every row used to land on key 0, leaving only the last.
+	 */
+	public function test_rows_and_cells_without_references_are_all_read() {
+		$cell = static fn( $v ) => is_int( $v ) ? '<c><v>' . $v . '</v></c>' : '<c t="inlineStr"><is><t>' . $v . '</t></is></c>';
+		$row  = static fn( array $vs ) => '<row>' . implode( '', array_map( $cell, $vs ) ) . '</row>';
+
+		$xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+			. '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'
+			. $row( array( 'SKU', 'Produto', 'Quantidade' ) )
+			. $row( array( 'A-1', 'Um', 2 ) )
+			. $row( array( 'B-2', 'Dois', 5 ) )
+			. '</sheetData></worksheet>';
+
+		$file = tempnam( sys_get_temp_dir(), 'qo' );
+		$zip  = new ZipArchive();
+		$zip->open( $file, ZipArchive::OVERWRITE );
+		$zip->addFromString( 'xl/worksheets/sheet1.xml', $xml );
+		$zip->close();
+
+		$lines = Reader::read( $file );
+		unlink( $file );
+
+		$this->assertSame(
+			array(
+				array( 'code' => 'A-1', 'quantity' => 2 ),
+				array( 'code' => 'B-2', 'quantity' => 5 ),
+			),
+			$lines
+		);
+	}
 }

@@ -59,6 +59,34 @@ class CatalogAudience {
 		foreach ( array( 'set_object_terms', 'woocommerce_update_product', 'woocommerce_new_product', 'clean_post_cache' ) as $hook ) {
 			add_action( $hook, array( __CLASS__, 'flush' ) );
 		}
+
+		/*
+		 * Who is asking changes the answer too: a role change, or the
+		 * per-user group override, moves an account between catalogues; a
+		 * group price written as plain meta (as imports do) changes what it
+		 * may buy. Each answer is keyed user:product, so these also clear it.
+		 */
+		foreach ( array( 'set_user_role', 'add_user_role', 'remove_user_role' ) as $hook ) {
+			add_action( $hook, array( __CLASS__, 'flush' ) );
+		}
+
+		foreach ( array( 'added', 'updated', 'deleted' ) as $verb ) {
+			add_action( "{$verb}_user_meta", array( __CLASS__, 'flush_on_meta' ), 10, 3 );
+			add_action( "{$verb}_post_meta", array( __CLASS__, 'flush_on_meta' ), 10, 3 );
+		}
+	}
+
+	/**
+	 * @param mixed  $meta_id
+	 * @param mixed  $object_id
+	 * @param string $meta_key
+	 */
+	public static function flush_on_meta( $meta_id, $object_id, $meta_key ): void {
+		$key = (string) $meta_key;
+
+		if ( PricingContext::OVERRIDE_META === $key || 0 === strpos( $key, '_price_group_' ) || 0 === strpos( $key, '_sale_price_' ) ) {
+			self::flush();
+		}
 	}
 
 	public static function flush(): void {

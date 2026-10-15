@@ -103,4 +103,22 @@ class CatalogAudienceTest extends WP_UnitTestCase {
 
 		wp_set_current_user( 0 );
 	}
+
+	/** A role change in the same process is answered afresh, not from memory. */
+	public function test_a_role_change_is_seen_at_once() {
+		$this->assertFalse( CatalogAudience::can_view( $this->pending_user, $this->b2b_only ) );
+
+		get_userdata( $this->pending_user )->set_role( 'b2b_customer' );
+
+		$this->assertTrue( CatalogAudience::can_view( $this->pending_user, $this->b2b_only ) );
+	}
+
+	/** A group price written as plain meta, as imports do, is seen at once. */
+	public function test_a_group_price_written_as_meta_is_seen_at_once() {
+		$this->assertFalse( CatalogAudience::can_purchase( $this->b2b_user, $this->both_unpriced ) );
+
+		update_post_meta( $this->both_unpriced, '_price_group_b2b_standard', '55' );
+
+		$this->assertTrue( CatalogAudience::can_purchase( $this->b2b_user, $this->both_unpriced ) );
+	}
 }

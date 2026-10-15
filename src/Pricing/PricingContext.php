@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
  */
 class PricingContext {
 
-	private const OVERRIDE_META = '_beltoft_pricing_group';
+	public const OVERRIDE_META = '_beltoft_pricing_group';
 
 	public static function current(): string {
 		return self::for_user( get_current_user_id() );
