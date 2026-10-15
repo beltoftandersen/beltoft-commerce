@@ -12,6 +12,10 @@
 
 define( 'BELTOFT_SITE_PLUGINS', '/var/www/staging.mindthetrash.pt/wp-content/plugins' );
 
+// The hostnames, as wp-config.php sets them per environment (Support\Hosts).
+define( 'BELTOFT_B2B_HOST', 'b2b.staging.mindthetrash.pt' );
+define( 'BELTOFT_RETAIL_HOST', 'staging.mindthetrash.pt' );
+
 $_tests_dir = getenv( 'WP_TESTS_DIR' ) ?: '/tmp/wordpress-tests-lib';
 
 require_once $_tests_dir . '/includes/functions.php';

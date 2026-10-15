@@ -57,8 +57,9 @@ class HostCondition {
 			return Hosts::is_b2b_host();
 		}
 
+		// The retail host itself; another host the install answers on is neither.
 		if ( 'retail' === $value ) {
-			return ! Hosts::is_b2b_host();
+			return Hosts::is_retail_host();
 		}
 
 		return false;

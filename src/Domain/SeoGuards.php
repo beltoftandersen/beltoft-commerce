@@ -55,7 +55,9 @@ class SeoGuards {
 	}
 
 	public static function replace_default_robots( $output, $public ) {
-		if ( Hosts::is_b2b_host() ) {
+		// The retail host's rules, on the retail host only - not on every
+		// host that is merely not the trade one.
+		if ( ! Hosts::is_retail_host() ) {
 			return $output;
 		}
 

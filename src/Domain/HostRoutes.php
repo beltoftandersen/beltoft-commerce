@@ -115,7 +115,8 @@ class HostRoutes {
 	}
 
 	public static function should_redirect( string $path, bool $is_bricks_builder = false ): bool {
-		if ( Hosts::is_b2b_host() ) {
+		// No trade host configured: these pages have nowhere to go.
+		if ( Hosts::is_b2b_host() || ! Hosts::is_b2b_configured() ) {
 			return false;
 		}
 
@@ -208,9 +209,15 @@ class HostRoutes {
 			return;
 		}
 
+		/*
+		 * The query string goes along: /entrar/?redirect_to= and the account
+		 * links that carry a key lost theirs here and landed on the bare page.
+		 */
+		$query = wp_parse_url( $request_uri, PHP_URL_QUERY );
+
 		// wp_safe_redirect() is pluggable and not loaded this early, and the
 		// target is a different host, which it would reject in any case.
-		header( 'Location: https://' . Hosts::b2b() . $path, true, 302 );
+		header( 'Location: https://' . Hosts::b2b() . $path . ( is_string( $query ) && '' !== $query ? '?' . $query : '' ), true, 302 );
 		exit;
 	}
 }

@@ -126,7 +126,26 @@ class Plugin {
 
 		if ( is_admin() ) {
 			Admin\PriceFields::register();
+
+			if ( ! Support\Hosts::is_b2b_configured() ) {
+				add_action( 'admin_notices', array( __CLASS__, 'needs_b2b_host' ) );
+			}
 		}
+	}
+
+	/** The trade host is set in wp-config.php; without it there is no trade site. */
+	public static function needs_b2b_host(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		printf(
+			'<div class="notice notice-warning"><p>%s</p></div>',
+			wp_kses(
+				__( 'Beltoft Commerce has no trade site: set its hostname with <code>define( \'BELTOFT_B2B_HOST\', \'b2b.example.com\' );</code> in wp-config.php.', 'beltoft-commerce' ),
+				array( 'code' => array() )
+			)
+		);
 	}
 
 	/**

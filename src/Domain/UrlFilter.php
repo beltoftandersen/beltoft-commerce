@@ -69,19 +69,13 @@ class UrlFilter {
 	/**
 	 * The stored home URL, whatever host this request happens to be on.
 	 *
-	 * Reads through its own suspension rather than around it, so callers get
-	 * the canonical value without having to know this filter exists. The
-	 * previous state is restored rather than cleared, because this is called
-	 * from inside queue processing as often as outside it.
+	 * Read past every option_home filter, not only this one: it used to
+	 * suspend just its own, and on any other host another plugin's filter
+	 * still rewrote the value to that host - which consumers of this (the
+	 * webhook source header, cache keys) took for the retail address.
 	 */
 	public static function canonical(): string {
-		$was = self::$suspended;
-
-		self::$suspended = true;
-		$home            = (string) get_option( 'home' );
-		self::$suspended = $was;
-
-		return trailingslashit( $home );
+		return trailingslashit( Hosts::stored_home() );
 	}
 
 	public static function filter( $value ) {
