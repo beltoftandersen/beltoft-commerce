@@ -7,6 +7,13 @@
  */
 class QueryResultCacheTest extends WP_UnitTestCase {
 
+	/** The tests below put the request on the trade host; it must not outlive them. */
+	public function tearDown(): void {
+		unset( $_SERVER['HTTP_HOST'] );
+		wp_set_current_user( 0 );
+		parent::tearDown();
+	}
+
 	private function version(): string {
 		return (string) get_option( 'beltoft_commerce_rows_version', '' );
 	}
@@ -106,8 +113,5 @@ class QueryResultCacheTest extends WP_UnitTestCase {
 		) as $field => $value ) {
 			$this->assertNotSame( $base, $this->key( $this->body( array( $field => $value ) ) ), $field );
 		}
-
-		unset( $_SERVER['HTTP_HOST'] );
-		wp_set_current_user( 0 );
 	}
 }

@@ -45,17 +45,33 @@ class TaxBasisTest extends WP_UnitTestCase {
 		$this->assertFalse( 'yes' === get_option( 'woocommerce_prices_include_tax' ) );
 	}
 
+	/**
+	 * With a 23% rate in force, the group price resolved for the product (not
+	 * one passed in) is its net price: 40, not 40/1.23. Without TaxBasis the
+	 * same call strips IVA out of it, which the retail half asserts.
+	 */
 	public function test_a_b2b_price_is_charged_as_entered() {
-		$user = $this->factory->user->create( array( 'role' => 'b2b_customer' ) );
-		wp_set_current_user( $user );
+		WC_Tax::_insert_tax_rate( array(
+			'tax_rate_country'  => '',
+			'tax_rate'          => '23.0000',
+			'tax_rate_name'     => 'IVA',
+			'tax_rate_priority' => 1,
+			'tax_rate_order'    => 1,
+			'tax_rate_class'    => '',
+		) );
 
 		$product = new WC_Product_Simple();
 		$product->set_regular_price( '100' );
 		$product->set_status( 'publish' );
+		$product->set_tax_status( 'taxable' );
 		$product->save();
 		update_post_meta( $product->get_id(), '_price_group_b2b_standard', '40' );
 
-		// The stored 40 is the net price, so the line is 40 — not 40/1.23.
-		$this->assertSame( 40.0, (float) wc_get_price_excluding_tax( wc_get_product( $product->get_id() ), array( 'price' => '40' ) ) );
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'b2b_customer' ) ) );
+		$this->assertEqualsWithDelta( 40.0, (float) wc_get_price_excluding_tax( wc_get_product( $product->get_id() ) ), 0.001 );
+
+		// Counter-check: retail's 100 is gross, so its net is 100/1.23.
+		wp_set_current_user( 0 );
+		$this->assertEqualsWithDelta( 81.30, (float) wc_get_price_excluding_tax( wc_get_product( $product->get_id() ) ), 0.01 );
 	}
 }
