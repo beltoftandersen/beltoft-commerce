@@ -104,45 +104,9 @@ class QueryFilter {
 		$query->set( 'tax_query', $tax_query );
 	}
 
-	/**
-	 * Whether any B2B-only product is PUBLISHED.
-	 *
-	 * The retail clause exists to hide B2B-only products from retail
-	 * listings. A B2B-only product that is `private` is already absent from
-	 * every published listing, so the clause would hide nothing — while
-	 * still adding a taxonomy join that changes result ordering for
-	 * products with equal sort values.
-	 *
-	 * That is not hypothetical: with nine private B2B-only products and
-	 * none published, the join silently reordered two retail category
-	 * pages. §2.7 requires retail queries to be untouched, so the clause is
-	 * added only when it actually has something to exclude. It starts
-	 * applying by itself the moment a B2B-only product is published.
-	 *
-	 * Deliberately not memoised in a static: publish status changes within
-	 * a request, and a stale answer either reorders retail pages or leaks a
-	 * B2B-only product into them.
-	 */
+	/** See CatalogAudience::published_b2b_only_exist(). */
 	private static function published_b2b_only_products_exist(): bool {
-		$ids = get_posts( array(
-			'post_type'              => 'product',
-			'post_status'            => 'publish',
-			'fields'                 => 'ids',
-			'posts_per_page'         => 1,
-			'no_found_rows'          => true,
-			'update_post_meta_cache' => false,
-			'update_post_term_cache' => false,
-			'beltoft_bypass_audience' => true,
-			'tax_query'              => array(
-				array(
-					'taxonomy' => Taxonomy::TAXONOMY,
-					'field'    => 'slug',
-					'terms'    => array( Taxonomy::B2B ),
-				),
-			),
-		) );
-
-		return ! empty( $ids );
+		return CatalogAudience::published_b2b_only_exist();
 	}
 
 	/**

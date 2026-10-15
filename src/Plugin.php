@@ -72,6 +72,7 @@ class Plugin {
 			add_action( $trigger, array( __CLASS__, 'ensure_mailer_loaded' ), 5 );
 		}
 
+		Pricing\PricingContext::register();
 		Hooks\Price::register();
 		Hooks\VariationPrice::register();
 		Pricing\SaleScheduler::register();

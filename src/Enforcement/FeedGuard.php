@@ -44,7 +44,7 @@ class FeedGuard {
 		 */
 		// Staff reading through the REST API or admin (an ERP round trip
 		// writing upsells back) get them all; hiding some there deletes them.
-		if ( ! is_array( $ids ) || CatalogAudience::serves_staff() ) {
+		if ( ! is_array( $ids ) || ! $ids || CatalogAudience::serves_staff() || ! CatalogAudience::may_hide_any() ) {
 			return $ids;
 		}
 

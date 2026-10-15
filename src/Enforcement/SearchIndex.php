@@ -26,6 +26,11 @@ class SearchIndex {
 	 * retail assumed retail saw everything.
 	 */
 	public static function filter_hits( $hits ) {
+		// Retail with no published B2B-only product: nothing to take out.
+		if ( ! CatalogAudience::may_hide_any() ) {
+			return $hits;
+		}
+
 		if ( ! is_array( $hits ) || ! isset( $hits[0] ) || ! is_array( $hits[0] ) ) {
 			return $hits;
 		}
