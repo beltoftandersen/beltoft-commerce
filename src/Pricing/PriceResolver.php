@@ -37,8 +37,14 @@ class PriceResolver {
 	 * window this is null even though a value is stored.
 	 */
 	public static function sale( \WC_Product $product, string $group ): ?string {
+		/*
+		 * WooCommerce's own sale, with WooCommerce's own schedule: a sale price
+		 * entered for next month is not this month's price. Returning the bare
+		 * stored value priced the order sheet's "your price" column at a sale
+		 * that had not started.
+		 */
 		if ( Registry::inherits_prices( $group ) ) {
-			return self::clean( $product->get_sale_price( 'edit' ) );
+			return $product->is_on_sale( 'edit' ) ? self::clean( $product->get_sale_price( 'edit' ) ) : null;
 		}
 
 		$value = self::clean( get_post_meta( $product->get_id(), Registry::sale_key( $group ), true ) );
@@ -64,15 +70,21 @@ class PriceResolver {
 	/**
 	 * Group sale price inside its window, else group regular price, else
 	 * null — fail closed.
+	 *
+	 * A sale price that is not below the regular price is not a sale and is
+	 * not charged - the same rule WooCommerce applies to its own. A mistyped
+	 * sale price above the regular one used to be charged, with no sale badge
+	 * to show anything had happened, since is_on_sale() already said no.
 	 */
 	public static function resolve( \WC_Product $product, string $group ): ?string {
-		$sale = self::sale( $product, $group );
+		$sale    = self::sale( $product, $group );
+		$regular = self::regular( $product, $group );
 
-		if ( null !== $sale ) {
+		if ( null !== $sale && ( null === $regular || (float) $sale < (float) $regular ) ) {
 			return $sale;
 		}
 
-		return self::regular( $product, $group );
+		return $regular;
 	}
 
 	public static function has_price( \WC_Product $product, string $group ): bool {

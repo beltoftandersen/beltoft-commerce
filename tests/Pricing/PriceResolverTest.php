@@ -130,4 +130,31 @@ class PriceResolverTest extends WP_UnitTestCase {
 
 		$this->assertSame( '0', PriceResolver::resolve( $product, 'b2b_standard' ) );
 	}
+
+	/** ...and is not charged either: the regular price is. */
+	public function test_a_higher_sale_price_is_not_charged() {
+		$product = $this->product_with( array(
+			'_price_group_b2b_standard'      => '60',
+			'_sale_price_group_b2b_standard' => '80',
+		) );
+
+		$this->assertSame( '60', PriceResolver::resolve( $product, 'b2b_standard' ) );
+	}
+
+	/** Retail's own sale follows WooCommerce's schedule: not before it starts. */
+	public function test_an_inherited_sale_waits_for_its_start_date() {
+		$product = new WC_Product_Simple();
+		$product->set_regular_price( '100' );
+		$product->set_sale_price( '70' );
+		$product->set_date_on_sale_from( gmdate( 'Y-m-d', time() + 10 * DAY_IN_SECONDS ) );
+		$product->save();
+		$product = wc_get_product( $product->get_id() );
+
+		$this->assertSame( '100', PriceResolver::resolve( $product, Registry::retail_slug() ) );
+
+		$product->set_date_on_sale_from( '' );
+		$product->save();
+
+		$this->assertSame( '70', PriceResolver::resolve( wc_get_product( $product->get_id() ), Registry::retail_slug() ) );
+	}
 }
