@@ -2,6 +2,8 @@
 
 namespace BeltoftCommerce\Vat;
 
+use BeltoftCommerce\Support\Hosts;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -102,6 +104,19 @@ class Exemption {
 	public static function is_exempt(): bool {
 		if ( null !== self::$decided ) {
 			return self::$decided;
+		}
+
+		/*
+		 * The trade host only, where the VAT field is offered, checked and
+		 * recorded. Elsewhere number() fell back to the number stored on the
+		 * account, so a partner - or an applicant never approved - buying on
+		 * the retail site was zero-rated with no check at that checkout and
+		 * no evidence on the order.
+		 */
+		if ( ! Hosts::is_b2b_host() ) {
+			self::$decided = false;
+
+			return false;
 		}
 
 		$number = self::number();
@@ -215,6 +230,15 @@ class Exemption {
 		}
 
 		return WC()->customer ? (string) WC()->customer->get_billing_country() : '';
+	}
+
+	/**
+	 * Forget this request's decision. Field::validate() calls this after it
+	 * asks VIES at checkout, so totals worked out afterwards use that answer
+	 * rather than one memoised before the cache was warm.
+	 */
+	public static function forget(): void {
+		self::$decided = null;
 	}
 
 	/** Test seam. */

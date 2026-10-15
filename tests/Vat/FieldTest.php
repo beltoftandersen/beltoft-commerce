@@ -37,4 +37,34 @@ class FieldTest extends WP_UnitTestCase {
 		$this->assertCount( 1, $errors );
 		$this->assertStringContainsString( 'billing', $errors[0]['notice'] );
 	}
+
+	/** The same number typed another way at checkout keeps its VIES proof. */
+	public function test_the_same_number_in_another_format_keeps_its_proof() {
+		$user = self::factory()->user->create( array( 'role' => 'customer' ) );
+		update_user_meta( $user, Field::META_KEY, 'DE123456789' );
+		update_user_meta( $user, '_vat_check_status', 'valid' );
+		update_user_meta( $user, '_vies_request_identifier', 'WAPI-KEEP' );
+
+		$_POST['beltoft_vat_number'] = 'de 123 456 789';
+		$customer                    = new WC_Customer( $user );
+		Field::save_to_customer( $customer, array() );
+		$customer->save();
+
+		$this->assertSame( 'DE123456789', get_user_meta( $user, Field::META_KEY, true ) );
+		$this->assertSame( 'WAPI-KEEP', get_user_meta( $user, '_vies_request_identifier', true ) );
+	}
+
+	public function test_a_different_number_clears_the_proof() {
+		$user = self::factory()->user->create( array( 'role' => 'customer' ) );
+		update_user_meta( $user, Field::META_KEY, 'DE123456789' );
+		update_user_meta( $user, '_vies_request_identifier', 'WAPI-OLD' );
+
+		$_POST['beltoft_vat_number'] = 'DE999999999';
+		$customer                    = new WC_Customer( $user );
+		Field::save_to_customer( $customer, array() );
+		$customer->save();
+
+		$this->assertSame( 'DE999999999', get_user_meta( $user, Field::META_KEY, true ) );
+		$this->assertSame( '', get_user_meta( $user, '_vies_request_identifier', true ) );
+	}
 }

@@ -2,11 +2,15 @@
 
 use BeltoftCommerce\Pricing\Roles;
 use BeltoftCommerce\Vat\Exemption;
+use BeltoftCommerce\Support\Hosts;
 use BeltoftCommerce\Vat\Field;
 
 class ExemptionTest extends WP_UnitTestCase {
 
 	private int $user;
+
+	/** WC()->customer as it was, put back after the tests replace it. */
+	private $customer;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -16,6 +20,9 @@ class ExemptionTest extends WP_UnitTestCase {
 		wp_set_current_user( $this->user );
 		Exemption::reset();
 		unset( $_POST['beltoft_vat_number'], $_POST['billing_country'] );
+		// Reverse charge is a trade-site decision; see the retail test below.
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+		$this->customer       = WC()->customer;
 	}
 
 	public function tearDown(): void {
@@ -23,6 +30,8 @@ class ExemptionTest extends WP_UnitTestCase {
 		unset( $_POST['beltoft_vat_number'], $_POST['billing_country'] );
 		Exemption::reset();
 		wp_set_current_user( 0 );
+		WC()->customer = $this->customer;
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -232,5 +241,44 @@ class ExemptionTest extends WP_UnitTestCase {
 		Exemption::refresh( $this->user );
 		$this->assertSame( $before, get_user_meta( $this->user, '_vies_request_date', true ) );
 		$this->assertSame( 'valid', get_user_meta( $this->user, '_vat_check_status', true ) );
+	}
+
+	/**
+	 * The retail site has no VAT field, no check and no evidence, so the
+	 * account's number must not zero-rate a purchase there.
+	 */
+	public function test_a_valid_account_number_is_not_exempt_on_the_retail_host() {
+		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
+		$this->cache_vies( 'ES', 'B12345678', 'valid' );
+		$this->billing_in( 'ES' );
+
+		$_SERVER['HTTP_HOST'] = Hosts::retail();
+
+		$this->assertFalse( Exemption::is_exempt() );
+	}
+
+	public function test_the_lapsed_cache_fallback_does_not_apply_on_the_retail_host() {
+		$this->forbid_http();
+		$this->account_evidence( 'DK40817921', 'valid', 2 );
+		$this->billing_in( 'DK' );
+
+		$_SERVER['HTTP_HOST'] = Hosts::retail();
+
+		$this->assertFalse( Exemption::is_exempt() );
+	}
+
+	/** The checkout's own VIES check is what the totals after it use. */
+	public function test_forget_drops_the_memoised_answer() {
+		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
+		$this->billing_in( 'ES' );
+		$this->forbid_http();
+
+		$this->assertFalse( Exemption::is_exempt(), 'nothing cached yet' );
+
+		$this->cache_vies( 'ES', 'B12345678', 'valid' );
+		$this->assertFalse( Exemption::is_exempt(), 'memoised' );
+
+		Exemption::forget();
+		$this->assertTrue( Exemption::is_exempt() );
 	}
 }

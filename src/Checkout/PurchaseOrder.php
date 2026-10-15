@@ -72,7 +72,9 @@ class PurchaseOrder {
 	}
 
 	public static function attach( $order, $data ): void {
-		if ( ! $order instanceof \WC_Order ) {
+		// Only where the field is offered: a reference posted to any other
+		// checkout would otherwise be printed on that order and its emails.
+		if ( ! $order instanceof \WC_Order || ! self::applies() ) {
 			return;
 		}
 

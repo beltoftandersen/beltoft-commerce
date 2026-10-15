@@ -77,6 +77,11 @@ class Field {
 		return isset( $_POST['beltoft_vat_number'] );
 	}
 
+	/** A number as compared: letters and digits only, upper case. */
+	public static function normalise( string $number ): string {
+		return strtoupper( (string) preg_replace( '/[^A-Z0-9]/i', '', $number ) );
+	}
+
 	public static function posted(): string {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WooCommerce verifies the checkout nonce before this runs.
 		return isset( $_POST['beltoft_vat_number'] ) ? sanitize_text_field( wp_unslash( $_POST['beltoft_vat_number'] ) ) : '';
@@ -98,6 +103,9 @@ class Field {
 
 		// Revalidated at each checkout rather than trusted from last time.
 		$decision = Validator::decide( $number, $country );
+
+		// That call warmed the VIES cache; the totals still to come should see it.
+		Exemption::forget();
 
 		if ( 'country_mismatch' === $decision->status ) {
 			wc_add_notice(
@@ -138,9 +146,19 @@ class Field {
 		$user_id  = (int) $customer->get_id();
 		$previous = (string) $customer->get_meta( self::META_KEY );
 
+		/*
+		 * The same number written another way ("de 123456789" for the stored
+		 * DE123456789) is not a change: comparing the raw strings wiped the
+		 * proof of a number that had been confirmed, and charged IVA until it
+		 * was confirmed again.
+		 */
+		if ( self::normalise( $number ) === self::normalise( $previous ) ) {
+			return;
+		}
+
 		$customer->update_meta_data( self::META_KEY, $number );
 
-		if ( ! $user_id || $number === $previous ) {
+		if ( ! $user_id ) {
 			return;
 		}
 
