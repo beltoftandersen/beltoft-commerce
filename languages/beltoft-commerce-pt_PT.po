@@ -1,5 +1,3 @@
-# Copyright (C) 2026 beltoft.net
-# This file is distributed under the same license as the Beltoft Commerce plugin.
 msgid ""
 msgstr ""
 "Project-Id-Version: Beltoft Commerce 0.1.0\n"
@@ -8,11 +6,11 @@ msgstr ""
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
-"Language: pt_PT\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2026-10-14T10:03:33+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Language: pt_PT\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: beltoft-commerce\n"
 
@@ -174,7 +172,7 @@ msgstr "Número da nota de encomenda"
 msgid "If your company uses an internal reference, enter it here. It appears on the confirmation and on the order."
 msgstr "Se a sua empresa usa uma referência interna, indique-a aqui. Aparece na confirmação e na encomenda."
 
-#: src/Domain/LoginGate.php:147
+#: src/Domain/LoginGate.php:166
 msgid "Sign in to continue."
 msgstr "Inicie sessão para continuar."
 
@@ -262,7 +260,7 @@ msgstr "\"%s\" já não está disponível na sua conta e foi removido."
 msgid "A product"
 msgstr "Um produto"
 
-#: src/Enforcement/StoreApiGuard.php:73
+#: src/Enforcement/StoreApiGuard.php:119
 msgid "Invalid product ID."
 msgstr "ID de produto inválido."
 
@@ -286,14 +284,14 @@ msgid "Sold out"
 msgstr "Esgotado"
 
 #. translators: %d: number of distinct GTINs across a product's variations.
-#: src/Frontend/ResellerTags.php:380
+#: src/Frontend/ResellerTags.php:308
 #, php-format
 msgid "%d code"
 msgid_plural "%d codes"
 msgstr[0] "%d código"
 msgstr[1] "%d códigos"
 
-#: src/Frontend/ResellerTags.php:391
+#: src/Frontend/ResellerTags.php:319
 msgid "Free"
 msgstr "Grátis"
 
@@ -425,6 +423,7 @@ msgstr "Referência desconhecida."
 msgid "Out of stock at the moment."
 msgstr "Sem stock de momento."
 
+#: src/Frontend/LoopQuantity.php:401
 #: src/QuickOrder/Report.php:113
 msgid "This line could not be added."
 msgstr "Não foi possível adicionar esta linha."
@@ -448,7 +447,7 @@ msgstr "A folha está danificada. Descarregue uma nova folha."
 msgid "The sheet is too large."
 msgstr "A folha é demasiado grande."
 
-#: src/QuickOrder/Sheet/Reader.php:200
+#: src/QuickOrder/Sheet/Reader.php:208
 msgid "The sheet does not have the SKU and Quantity columns. Download a new sheet."
 msgstr "A folha não tem as colunas SKU e Quantidade. Descarregue uma nova folha."
 
@@ -529,7 +528,7 @@ msgstr "Estado"
 
 #: src/Registration/Fields.php:30
 msgid "Email"
-msgstr ""
+msgstr "E-mail"
 
 #: src/Registration/Fields.php:36
 msgid "Company name"
@@ -738,7 +737,7 @@ msgstr "Eliminar esta encomenda guardada?"
 msgid "Delete"
 msgstr "Eliminar"
 
-#: src/Scanner/ScannerContext.php:95
+#: src/Scanner/ScannerContext.php:106
 msgid "The back-in-stock alert could not be saved. Please try again."
 msgstr "Não foi possível registar o aviso. Tente novamente."
 
@@ -840,25 +839,25 @@ msgstr "Deixe em branco se não tiver número de IVA. Um número de outro país 
 msgid "VAT number (NIF/VAT)"
 msgstr "Número de contribuinte (NIF/VAT)"
 
-#: src/Vat/Field.php:65
+#: src/Vat/Field.php:64
 msgid "If you have an EU VAT number, enter it here. Leave empty for a normal purchase."
 msgstr "Se tem um número de IVA da UE, introduza-o aqui. Deixe vazio para uma compra normal."
 
-#: src/Vat/Field.php:105
+#: src/Vat/Field.php:112
 msgid "This VAT number is from a different country than your billing address. Change the billing country to the VAT number's country, or leave the field empty."
 msgstr "Este número de IVA é de um país diferente do da morada de faturação. Altere o país de faturação para o país do número de IVA, ou deixe o campo vazio."
 
-#: src/Vat/Field.php:110
+#: src/Vat/Field.php:117
 msgid "The VAT number you entered could not be validated. Please correct it or leave the field empty."
 msgstr "O número de IVA introduzido não pôde ser validado. Corrija-o ou deixe o campo vazio."
 
 #. translators: %s: error detail from the VIES service
-#: src/Vat/OrderEvidence.php:63
+#: src/Vat/OrderEvidence.php:110
 #, php-format
 msgid "VAT number could not be verified: VIES was unreachable (%s). IVA has been charged and this order needs manual review."
 msgstr "Não foi possível verificar o número de IVA: o VIES está indisponível (%s). O IVA foi cobrado e esta encomenda necessita de revisão manual."
 
-#: src/Vat/OrderEvidence.php:64
+#: src/Vat/OrderEvidence.php:111
 msgid "no detail"
 msgstr "sem detalhe"
 
@@ -884,3 +883,32 @@ msgstr "Loja"
 msgid "NIF/NIPC"
 msgstr ""
 
+#. translators: %d: units in stock
+#: src/Frontend/LoopQuantity.php:398
+#, php-format
+msgid "Only %d in stock."
+msgstr "Apenas %d em stock."
+
+#. translators: %d: units in stock
+#: src/Frontend/LoopQuantity.php:400
+#, php-format
+msgid "Could not add. Only %d in stock."
+msgstr "Não foi possível adicionar. Apenas %d em stock."
+
+#: src/Plugin.php:146
+msgid "Beltoft Commerce has no trade site: set its hostname with <code>define( 'BELTOFT_B2B_HOST', 'b2b.example.com' );</code> in wp-config.php."
+msgstr "O Beltoft Commerce não tem site de revenda: defina o nome do anfitrião com <code>define( 'BELTOFT_B2B_HOST', 'b2b.example.com' );</code> no wp-config.php."
+
+#. translators: 1: date of the account's VIES check, 2: VIES consultation number
+#: src/Vat/OrderEvidence.php:92
+#, php-format
+msgid "VIES was unreachable at checkout. Reverse charge was applied on the account's VIES confirmation of %1$s (consultation %2$s)."
+msgstr "O VIES estava indisponível na finalização da compra. A autoliquidação foi aplicada com base na confirmação VIES da conta de %1$s (consulta %2$s)."
+
+#: src/Vat/OrderEvidence.php:93
+msgid "unknown date"
+msgstr "data desconhecida"
+
+#: src/Vat/OrderEvidence.php:94
+msgid "none"
+msgstr "nenhuma"
