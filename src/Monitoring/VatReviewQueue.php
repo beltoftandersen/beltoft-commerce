@@ -13,14 +13,19 @@ defined( 'ABSPATH' ) || exit;
  * queue. The operational target is zero unresolved `unverified` orders at
  * month end.
  *
- * HPOS was deliberately not enabled, so orders live in wp_posts and this
- * queries through the WooCommerce order API rather than wp_wc_orders_meta.
+ * Queried through the WooCommerce order API, so it works whether orders live
+ * in wp_posts or the HPOS tables - staging runs HPOS, production does not -
+ * and the column is added to both order screens for the same reason. With
+ * only the wp_posts hooks the column never appeared under HPOS, and nothing
+ * else showed the queue.
  */
 class VatReviewQueue {
 
 	public static function register(): void {
 		add_filter( 'manage_edit-shop_order_columns', array( __CLASS__, 'add_column' ) );
 		add_action( 'manage_shop_order_posts_custom_column', array( __CLASS__, 'render_column' ), 10, 2 );
+		add_filter( 'manage_woocommerce_page_wc-orders_columns', array( __CLASS__, 'add_column' ) );
+		add_action( 'manage_woocommerce_page_wc-orders_custom_column', array( __CLASS__, 'render_column' ), 10, 2 );
 	}
 
 	/**
@@ -78,12 +83,16 @@ class VatReviewQueue {
 		return $columns;
 	}
 
-	public static function render_column( $column, $post_id ): void {
+	/**
+	 * @param string             $column
+	 * @param int|\WC_Order $order_or_id An id on the wp_posts screen, the order under HPOS.
+	 */
+	public static function render_column( $column, $order_or_id ): void {
 		if ( 'beltoft_vat' !== $column ) {
 			return;
 		}
 
-		$order = wc_get_order( $post_id );
+		$order = $order_or_id instanceof \WC_Order ? $order_or_id : wc_get_order( $order_or_id );
 
 		if ( ! $order ) {
 			return;

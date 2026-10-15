@@ -74,4 +74,17 @@ class VatReviewQueueTest extends WP_UnitTestCase {
 
 		$this->assertSame( 0, VatReviewQueue::month_end_report( gmdate( 'Y-m' ) )['count'] );
 	}
+
+	/** The column is on the HPOS orders screen too, which passes the order itself. */
+	public function test_the_column_shows_on_the_hpos_screen() {
+		$this->assertArrayHasKey( 'beltoft_vat', apply_filters( 'manage_woocommerce_page_wc-orders_columns', array() ) );
+
+		$order = new WC_Order();
+		$order->update_meta_data( '_vat_check_status', 'unverified' );
+		$order->save();
+
+		ob_start();
+		do_action( 'manage_woocommerce_page_wc-orders_custom_column', 'beltoft_vat', $order );
+		$this->assertStringContainsString( 'status-on-hold', (string) ob_get_clean() );
+	}
 }

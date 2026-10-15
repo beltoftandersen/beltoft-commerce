@@ -63,7 +63,7 @@ class QueryResultCacheTest extends WP_UnitTestCase {
 			'infinitePage'         => 1,
 			'selectedFilters'      => array(),
 			'afTags'               => array(),
-			'nonce'                => 'aaaa',
+			'nonce'                => wp_create_nonce( 'bricks-nonce' ),
 			'baseUrl'              => 'https://b2b.example/loja/',
 			'lang'                 => false,
 			'mainQueryId'          => false,
@@ -83,13 +83,39 @@ class QueryResultCacheTest extends WP_UnitTestCase {
 		return $key->invoke( null, $request );
 	}
 
+	/** A second valid nonce: the one issued in the previous tick, which WordPress still accepts. */
+	private function previous_tick_nonce(): string {
+		$tick  = wp_nonce_tick( 'bricks-nonce' ) - 1;
+		$nonce = substr( wp_hash( $tick . '|bricks-nonce|' . get_current_user_id() . '|' . wp_get_session_token(), 'nonce' ), -12, 10 );
+
+		$this->assertSame( 2, wp_verify_nonce( $nonce, 'bricks-nonce' ), 'fixture' );
+
+		return $nonce;
+	}
+
+	/** Without Bricks' nonce there is no cache: a hit would skip its check. */
+	public function test_a_request_without_a_valid_nonce_is_not_cached() {
+		$_SERVER['HTTP_HOST'] = BeltoftCommerce\Support\Hosts::b2b();
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'b2b_customer' ) ) );
+
+		$this->assertSame( '', $this->key( $this->body( array( 'nonce' => 'forged' ) ) ) );
+	}
+
+	/** Staff render rows with private products in them; those are never cached. */
+	public function test_staff_requests_are_not_cached() {
+		$_SERVER['HTTP_HOST'] = BeltoftCommerce\Support\Hosts::b2b();
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'shop_manager' ) ) );
+
+		$this->assertSame( '', $this->key( $this->body() ) );
+	}
+
 	/** The nonce is per session; keying on it would make the cache per person. */
 	public function test_requests_differing_only_in_the_nonce_share_an_entry() {
 		$_SERVER['HTTP_HOST'] = BeltoftCommerce\Support\Hosts::b2b();
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'b2b_customer' ) ) );
 
 		$this->assertNotSame( '', $this->key( $this->body() ) );
-		$this->assertSame( $this->key( $this->body() ), $this->key( $this->body( array( 'nonce' => 'bbbb' ) ) ) );
+		$this->assertSame( $this->key( $this->body() ), $this->key( $this->body( array( 'nonce' => $this->previous_tick_nonce() ) ) ) );
 	}
 
 	/**

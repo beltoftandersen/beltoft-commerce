@@ -209,6 +209,24 @@ class QueryResultCache {
 		}
 
 		/*
+		 * Not for anyone who sees more than their group does. The rows are
+		 * rendered with the requester's capabilities, and the query includes
+		 * private products for staff who may read them: cached under the
+		 * group key, a shop manager's rows reached customers in that group.
+		 */
+		if ( current_user_can( 'read_private_products' ) ) {
+			return '';
+		}
+
+		/*
+		 * A hit is answered before Bricks runs its own permission check, which
+		 * is this nonce; so it is checked here.
+		 */
+		if ( ! wp_verify_nonce( (string) ( $body['nonce'] ?? '' ), 'bricks-nonce' ) ) {
+			return '';
+		}
+
+		/*
 		 * The whole request, except the nonce. It used to be a list of the
 		 * fields known to matter, and Bricks sends more than that list held:
 		 * urlParams (element conditions, {url_parameter} tags), afTags,
