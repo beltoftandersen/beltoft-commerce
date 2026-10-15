@@ -55,7 +55,6 @@ class QueryResultCache {
 			'woocommerce_new_product',
 			'woocommerce_variation_set_stock',
 			'woocommerce_product_set_stock',
-			'set_object_terms',
 			// The rows carry group prices. They change by meta write (imports
 			// never save the product) and when a group sale opens or closes;
 			// SaleScheduler announces both here.
@@ -63,10 +62,50 @@ class QueryResultCache {
 		) as $hook ) {
 			add_action( $hook, array( __CLASS__, 'bump' ) );
 		}
+
+		// Terms: only a product's. This fired for every post, order and menu
+		// item saved anywhere on the site, each one an options-table write.
+		add_action( 'set_object_terms', array( __CLASS__, 'bump_on_terms' ), 10, 4 );
 	}
 
+	/** Whether this request changed something the rows show. */
+	private static bool $dirty = false;
+
+	/**
+	 * Mark the rows stale; they are dropped once, at the end of the request.
+	 *
+	 * A product save fires several of these hooks, and a retail order fires
+	 * one per line as stock goes down - each was an options-table write. At
+	 * shutdown every change the request made is in place, so one new version
+	 * covers them all.
+	 */
 	public static function bump(): void {
+		if ( ! self::$dirty ) {
+			self::$dirty = true;
+			add_action( 'shutdown', array( __CLASS__, 'commit' ), 0 );
+		}
+	}
+
+	/** Write the new version now if anything is pending (shutdown; tests and CLI may call it). */
+	public static function commit(): void {
+		if ( ! self::$dirty ) {
+			return;
+		}
+
+		self::$dirty = false;
 		update_option( self::VERSION_OPTION, (string) ( time() . wp_rand( 100, 999 ) ), false );
+	}
+
+	/**
+	 * @param mixed  $object_id
+	 * @param mixed  $terms
+	 * @param mixed  $tt_ids
+	 * @param string $taxonomy
+	 */
+	public static function bump_on_terms( $object_id, $terms = null, $tt_ids = null, $taxonomy = '' ): void {
+		if ( in_array( get_post_type( (int) $object_id ), array( 'product', 'product_variation' ), true ) ) {
+			self::bump();
+		}
 	}
 
 	private static function version(): string {

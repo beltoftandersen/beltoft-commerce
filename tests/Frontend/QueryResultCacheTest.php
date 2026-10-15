@@ -15,6 +15,8 @@ class QueryResultCacheTest extends WP_UnitTestCase {
 	}
 
 	private function version(): string {
+		BeltoftCommerce\Frontend\QueryResultCache::commit();
+
 		return (string) get_option( 'beltoft_commerce_rows_version', '' );
 	}
 
@@ -113,5 +115,35 @@ class QueryResultCacheTest extends WP_UnitTestCase {
 		) as $field => $value ) {
 			$this->assertNotSame( $base, $this->key( $this->body( array( $field => $value ) ) ), $field );
 		}
+	}
+
+	/** A term change on a product drops the rows; on anything else it does not. */
+	public function test_only_a_products_terms_drop_the_rows() {
+		$before = $this->version();
+		wp_set_object_terms( self::factory()->post->create(), 'qualquer', 'post_tag' );
+		$this->assertSame( $before, $this->version(), 'a post' );
+
+		wp_set_object_terms( $this->product(), 'marca-x', 'product_tag' );
+		$this->assertNotSame( $before, $this->version(), 'a product' );
+	}
+
+	/** Many changes in one request are one write. */
+	public function test_changes_in_one_request_are_one_write() {
+		$writes = 0;
+		$count  = static function ( $option ) use ( &$writes ) {
+			if ( 'beltoft_commerce_rows_version' === $option ) {
+				$writes++;
+			}
+		};
+		$this->version();
+		add_action( 'updated_option', $count );
+		add_action( 'added_option', $count );
+
+		BeltoftCommerce\Frontend\QueryResultCache::bump();
+		BeltoftCommerce\Frontend\QueryResultCache::bump();
+		BeltoftCommerce\Frontend\QueryResultCache::bump();
+		BeltoftCommerce\Frontend\QueryResultCache::commit();
+
+		$this->assertSame( 1, $writes );
 	}
 }
