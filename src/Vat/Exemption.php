@@ -127,6 +127,17 @@ class Exemption {
 			return false;
 		}
 
+		/*
+		 * Reverse charge is for goods that leave Portugal. A valid Spanish
+		 * number with the goods shipped to a Portuguese address, or collected
+		 * here, is a domestic sale and is charged IVA.
+		 */
+		if ( Validator::HOME_COUNTRY === self::destination() ) {
+			self::$decided = false;
+
+			return false;
+		}
+
 		// Never remote from here: see the class docblock. capture_review()
 		// and Field::validate() are the two places allowed to ask VIES, and
 		// both run before the totals that matter.
@@ -239,6 +250,26 @@ class Exemption {
 	 */
 	public static function forget(): void {
 		self::$decided = null;
+	}
+
+	/**
+	 * Where the goods go: the shop's own country for a pickup, else the
+	 * shipping country WooCommerce holds for this customer (it updates it from
+	 * the checkout form before the totals), else the billing country.
+	 */
+	private static function destination(): string {
+		$methods = function_exists( 'WC' ) && WC()->session ? (array) WC()->session->get( 'chosen_shipping_methods', array() ) : array();
+
+		foreach ( $methods as $method ) {
+			if ( 0 === strpos( (string) $method, 'local_pickup' ) || 0 === strpos( (string) $method, 'pickup_location' ) ) {
+				return Validator::HOME_COUNTRY;
+			}
+		}
+
+		$customer = function_exists( 'WC' ) ? WC()->customer : null;
+		$shipping = $customer ? strtoupper( (string) $customer->get_shipping_country() ) : '';
+
+		return '' !== $shipping ? $shipping : strtoupper( self::country() );
 	}
 
 	/** Test seam. */

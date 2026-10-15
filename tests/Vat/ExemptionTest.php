@@ -281,4 +281,35 @@ class ExemptionTest extends WP_UnitTestCase {
 		Exemption::forget();
 		$this->assertTrue( Exemption::is_exempt() );
 	}
+
+	/** Goods that stay in Portugal are a domestic sale, whatever the number. */
+	public function test_a_portuguese_delivery_address_charges_iva() {
+		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
+		$this->cache_vies( 'ES', 'B12345678', 'valid' );
+		$this->billing_in( 'ES' );
+		WC()->customer->set_shipping_country( 'PT' );
+
+		$this->assertFalse( Exemption::is_exempt() );
+	}
+
+	public function test_a_pickup_in_the_shop_charges_iva() {
+		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
+		$this->cache_vies( 'ES', 'B12345678', 'valid' );
+		$this->billing_in( 'ES' );
+		WC()->customer->set_shipping_country( 'ES' );
+		WC()->session->set( 'chosen_shipping_methods', array( 'local_pickup:6' ) );
+
+		$this->assertFalse( Exemption::is_exempt() );
+
+		WC()->session->set( 'chosen_shipping_methods', array() );
+	}
+
+	public function test_delivery_to_the_numbers_country_is_exempt() {
+		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
+		$this->cache_vies( 'ES', 'B12345678', 'valid' );
+		$this->billing_in( 'ES' );
+		WC()->customer->set_shipping_country( 'ES' );
+
+		$this->assertTrue( Exemption::is_exempt() );
+	}
 }
