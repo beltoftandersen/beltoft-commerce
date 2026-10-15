@@ -22,6 +22,7 @@ class ScannerContextTest extends WP_UnitTestCase {
 		remove_all_filters( 'beltoft_scanner_contexts' );
 		remove_all_filters( 'beltoft_scanner_assess' );
 		remove_all_filters( 'beltoft_scanner_notify' );
+		remove_all_filters( 'bisn_email_product_url' );
 		unset( $_SERVER['HTTP_HOST'] );
 		wp_set_current_user( 0 );
 		parent::tearDown();
@@ -137,6 +138,9 @@ class ScannerContextTest extends WP_UnitTestCase {
 
 		// The handler hooks in only when the notifier exists, so register again now it does.
 		ScannerContext::register();
+
+		// "Notify me" is the trade list's, asked from the trade host.
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
 	}
 
 	private function notify( WC_Product $product, WP_User $user, int $quantity = 1 ) {
@@ -204,5 +208,65 @@ class ScannerContextTest extends WP_UnitTestCase {
 		$partner = get_userdata( self::factory()->user->create( array( 'role' => 'b2b_customer' ) ) );
 
 		$this->assertSame( 'already', apply_filters( 'beltoft_scanner_notify', 'already', $this->product( Taxonomy::BOTH ), $partner, 1 ) );
+	}
+
+	/** Another place the scanner is used is not the trade list's to answer for. */
+	public function test_notify_is_not_answered_off_the_trade_host() {
+		$this->with_notifier();
+		$partner = get_userdata( self::factory()->user->create( array( 'role' => 'b2b_customer', 'user_email' => 'parceiro4@example.com' ) ) );
+
+		$_SERVER['HTTP_HOST'] = Hosts::retail();
+
+		$this->assertNull( $this->notify( $this->product( Taxonomy::BOTH ), $partner ) );
+		$this->assertSame( array(), $this->subscriptions_for( 'parceiro4@example.com' ) );
+	}
+
+	public function test_notify_is_not_answered_for_someone_who_may_not_scan_the_list() {
+		$this->with_notifier();
+		$customer = get_userdata( self::factory()->user->create( array( 'role' => 'customer' ) ) );
+
+		$this->assertNull( $this->notify( $this->product( Taxonomy::BOTH ), $customer ) );
+	}
+
+	public function test_the_requested_quantity_is_capped() {
+		$this->with_notifier();
+		$partner = get_userdata( self::factory()->user->create( array( 'role' => 'b2b_customer', 'user_email' => 'parceiro5@example.com' ) ) );
+
+		$this->notify( $this->product( Taxonomy::BOTH ), $partner, PHP_INT_MAX );
+
+		$this->assertSame( '9999', (string) $this->subscriptions_for( 'parceiro5@example.com' )[0]['quantity_requested'] );
+	}
+
+	// --- The back-in-stock email's link ------------------------------------
+
+	private function email_to( string $address ): WC_Email {
+		WC()->mailer(); // Loads the email classes.
+		$email            = new WC_Email();
+		$email->recipient = $address;
+
+		return $email;
+	}
+
+	public function test_a_partners_email_links_to_the_trade_site() {
+		$this->with_notifier();
+		\BeltoftCommerce\Scanner\BackInStockLink::register();
+		self::factory()->user->create( array( 'role' => 'b2b_customer', 'user_email' => 'parceiro6@example.com' ) );
+		$product = $this->product( Taxonomy::BOTH );
+		$url     = 'https://' . Hosts::retail() . '/loja/produto-x/';
+
+		$this->assertSame(
+			'https://' . Hosts::b2b() . '/loja/produto-x/',
+			apply_filters( 'bisn_email_product_url', $url, $product, $this->email_to( 'parceiro6@example.com' ) )
+		);
+	}
+
+	public function test_a_retail_subscribers_email_keeps_the_retail_link() {
+		$this->with_notifier();
+		\BeltoftCommerce\Scanner\BackInStockLink::register();
+		self::factory()->user->create( array( 'role' => 'customer', 'user_email' => 'cliente@example.com' ) );
+		$url = 'https://' . Hosts::retail() . '/loja/produto-x/';
+
+		$this->assertSame( $url, apply_filters( 'bisn_email_product_url', $url, $this->product( Taxonomy::BOTH ), $this->email_to( 'cliente@example.com' ) ) );
+		$this->assertSame( $url, apply_filters( 'bisn_email_product_url', $url, $this->product( Taxonomy::BOTH ), $this->email_to( 'nobody@example.com' ) ) );
 	}
 }

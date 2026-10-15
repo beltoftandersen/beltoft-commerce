@@ -35,6 +35,9 @@ class ScannerContext {
 	 */
 	private const ROLES = array( 'b2b_customer' );
 
+	/** The most a "Notify me" may ask for: a scan, not a bulk order. */
+	private const MAX_QUANTITY = 9999;
+
 	public static function register(): void {
 		add_filter( 'beltoft_scanner_contexts', array( __CLASS__, 'add_context' ) );
 		add_filter( 'beltoft_scanner_assess', array( __CLASS__, 'assess' ), 10, 3 );
@@ -72,6 +75,15 @@ class ScannerContext {
 			return $result;
 		}
 
+		/*
+		 * The trade list's answer, for the people who scan there. The hook
+		 * carries no context, and another place the scanner is used is
+		 * another plugin's to answer for.
+		 */
+		if ( ! Hosts::is_b2b_host() || ! self::may_scan( $user ) ) {
+			return $result;
+		}
+
 		if ( ! class_exists( '\BeltoftInStockNotifier\Subscription\Repository' ) ) {
 			return $result;
 		}
@@ -83,7 +95,7 @@ class ScannerContext {
 			'variation_id'      => $parent ? $product->get_id() : 0,
 			'email'             => $user->user_email,
 			'locale'            => get_user_locale( $user ),
-			'quantity'          => max( 1, (int) $quantity ),
+			'quantity'          => min( self::MAX_QUANTITY, max( 1, (int) $quantity ) ),
 			'gdpr_consent'      => 1,
 			'unsubscribe_token' => wp_generate_password( 32, false ),
 		) );
