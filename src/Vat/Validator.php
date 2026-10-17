@@ -41,6 +41,11 @@ class Validator {
 	 * country this accepts the number rather than refusing every domestic
 	 * applicant with a Portuguese test.
 	 */
+	/** Whether a country code (XI included) is in the EU for VAT on goods. */
+	public static function is_eu( string $country ): bool {
+		return in_array( strtoupper( $country ), self::EU, true );
+	}
+
 	public static function domestic_number_ok( string $number ): bool {
 		return 'PT' !== self::home_country() || PtNif::is_valid( $number );
 	}

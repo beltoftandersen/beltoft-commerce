@@ -136,8 +136,14 @@ class Status {
 		$roles    = (array) $user->roles;
 		$override = (string) get_user_meta( $user_id, \BeltoftCommerce\Pricing\PricingContext::OVERRIDE_META, true );
 
-		// A B2B account, or one holding trade terms through the per-user group.
-		if ( ! array_intersect( $roles, array( 'b2b_pending', 'b2b_customer' ) ) && '' === $override ) {
+		/*
+		 * A B2B account, or a plain customer holding trade terms through the
+		 * per-user group. Never staff: an administrator or shop manager with
+		 * the override, caught in a bulk Reject, would lose wp-admin.
+		 */
+		$plain_customer = '' !== $override && ! array_diff( $roles, array( 'customer', 'subscriber' ) );
+
+		if ( ! array_intersect( $roles, array( 'b2b_pending', 'b2b_customer' ) ) && ! $plain_customer ) {
 			return false;
 		}
 

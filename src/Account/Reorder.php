@@ -65,8 +65,11 @@ class Reorder {
 	 * native button on for processing and on-hold orders, next to this one -
 	 * and the native handler empties the cart and skips unavailable lines
 	 * without saying so, the behaviour this class exists to replace. Its
-	 * button is removed, and its trigger - ?order_again, read while the cart
-	 * is loaded from the session on wp_loaded 10 - dropped before that.
+	 * button is removed, and its link - ?order_again, read while the cart is
+	 * loaded from the session on wp_loaded 10 - is sent to this class's own
+	 * reorder instead: the trade pages' Bricks button "Encomendar novamente"
+	 * uses that link ({woo_order_again_url}), and simply dropping it left the
+	 * button adding nothing.
 	 */
 	public static function retire_native_order_again(): void {
 		if ( ! Hosts::is_b2b_host() ) {
@@ -74,7 +77,25 @@ class Reorder {
 		}
 
 		remove_action( 'woocommerce_order_details_after_order_table', 'woocommerce_order_again_button' );
+
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- WooCommerce's own nonce is checked here.
+		if ( ! isset( $_GET['order_again'] ) ) {
+			return;
+		}
+
+		$order_id = absint( $_GET['order_again'] );
+		$valid    = isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_key( wp_unslash( $_GET['_wpnonce'] ) ), 'woocommerce-order_again' );
+		// phpcs:enable
+
 		unset( $_GET['order_again'], $_REQUEST['order_again'] );
+
+		$order = $valid && $order_id ? wc_get_order( $order_id ) : null;
+
+		if ( $order instanceof WC_Order && self::reorderable( $order ) ) {
+			// url() is escaped for an href; a Location header wants it raw.
+			wp_safe_redirect( html_entity_decode( self::url( $order ) ) );
+			exit;
+		}
 	}
 
 	/**

@@ -230,6 +230,6 @@ class QueryFilterTest extends WP_UnitTestCase {
 	public function test_bricks_query_vars_lose_suppress_filters() {
 		$vars = BeltoftCommerce\Enforcement\QueryFilter::clean_bricks_query_vars( array( 'post_type' => 'product', 'suppress_filters' => true, 'beltoft_bypass_audience' => true ) );
 
-		$this->assertSame( array( 'post_type' => 'product' ), $vars );
+		$this->assertSame( array( 'post_type' => 'product', 'post_status' => 'publish' ), $vars );
 	}
 }

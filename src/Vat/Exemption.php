@@ -143,7 +143,14 @@ class Exemption {
 		 * number with the goods shipped to a Portuguese address, or collected
 		 * here, is a domestic sale and is charged IVA.
 		 */
-		if ( Validator::home_country() === self::destination() ) {
+		/*
+		 * And to another EU member state: an XI number with the goods sent to
+		 * Great Britain, or a German number with them sent to Switzerland, is
+		 * not an intra-EU supply. Sales leaving the EU are charged IVA here.
+		 */
+		$destination = self::destination();
+
+		if ( Validator::home_country() === $destination || ! Validator::is_eu( $destination ) ) {
 			self::$decided = false;
 
 			return false;
@@ -285,8 +292,24 @@ class Exemption {
 
 		$customer = function_exists( 'WC' ) ? WC()->customer : null;
 		$shipping = $customer ? strtoupper( (string) $customer->get_shipping_country() ) : '';
+		$postcode = $customer ? strtoupper( trim( (string) $customer->get_shipping_postcode() ) ) : '';
 
-		return '' !== $shipping ? $shipping : strtoupper( self::country() );
+		if ( '' === $shipping ) {
+			$shipping = strtoupper( self::country() );
+			$postcode = $customer ? strtoupper( trim( (string) $customer->get_billing_postcode() ) ) : '';
+		}
+
+		// WooCommerce has no Northern Ireland: a GB address with a BT postcode is.
+		return ( 'GB' === $shipping && 0 === strpos( $postcode, 'BT' ) ) ? 'XI' : $shipping;
+	}
+
+	/**
+	 * The VAT number this request's totals are worked out with - the checkout
+	 * field, the checkout review, or the account's - so the order's evidence
+	 * describes the same number.
+	 */
+	public static function number_in_use(): string {
+		return self::number();
 	}
 
 	/** Test seam. */

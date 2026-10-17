@@ -25,7 +25,6 @@ class PriceQuery {
 	public static function register(): void {
 		add_action( 'pre_get_posts', array( __CLASS__, 'take_price_bounds' ), 30 );
 		add_filter( 'posts_clauses', array( __CLASS__, 'clauses' ), 20, 2 );
-		add_filter( 'woocommerce_enable_post_clause_filtering', array( __CLASS__, 'drop_retail_price_clause' ), 10, 2 );
 	}
 
 	private const MIN = 'beltoft_min_price';
@@ -71,25 +70,17 @@ class PriceQuery {
 
 			$query->set( $own, (float) $value / $scale );
 			$query->set( $var, '' );
-		}
-	}
 
-	/**
-	 * WooCommerce's own ?min_price= clause (classic shop) reads $_GET, not
-	 * the query: switched off for trade sessions, whose bounds are applied to
-	 * the group table instead.
-	 *
-	 * @param mixed     $enable
-	 * @param \WP_Query $query
-	 * @return mixed
-	 */
-	public static function drop_retail_price_clause( $enable, $query = null ) {
-		if ( ! $enable || Registry::inherits_prices( PricingContext::current() ) ) {
-			return $enable;
+			/*
+			 * WooCommerce's own clause on the main query reads $_GET, on the
+			 * retail table, from the same method that applies the attribute
+			 * filters - so the bound is taken out of $_GET rather than that
+			 * method switched off.
+			 */
+			if ( $query->is_main_query() ) {
+				unset( $_GET[ $var ] );
+			}
 		}
-
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		return isset( $_GET['min_price'] ) || isset( $_GET['max_price'] ) ? false : $enable;
 	}
 
 	public static function clauses( $clauses, $query ) {

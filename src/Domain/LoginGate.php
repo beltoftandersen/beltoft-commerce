@@ -106,7 +106,13 @@ class LoginGate {
 	public static function effective_path( string $request_uri ): string {
 		$query = self::query_of( $request_uri );
 
-		if ( isset( $query['rest_route'] ) && is_string( $query['rest_route'] ) ) {
+		/*
+		 * A non-empty value only, as WordPress and WooCommerce read it: an
+		 * empty ?rest_route= (or "0") is not a REST request to either, but it
+		 * made this answer /wp-json/, which waved admin-ajax.php past the
+		 * guard below on a forged login cookie.
+		 */
+		if ( isset( $query['rest_route'] ) && is_string( $query['rest_route'] ) && ! empty( $query['rest_route'] ) ) {
 			return '/wp-json/' . ltrim( $query['rest_route'], '/' );
 		}
 

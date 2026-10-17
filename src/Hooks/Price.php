@@ -55,6 +55,8 @@ class Price {
 
 		// Before WooCommerce's own handler (10), which prices the new lines.
 		add_action( 'wp_ajax_woocommerce_add_order_item', array( __CLASS__, 'price_added_items_for_customer' ), 0 );
+		add_filter( 'woocommerce_ajax_add_order_item_validation', array( __CLASS__, 'refuse_unpriced_item' ), 10, 4 );
+		add_action( 'admin_footer', array( __CLASS__, 'send_customer_with_added_items' ) );
 		add_filter( 'woocommerce_product_variation_is_on_sale', array( __CLASS__, 'on_sale' ), self::PRIORITY, 2 );
 	}
 
@@ -111,12 +113,83 @@ class Price {
 	 * a phone order for a partner came out at retail prices.
 	 */
 	public static function price_added_items_for_customer(): void {
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WooCommerce checks the nonce and capability in its own handler, which runs next.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- WooCommerce checks the nonce and capability in its own handler, which runs next.
 		$order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
 		$order    = $order_id && current_user_can( 'edit_shop_orders' ) ? wc_get_order( $order_id ) : null;
 
-		if ( $order instanceof \WC_Order && $order->get_customer_id() ) {
-			PricingContext::act_for( (int) $order->get_customer_id() );
+		if ( ! $order instanceof \WC_Order ) {
+			return;
 		}
+
+		/*
+		 * A new order is not saved until Create, so its customer is still 0
+		 * when items are added; send_customer_with_added_items() sends the one
+		 * chosen on the screen.
+		 */
+		$customer = (int) $order->get_customer_id();
+
+		if ( ! $customer && isset( $_POST['beltoft_customer_user'] ) ) {
+			$customer = absint( wp_unslash( $_POST['beltoft_customer_user'] ) );
+		}
+		// phpcs:enable
+
+		if ( $customer && get_userdata( $customer ) ) {
+			PricingContext::act_for( $customer );
+		}
+	}
+
+	/**
+	 * A product the order's customer has no price for is refused, not added
+	 * at 0: under act_for() its price fails closed to '', which WooCommerce
+	 * writes as a free line.
+	 *
+	 * @param \WP_Error $error
+	 * @param mixed     $product
+	 * @param mixed     $order
+	 * @param mixed     $qty
+	 * @return \WP_Error
+	 */
+	public static function refuse_unpriced_item( $error, $product = null, $order = null, $qty = 1 ) {
+		$group = PricingContext::current();
+
+		if ( ! $error instanceof \WP_Error || ! $product instanceof \WC_Product || Registry::inherits_prices( $group ) ) {
+			return $error;
+		}
+
+		if ( null === PriceResolver::resolve( $product, $group ) ) {
+			$error->add(
+				'beltoft_commerce_no_group_price',
+				/* translators: %s: product name */
+				sprintf( __( '%s has no price for this customer.', 'beltoft-commerce' ), $product->get_name() )
+			);
+		}
+
+		return $error;
+	}
+
+	/**
+	 * On the order screen, add the chosen customer to WooCommerce's add-item
+	 * request, which otherwise sends only the order id.
+	 */
+	public static function send_customer_with_added_items(): void {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+
+		if ( ! $screen || ! in_array( $screen->id, array( 'shop_order', 'woocommerce_page_wc-orders' ), true ) ) {
+			return;
+		}
+		?>
+<script>
+jQuery( function ( $ ) {
+	$.ajaxPrefilter( function ( options ) {
+		if ( typeof options.data === 'string' && options.data.indexOf( 'action=woocommerce_add_order_item' ) !== -1 ) {
+			var customer = $( '#customer_user' ).val();
+			if ( customer ) {
+				options.data += '&beltoft_customer_user=' + encodeURIComponent( customer );
+			}
+		}
+	} );
+} );
+</script>
+		<?php
 	}
 }

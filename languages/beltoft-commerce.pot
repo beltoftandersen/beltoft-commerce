@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-17T15:16:37+00:00\n"
+"POT-Creation-Date: 2026-10-17T15:56:29+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: beltoft-commerce\n"
@@ -29,8 +29,8 @@ msgstr ""
 msgid "beltoft.net"
 msgstr ""
 
-#: src/Account/Reorder.php:125
-#: src/Account/Reorder.php:141
+#: src/Account/Reorder.php:146
+#: src/Account/Reorder.php:162
 msgid "Order again"
 msgstr ""
 
@@ -176,7 +176,7 @@ msgstr ""
 msgid "If your company uses an internal reference, enter it here. It appears on the confirmation and on the order."
 msgstr ""
 
-#: src/Domain/LoginGate.php:246
+#: src/Domain/LoginGate.php:252
 msgid "Sign in to continue."
 msgstr ""
 
@@ -264,7 +264,7 @@ msgstr ""
 msgid "A product"
 msgstr ""
 
-#: src/Enforcement/StoreApiGuard.php:205
+#: src/Enforcement/StoreApiGuard.php:206
 msgid "Invalid product ID."
 msgstr ""
 
@@ -314,6 +314,12 @@ msgstr[1] ""
 
 #: src/Frontend/ResellerTags.php:319
 msgid "Free"
+msgstr ""
+
+#. translators: %s: product name
+#: src/Hooks/Price.php:163
+#, php-format
+msgid "%s has no price for this customer."
 msgstr ""
 
 #: src/Monitoring/VatReviewQueue.php:81
@@ -479,45 +485,45 @@ msgstr ""
 msgid "Out of stock"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:158
+#: src/Registration/AdminUsers.php:159
 msgid "B2B awaiting approval"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:159
+#: src/Registration/AdminUsers.php:160
 msgid "B2B rejected"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:210
-#: src/Registration/AdminUsers.php:356
+#: src/Registration/AdminUsers.php:211
+#: src/Registration/AdminUsers.php:413
 msgid "B2B application"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:232
+#: src/Registration/AdminUsers.php:233
 msgid "Awaiting approval"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:233
+#: src/Registration/AdminUsers.php:234
 msgid "Approved"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:234
+#: src/Registration/AdminUsers.php:235
 msgid "Rejected"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:244
+#: src/Registration/AdminUsers.php:245
 msgid "NIF"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:255
+#: src/Registration/AdminUsers.php:256
 msgid "Approve B2B application"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:256
+#: src/Registration/AdminUsers.php:257
 msgid "Reject B2B application"
 msgstr ""
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:309
+#: src/Registration/AdminUsers.php:366
 #, php-format
 msgid "%d application approved."
 msgid_plural "%d applications approved."
@@ -525,24 +531,24 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:311
+#: src/Registration/AdminUsers.php:368
 #, php-format
 msgid "%d application rejected."
 msgid_plural "%d applications rejected."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Registration/AdminUsers.php:359
+#: src/Registration/AdminUsers.php:416
 #: src/Registration/Fields.php:130
 msgid "Shop name"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:364
+#: src/Registration/AdminUsers.php:421
 #: src/Registration/Fields.php:124
 msgid "Company information"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:370
+#: src/Registration/AdminUsers.php:427
 msgid "Status"
 msgstr ""
 
@@ -879,26 +885,30 @@ msgid "The VAT number you entered could not be validated. Please correct it or l
 msgstr ""
 
 #. translators: 1: date of the account's VIES check, 2: VIES consultation number
-#: src/Vat/OrderEvidence.php:100
+#: src/Vat/OrderEvidence.php:105
 #, php-format
 msgid "VIES was unreachable at checkout. Reverse charge was applied on the account's VIES confirmation of %1$s (consultation %2$s)."
 msgstr ""
 
-#: src/Vat/OrderEvidence.php:101
+#: src/Vat/OrderEvidence.php:106
 msgid "unknown date"
 msgstr ""
 
-#: src/Vat/OrderEvidence.php:102
+#: src/Vat/OrderEvidence.php:107
 msgid "none"
 msgstr ""
 
 #. translators: %s: error detail from the VIES service
-#: src/Vat/OrderEvidence.php:121
+#: src/Vat/OrderEvidence.php:133
 #, php-format
 msgid "VAT number could not be verified: VIES was unreachable (%s). IVA has been charged and this order needs manual review."
 msgstr ""
 
-#: src/Vat/OrderEvidence.php:122
+#: src/Vat/OrderEvidence.php:134
+msgid "no answer during checkout"
+msgstr ""
+
+#: src/Vat/OrderEvidence.php:134
 msgid "no detail"
 msgstr ""
 

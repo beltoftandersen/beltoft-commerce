@@ -30,7 +30,12 @@ class OrderEvidence {
 			return;
 		}
 
-		$number = Field::posted();
+		/*
+		 * The number the totals were worked out with. A checkout that does not
+		 * post the field (a payment plugin's own checkout route) was zero-rated
+		 * from the account's number yet recorded nothing.
+		 */
+		$number = Field::was_posted() ? Field::posted() : ( 'yes' === $order->get_meta( 'is_vat_exempt' ) ? Exemption::number_in_use() : '' );
 
 		if ( '' === $number ) {
 			return;
@@ -111,7 +116,14 @@ class OrderEvidence {
 		$order->update_meta_data( self::REQUEST_ID, $decision->request_identifier );
 		// A date only when VIES was asked - as for accounts (Evidence::store()).
 		// A domestic or non-EU number was never sent, whatever checked_at says.
-		$consulted = in_array( $decision->status, array( 'valid', 'invalid', 'unverified' ), true );
+		//
+		// The order is written from what the checkout already learnt (attach()
+		// does not ask again), so 'unverified' with ViesClient's "not checked"
+		// marker means VIES gave the checkout no answer: there is no
+		// consultation to date, and the note says that rather than quoting the
+		// marker as if it were VIES's error.
+		$no_answer = 'unverified' === $decision->status && 'not checked in this context' === $decision->error;
+		$consulted = in_array( $decision->status, array( 'valid', 'invalid', 'unverified' ), true ) && ! $no_answer;
 		$order->update_meta_data( self::REQUEST_DATE, $consulted && $decision->checked_at ? gmdate( 'c', $decision->checked_at ) : '' );
 		$order->update_meta_data( self::REGISTERED, $decision->registered_name );
 
@@ -119,7 +131,7 @@ class OrderEvidence {
 			$order->add_order_note( sprintf(
 				/* translators: %s: error detail from the VIES service */
 				__( 'VAT number could not be verified: VIES was unreachable (%s). IVA has been charged and this order needs manual review.', 'beltoft-commerce' ),
-				$decision->error ?: __( 'no detail', 'beltoft-commerce' )
+				$no_answer ? __( 'no answer during checkout', 'beltoft-commerce' ) : ( $decision->error ?: __( 'no detail', 'beltoft-commerce' ) )
 			) );
 		}
 	}

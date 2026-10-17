@@ -28,6 +28,7 @@ class AdminUsers {
 		add_filter( 'manage_users_custom_column', array( __CLASS__, 'column_value' ), 10, 3 );
 		add_filter( 'bulk_actions-users', array( __CLASS__, 'bulk_actions' ) );
 		add_filter( 'handle_bulk_actions-users', array( __CLASS__, 'handle_bulk' ), 10, 3 );
+		add_action( 'load-users.php', array( __CLASS__, 'handle_bulk_early' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'notice' ) );
 		add_action( 'show_user_profile', array( __CLASS__, 'profile_panel' ) );
 		add_action( 'edit_user_profile', array( __CLASS__, 'profile_panel' ) );
@@ -259,11 +260,62 @@ class AdminUsers {
 	}
 
 	/**
-	 * The nonce is checked here: WordPress checks it for its own bulk actions
-	 * but not before handing a custom one to this filter (wp-admin/users.php,
-	 * the default case), so a crafted link opened by a signed-in administrator
-	 * approved or rejected accounts. Whether the acting user may edit each
-	 * account is checked per user rather than once for the batch.
+	 * The two B2B bulk actions, handled on the request that still carries the
+	 * nonce.
+	 *
+	 * WordPress checks the bulk nonce for its own actions but not before a
+	 * custom one reaches handle_bulk_actions-users - and for the list form
+	 * (a GET with _wp_http_referer) it first redirects, dropping _wpnonce,
+	 * and only then calls the filter. A check in the filter therefore refused
+	 * every genuine click, and no check let a crafted link opened by a
+	 * signed-in administrator approve or reject accounts. So the nonce is
+	 * verified here, on load-users.php, before that redirect, and the batch
+	 * is run from here.
+	 */
+	public static function handle_bulk_early(): void {
+		$redirect = self::bulk_from_request();
+
+		if ( null !== $redirect ) {
+			wp_safe_redirect( $redirect );
+			exit;
+		}
+	}
+
+	/**
+	 * Run a B2B bulk action named in the request, nonce and capability
+	 * checked. Returns where to go next, or null when the request is not one.
+	 */
+	public static function bulk_from_request(): ?string {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- the nonce is checked below.
+		$action = isset( $_REQUEST['action'] ) && '-1' !== $_REQUEST['action'] ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : '';
+
+		if ( '' === $action && isset( $_REQUEST['action2'] ) ) {
+			$action = sanitize_key( wp_unslash( $_REQUEST['action2'] ) );
+		}
+
+		if ( ! in_array( $action, array( 'beltoft_b2b_approve', 'beltoft_b2b_reject' ), true ) || empty( $_REQUEST['users'] ) ) {
+			return null;
+		}
+
+		// load-users.php runs before users.php checks the screen capability.
+		if ( ! current_user_can( 'list_users' ) ) {
+			return null;
+		}
+
+		check_admin_referer( 'bulk-users' );
+
+		$user_ids = array_map( 'intval', (array) wp_unslash( $_REQUEST['users'] ) );
+		// phpcs:enable
+
+		$referer = wp_get_referer();
+
+		return (string) self::run_bulk( $referer ? $referer : admin_url( 'users.php' ), $action, $user_ids );
+	}
+
+	/**
+	 * The filter WordPress calls for custom bulk actions. Ours never get here
+	 * legitimately (handle_bulk_early() answers first, nonce checked); a
+	 * request that does arrives without its nonce and is refused.
 	 */
 	public static function handle_bulk( $redirect, $action, $user_ids ) {
 		if ( ! in_array( $action, array( 'beltoft_b2b_approve', 'beltoft_b2b_reject' ), true ) ) {
@@ -272,6 +324,11 @@ class AdminUsers {
 
 		check_admin_referer( 'bulk-users' );
 
+		return self::run_bulk( $redirect, $action, (array) $user_ids );
+	}
+
+	/** Whether the acting user may edit each account is checked per user. */
+	private static function run_bulk( $redirect, string $action, array $user_ids ) {
 		$done = 0;
 
 		foreach ( (array) $user_ids as $user_id ) {

@@ -17,6 +17,11 @@ class CheckoutReviewFixesTest extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
+		// The district test fills WooCommerce's states cache with test data.
+		$cache = new ReflectionProperty( WC_Countries::class, 'geo_cache' );
+		$cache->setAccessible( true );
+		$cache->setValue( WC()->countries, array() );
+
 		PricingContext::stop_acting();
 		unset( $_SERVER['HTTP_HOST'], $_POST['order_id'] );
 		wp_set_current_user( 0 );

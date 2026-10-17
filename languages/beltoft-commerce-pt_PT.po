@@ -29,8 +29,8 @@ msgstr "Grupos de preços B2B/B2C, público do catálogo, encaminhamento por dom
 msgid "beltoft.net"
 msgstr ""
 
-#: src/Account/Reorder.php:125
-#: src/Account/Reorder.php:141
+#: src/Account/Reorder.php:146
+#: src/Account/Reorder.php:162
 msgid "Order again"
 msgstr "Encomendar novamente"
 
@@ -172,7 +172,7 @@ msgstr "Número da nota de encomenda"
 msgid "If your company uses an internal reference, enter it here. It appears on the confirmation and on the order."
 msgstr "Se a sua empresa usa uma referência interna, indique-a aqui. Aparece na confirmação e na encomenda."
 
-#: src/Domain/LoginGate.php:246
+#: src/Domain/LoginGate.php:252
 msgid "Sign in to continue."
 msgstr "Inicie sessão para continuar."
 
@@ -260,7 +260,7 @@ msgstr "\"%s\" já não está disponível na sua conta e foi removido."
 msgid "A product"
 msgstr "Um produto"
 
-#: src/Enforcement/StoreApiGuard.php:205
+#: src/Enforcement/StoreApiGuard.php:206
 msgid "Invalid product ID."
 msgstr "ID de produto inválido."
 
@@ -459,45 +459,45 @@ msgstr "Em stock"
 msgid "Out of stock"
 msgstr "Sem stock"
 
-#: src/Registration/AdminUsers.php:158
+#: src/Registration/AdminUsers.php:159
 msgid "B2B awaiting approval"
 msgstr "B2B por aprovar"
 
-#: src/Registration/AdminUsers.php:159
+#: src/Registration/AdminUsers.php:160
 msgid "B2B rejected"
 msgstr "B2B rejeitados"
 
-#: src/Registration/AdminUsers.php:210
-#: src/Registration/AdminUsers.php:356
+#: src/Registration/AdminUsers.php:211
+#: src/Registration/AdminUsers.php:413
 msgid "B2B application"
 msgstr "Registo B2B"
 
-#: src/Registration/AdminUsers.php:232
+#: src/Registration/AdminUsers.php:233
 msgid "Awaiting approval"
 msgstr "Por aprovar"
 
-#: src/Registration/AdminUsers.php:233
+#: src/Registration/AdminUsers.php:234
 msgid "Approved"
 msgstr "Aprovado"
 
-#: src/Registration/AdminUsers.php:234
+#: src/Registration/AdminUsers.php:235
 msgid "Rejected"
 msgstr "Rejeitado"
 
-#: src/Registration/AdminUsers.php:244
+#: src/Registration/AdminUsers.php:245
 msgid "NIF"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:255
+#: src/Registration/AdminUsers.php:256
 msgid "Approve B2B application"
 msgstr "Aprovar registo B2B"
 
-#: src/Registration/AdminUsers.php:256
+#: src/Registration/AdminUsers.php:257
 msgid "Reject B2B application"
 msgstr "Rejeitar registo B2B"
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:309
+#: src/Registration/AdminUsers.php:366
 #, php-format
 msgid "%d application approved."
 msgid_plural "%d applications approved."
@@ -505,24 +505,24 @@ msgstr[0] "%d registo aprovado."
 msgstr[1] "%d registos aprovados."
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:311
+#: src/Registration/AdminUsers.php:368
 #, php-format
 msgid "%d application rejected."
 msgid_plural "%d applications rejected."
 msgstr[0] "%d registo rejeitado."
 msgstr[1] "%d registos rejeitados."
 
-#: src/Registration/AdminUsers.php:359
+#: src/Registration/AdminUsers.php:416
 #: src/Registration/Fields.php:130
 msgid "Shop name"
 msgstr "Nome da loja"
 
-#: src/Registration/AdminUsers.php:364
+#: src/Registration/AdminUsers.php:421
 #: src/Registration/Fields.php:124
 msgid "Company information"
 msgstr "Informação da empresa"
 
-#: src/Registration/AdminUsers.php:370
+#: src/Registration/AdminUsers.php:427
 msgid "Status"
 msgstr "Estado"
 
@@ -853,12 +853,12 @@ msgid "The VAT number you entered could not be validated. Please correct it or l
 msgstr "O número de IVA introduzido não pôde ser validado. Corrija-o ou deixe o campo vazio."
 
 #. translators: %s: error detail from the VIES service
-#: src/Vat/OrderEvidence.php:121
+#: src/Vat/OrderEvidence.php:133
 #, php-format
 msgid "VAT number could not be verified: VIES was unreachable (%s). IVA has been charged and this order needs manual review."
 msgstr "Não foi possível verificar o número de IVA: o VIES está indisponível (%s). O IVA foi cobrado e esta encomenda necessita de revisão manual."
 
-#: src/Vat/OrderEvidence.php:122
+#: src/Vat/OrderEvidence.php:134
 msgid "no detail"
 msgstr "sem detalhe"
 
@@ -901,16 +901,16 @@ msgid "Beltoft Commerce has no trade site: set its hostname with <code>define( '
 msgstr "O Beltoft Commerce não tem site de revenda: defina o nome do anfitrião com <code>define( 'BELTOFT_B2B_HOST', 'b2b.example.com' );</code> no wp-config.php."
 
 #. translators: 1: date of the account's VIES check, 2: VIES consultation number
-#: src/Vat/OrderEvidence.php:100
+#: src/Vat/OrderEvidence.php:105
 #, php-format
 msgid "VIES was unreachable at checkout. Reverse charge was applied on the account's VIES confirmation of %1$s (consultation %2$s)."
 msgstr "O VIES estava indisponível na finalização da compra. A autoliquidação foi aplicada com base na confirmação VIES da conta de %1$s (consulta %2$s)."
 
-#: src/Vat/OrderEvidence.php:101
+#: src/Vat/OrderEvidence.php:106
 msgid "unknown date"
 msgstr "data desconhecida"
 
-#: src/Vat/OrderEvidence.php:102
+#: src/Vat/OrderEvidence.php:107
 msgid "none"
 msgstr "nenhuma"
 
@@ -923,3 +923,13 @@ msgstr "O Beltoft Commerce não conseguiu instalar o seu tratamento antecipado d
 #: src/Checkout/B2BCheckoutPage.php:73
 msgid "Please place trade orders from the checkout page."
 msgstr "Faça as encomendas de revenda a partir da página de finalização da compra."
+
+#. translators: %s: product name
+#: src/Hooks/Price.php:163
+#, php-format
+msgid "%s has no price for this customer."
+msgstr "%s não tem preço para este cliente."
+
+#: src/Vat/OrderEvidence.php:134
+msgid "no answer during checkout"
+msgstr "sem resposta durante a finalização da compra"

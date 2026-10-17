@@ -52,7 +52,8 @@ class StoreApiGuard {
 	 * @return mixed
 	 */
 	public static function guard_cart_add( $result, $server = null, $request = null ) {
-		if ( null !== $result || ! $request instanceof \WP_REST_Request || ! preg_match( '#^/wc/store(/v\d+)?/cart/add-item$#i', $request->get_route() ) ) {
+		// Both add routes: cart/add-item, and POST cart/items.
+		if ( null !== $result || ! $request instanceof \WP_REST_Request || ! preg_match( '#^/wc/store(/v\d+)?/cart/(add-item|items)$#i', $request->get_route() ) || 'POST' !== $request->get_method() ) {
 			return $result;
 		}
 

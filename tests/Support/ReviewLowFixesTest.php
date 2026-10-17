@@ -70,8 +70,15 @@ class ReviewLowFixesTest extends WP_UnitTestCase {
 
 	/** #24/#34: the early handler is told the plugin's real folder. */
 	public function test_the_plugin_folder_is_recorded_for_the_early_handler() {
+		$target = BeltoftCommerce\Support\MuPlugin::target();
+		$before = is_readable( $target ) ? (string) file_get_contents( $target ) : null;
+
 		delete_option( 'beltoft_commerce_basename' );
 		BeltoftCommerce\Support\MuPlugin::maybe_install();
+
+		// maybe_install() also writes the handler into the test install's
+		// mu-plugins, where later runs would load it twice; put back what was there.
+		null === $before ? @unlink( $target ) : file_put_contents( $target, $before );
 
 		$this->assertSame( plugin_basename( BELTOFT_COMMERCE_FILE ), get_option( 'beltoft_commerce_basename' ) );
 	}
@@ -124,9 +131,12 @@ class ReviewLowFixesTest extends WP_UnitTestCase {
 
 		get_userdata( $partner )->set_role( 'b2b_pending' );
 		$this->assertSame( Status::REJECTED, Status::get( $partner ) );
+		// The recorded decision too (sync_with_role), which the queues read.
+		$this->assertSame( Status::REJECTED, get_user_meta( $partner, Status::META_STATUS, true ) );
 
 		get_userdata( $partner )->set_role( 'b2b_customer' );
 		$this->assertSame( Status::APPROVED, Status::get( $partner ) );
+		$this->assertSame( Status::APPROVED, get_user_meta( $partner, Status::META_STATUS, true ) );
 	}
 
 	/** #31: WooCommerce's own "Order again" is switched off on the trade host. */
@@ -193,15 +203,24 @@ class ReviewLowFixesTest extends WP_UnitTestCase {
 		$this->assertFalse( HostRoutes::is_b2b_only_path( '/wp-admin/' ) );
 	}
 
-	/** #47: for trade sessions WooCommerce's retail price clause is off; the group's is applied. */
-	public function test_the_retail_price_clause_is_off_for_trade_sessions() {
+	/** #47: a trade session's price bounds go to the group table; WooCommerce's retail clause never sees them. */
+	public function test_trade_price_bounds_leave_the_retail_clause() {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'b2b_customer' ) ) );
 		$_GET['min_price'] = '5';
 
-		$this->assertFalse( BeltoftCommerce\Hooks\PriceQuery::drop_retail_price_clause( true, null ) );
+		$main  = $GLOBALS['wp_the_query'];
+		$query = new WP_Query();
+		$query->query_vars = array( 'post_type' => 'product' );
+		$GLOBALS['wp_the_query'] = $query; // So it is the main query.
 
-		wp_set_current_user( 0 );
-		$this->assertTrue( BeltoftCommerce\Hooks\PriceQuery::drop_retail_price_clause( true, null ) );
+		try {
+			BeltoftCommerce\Hooks\PriceQuery::take_price_bounds( $query );
+		} finally {
+			$GLOBALS['wp_the_query'] = $main;
+		}
+
+		$this->assertSame( 5.0, $query->get( 'beltoft_min_price' ) );
+		$this->assertArrayNotHasKey( 'min_price', $_GET );
 	}
 
 	/** #49: which rates are trade-only is part of the shipping package. */
@@ -238,5 +257,36 @@ class ReviewLowFixesTest extends WP_UnitTestCase {
 		BeltoftCommerce\Vat\RateLabel::store_rate_name( $item, $rate );
 
 		$this->assertSame( 'IVA23', $item->get_label() );
+	}
+
+	/** Verification round: the Store API's second add route is guarded too. */
+	public function test_cart_items_post_is_guarded() {
+		$request = new WP_REST_Request( 'POST', '/wc/store/v1/cart/items' );
+		$request->set_param( 'id', $this->product( Taxonomy::B2B ) );
+
+		$this->assertWPError( StoreApiGuard::guard_cart_add( null, null, $request ) );
+	}
+
+	/** Verification round: Bricks loops cannot ask for private posts. */
+	public function test_bricks_loops_get_published_posts_only() {
+		$vars = BeltoftCommerce\Enforcement\QueryFilter::clean_bricks_query_vars( array( 'post_status' => 'private', 'perm' => 'readable' ) );
+
+		$this->assertSame( array( 'post_status' => 'publish' ), $vars );
+	}
+
+	/** Verification round: an empty ?rest_route= is not REST and does not dodge the admin-ajax guard. */
+	public function test_an_empty_rest_route_is_not_a_rest_path() {
+		$this->assertSame( '/wp-admin/admin-ajax.php', LoginGate::effective_path( '/wp-admin/admin-ajax.php?action=x&rest_route=' ) );
+		$this->assertSame( '/wp-admin/admin-ajax.php', LoginGate::effective_path( '/wp-admin/admin-ajax.php?rest_route=0' ) );
+		$this->assertSame( '/wp-json/wc/store/v1/cart', LoginGate::effective_path( '/?rest_route=/wc/store/v1/cart' ) );
+	}
+
+	/** Verification round: rejecting never demotes staff who hold the pricing override. */
+	public function test_reject_leaves_staff_alone() {
+		$manager = self::factory()->user->create( array( 'role' => 'shop_manager' ) );
+		update_user_meta( $manager, PricingContext::OVERRIDE_META, 'b2b_standard' );
+
+		$this->assertFalse( Status::reject( $manager ) );
+		$this->assertContains( 'shop_manager', get_userdata( $manager )->roles );
 	}
 }

@@ -66,8 +66,22 @@ class QueryFilter {
 	 * @return mixed
 	 */
 	public static function clean_bricks_query_vars( $vars ) {
-		if ( is_array( $vars ) ) {
-			unset( $vars['suppress_filters'], $vars['beltoft_bypass_audience'] );
+		if ( ! is_array( $vars ) ) {
+			return $vars;
+		}
+
+		unset( $vars['suppress_filters'], $vars['beltoft_bypass_audience'], $vars['perm'], $vars['post_password'], $vars['has_password'] );
+
+		/*
+		 * Published posts only, for anyone who may not read private ones.
+		 * Bricks lets the browser's query vars override its own
+		 * post_status = publish, and WP_Query returns private and draft posts
+		 * for an explicit post_status without asking who is reading: an
+		 * anonymous visitor listed the private B2B-only products, with
+		 * prices, by sending post_status = private.
+		 */
+		if ( ! current_user_can( 'read_private_products' ) ) {
+			$vars['post_status'] = 'publish';
 		}
 
 		return $vars;
