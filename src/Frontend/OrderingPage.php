@@ -2,6 +2,7 @@
 
 namespace BeltoftCommerce\Frontend;
 
+use BeltoftCommerce\Support\Config;
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -14,14 +15,18 @@ defined( 'ABSPATH' ) || exit;
 class OrderingPage {
 
 	/** Its root slug in the HostPages map. */
-	public const SLUG = 'loja';
+	public static function slug(): string {
+		return trim( (string) Config::get( 'ordering_page' ), '/' );
+	}
 
 	/** Where the ordering page lives on the trade host. */
-	public const PATH = '/loja/';
+	public static function path(): string {
+		return '/' . self::slug() . '/';
+	}
 
 	/** The configured page, or 0 if it is missing or not published. */
 	public static function id(): int {
-		return HostPages::id( self::SLUG );
+		return HostPages::id( self::slug() );
 	}
 
 	/**

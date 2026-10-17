@@ -2,6 +2,7 @@
 
 namespace BeltoftCommerce\Bricks;
 
+use BeltoftCommerce\Support\Config;
 use BeltoftCommerce\Domain\LoginGate;
 use BeltoftCommerce\Support\Hosts;
 
@@ -30,8 +31,6 @@ defined( 'ABSPATH' ) || exit;
  */
 class HostChrome {
 
-	private const HEADER_SLUG = 'b2b-cabecalho';
-	private const FOOTER_SLUG = 'b2b-rodape';
 
 	public static function register(): void {
 		add_filter( 'bricks/active_templates', array( __CLASS__, 'choose' ), 10, 3 );
@@ -78,8 +77,8 @@ class HostChrome {
 			return $active_templates;
 		}
 
-		$header = self::template_id( self::HEADER_SLUG );
-		$footer = self::template_id( self::FOOTER_SLUG );
+		$header = self::template_id( (string) Config::get( 'header_template' ) );
+		$footer = self::template_id( (string) Config::get( 'footer_template' ) );
 
 		if ( $header ) {
 			$active_templates['header'] = $header;
@@ -98,8 +97,8 @@ class HostChrome {
 		}
 
 		$slugs = array_filter( array(
-			trim( LoginGate::LOGIN_PATH, '/' ),
-			trim( LoginGate::REGISTER_PATH, '/' ),
+			trim( LoginGate::login_path(), '/' ),
+			trim( LoginGate::register_path(), '/' ),
 		) );
 
 		return ! empty( $slugs ) && is_page( $slugs );

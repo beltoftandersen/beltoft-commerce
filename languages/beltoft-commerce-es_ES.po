@@ -172,7 +172,7 @@ msgstr ""
 msgid "If your company uses an internal reference, enter it here. It appears on the confirmation and on the order."
 msgstr ""
 
-#: src/Domain/LoginGate.php:166
+#: src/Domain/LoginGate.php:203
 msgid "Sign in to continue."
 msgstr ""
 
@@ -295,11 +295,11 @@ msgstr[1] ""
 msgid "Free"
 msgstr ""
 
-#: src/Monitoring/VatReviewQueue.php:76
+#: src/Monitoring/VatReviewQueue.php:81
 msgid "VAT check"
 msgstr ""
 
-#: src/Monitoring/VatReviewQueue.php:95
+#: src/Monitoring/VatReviewQueue.php:104
 msgid "Needs review"
 msgstr ""
 
@@ -895,7 +895,7 @@ msgstr ""
 msgid "Could not add. Only %d in stock."
 msgstr ""
 
-#: src/Plugin.php:146
+#: src/Plugin.php:150
 msgid "Beltoft Commerce has no trade site: set its hostname with <code>define( 'BELTOFT_B2B_HOST', 'b2b.example.com' );</code> in wp-config.php."
 msgstr ""
 
@@ -911,4 +911,10 @@ msgstr ""
 
 #: src/Vat/OrderEvidence.php:94
 msgid "none"
+msgstr ""
+
+#. translators: 1: source file path, 2: target directory
+#: src/Support/MuPlugin.php:90
+#, php-format
+msgid "Beltoft Commerce could not install its early host handler. Copy %1$s into %2$s."
 msgstr ""

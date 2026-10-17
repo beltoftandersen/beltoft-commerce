@@ -2,6 +2,7 @@
 
 namespace BeltoftCommerce\Checkout;
 
+use BeltoftCommerce\Support\Config;
 use BeltoftCommerce\Support\Hosts;
 
 defined( 'ABSPATH' ) || exit;
@@ -30,14 +31,18 @@ class B2BCheckoutPage {
 	public const OPTION = 'beltoft_commerce_b2b_checkout_page_id';
 
 	/** Where the trade checkout lives on the trade host - Frontend\HostPages serves it there. */
-	public const PATH = '/finalizar/';
+	public static function path(): string {
+		return Config::path( 'checkout_path' );
+	}
 
 	/*
 	 * Where it used to live. Order e-mails already sent carry thank-you and
 	 * pay links on this path, so it forwards rather than 404s - endpoint tail
 	 * and ?key= included, or the link in the e-mail would open to nothing.
 	 */
-	public const LEGACY_PATHS = array( '/finalizar-b2b/' );
+	public static function legacy_paths(): array {
+		return Config::paths( 'checkout_legacy_paths' );
+	}
 
 	public static function register(): void {
 		add_filter( 'woocommerce_get_checkout_page_id', array( __CLASS__, 'page_id' ) );
@@ -62,12 +67,12 @@ class B2BCheckoutPage {
 	public static function legacy_target( string $request_uri ): ?string {
 		$path = (string) wp_parse_url( $request_uri, PHP_URL_PATH );
 
-		foreach ( self::LEGACY_PATHS as $legacy ) {
+		foreach ( self::legacy_paths() as $legacy ) {
 			if ( '' === $path || 0 !== strpos( $path, $legacy ) ) {
 				continue;
 			}
 
-			$target = home_url( self::PATH . substr( $path, strlen( $legacy ) ) );
+			$target = home_url( self::path() . substr( $path, strlen( $legacy ) ) );
 			$query  = (string) wp_parse_url( $request_uri, PHP_URL_QUERY );
 
 			return '' !== $query ? $target . '?' . $query : $target;

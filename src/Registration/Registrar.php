@@ -55,7 +55,7 @@ class Registrar {
 			return new WP_Error( 'beltoft_email_exists', __( 'An account with this email already exists.', 'beltoft-commerce' ) );
 		}
 
-		$nif = self::validate_nif( $clean['nif'], $clean['country'] ?? 'PT' );
+		$nif = self::validate_nif( $clean['nif'], $clean['country'] ?? \BeltoftCommerce\Vat\Validator::home_country() );
 
 		if ( is_wp_error( $nif ) ) {
 			return $nif;

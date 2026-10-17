@@ -32,5 +32,7 @@ spl_autoload_register( function ( $class ) {
 
 add_action( 'plugins_loaded', array( 'BeltoftCommerce\\Plugin', 'init' ) );
 
-// Roles, the price lookup table and its first fill (Support\Installer).
+// The early host handler, roles, the price lookup table and its first fill
+// (Support\Installer); the handler goes again on deactivation.
 register_activation_hook( __FILE__, array( 'BeltoftCommerce\\Support\\Installer', 'install' ) );
+register_deactivation_hook( __FILE__, array( 'BeltoftCommerce\\Support\\MuPlugin', 'remove' ) );

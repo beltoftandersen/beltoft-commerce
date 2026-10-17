@@ -25,8 +25,8 @@ class TradeBoundaryTest extends WP_UnitTestCase {
 		$_SERVER['HTTP_HOST'] = Hosts::b2b();
 
 		foreach ( array( 'pagename' => 'b2b-loja', 'page_id' => '5', 'p' => '5', 'post_type' => 'product', 's' => 'x' ) as $var => $value ) {
-			$this->assertTrue( LoginGate::should_gate( LoginGate::LOGIN_PATH, array( $var => $value ) ), $var );
-			$this->assertTrue( LoginGate::should_gate_early( LoginGate::LOGIN_PATH, false, array( $var => $value ) ), $var );
+			$this->assertTrue( LoginGate::should_gate( LoginGate::login_path(), array( $var => $value ) ), $var );
+			$this->assertTrue( LoginGate::should_gate_early( LoginGate::login_path(), false, array( $var => $value ) ), $var );
 		}
 	}
 
@@ -34,7 +34,7 @@ class TradeBoundaryTest extends WP_UnitTestCase {
 	public function test_the_login_and_reset_parameters_still_pass() {
 		$_SERVER['HTTP_HOST'] = Hosts::b2b();
 
-		$this->assertFalse( LoginGate::should_gate( LoginGate::LOGIN_PATH, array( 'redirect_to' => '/loja/', 'loggedout' => 'true' ) ) );
+		$this->assertFalse( LoginGate::should_gate( LoginGate::login_path(), array( 'redirect_to' => '/loja/', 'loggedout' => 'true' ) ) );
 		$this->assertFalse( LoginGate::should_gate( '/conta/recuperar-palavra-passe/', array( 'key' => 'abc', 'login' => 'x@y.pt' ) ) );
 	}
 

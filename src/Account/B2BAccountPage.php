@@ -2,6 +2,7 @@
 
 namespace BeltoftCommerce\Account;
 
+use BeltoftCommerce\Support\Config;
 use BeltoftCommerce\Support\Hosts;
 
 defined( 'ABSPATH' ) || exit;
@@ -25,18 +26,21 @@ defined( 'ABSPATH' ) || exit;
  * or unpublished page falls back to the retail id rather than leaving trade
  * with no account area.
  *
- * NOTE for whoever changes this slug: Domain\LoginGate allowlists the
- * password-recovery endpoint underneath it by literal path, because that gate runs
- * from the mu-plugin before WooCommerce exists and cannot ask for the page.
- * Change the slug there too or trade partners cannot reset a password.
+ * NOTE for whoever changes this path (Config 'account_path'): Domain\LoginGate
+ * allowlists the password-recovery endpoint underneath it by path (Config
+ * 'lost_password_paths'), because that gate runs from the mu-plugin before
+ * WooCommerce exists and cannot ask for the page. Change that setting too or
+ * trade partners cannot reset a password.
  */
 class B2BAccountPage {
 
 	/** Option holding the B2B account page id, so the id is not hard-coded. */
 	public const OPTION = 'beltoft_commerce_b2b_account_page_id';
 
-	/** Kept in step with the literal in Domain\LoginGate::allowlist(). */
-	public const PATH = '/conta/';
+	/** Config 'account_path'. Its lost-password endpoint is in Config 'lost_password_paths' too. */
+	public static function path(): string {
+		return Config::path( 'account_path' );
+	}
 
 	/**
 	 * Where the account area has lived before.
@@ -45,7 +49,9 @@ class B2BAccountPage {
 	 * bookmarks. The move left no _wp_old_slug behind - WordPress records one
 	 * for a slug change, not a re-parent - so the forwarding is done here.
 	 */
-	public const LEGACY_PATHS = array( '/conta-b2b/' );
+	public static function legacy_paths(): array {
+		return Config::paths( 'account_legacy_paths' );
+	}
 
 	public static function register(): void {
 		add_filter( 'woocommerce_get_myaccount_page_id', array( __CLASS__, 'page_id' ) );
@@ -62,13 +68,13 @@ class B2BAccountPage {
 	public static function forward_legacy_path(): void {
 		$path = (string) wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH );
 
-		foreach ( self::LEGACY_PATHS as $legacy ) {
+		foreach ( self::legacy_paths() as $legacy ) {
 			if ( '' === $path || 0 !== strpos( $path, $legacy ) ) {
 				continue;
 			}
 
 			// Whatever followed the old base - an endpoint, an order id, nothing.
-			$target = home_url( self::PATH . substr( $path, strlen( $legacy ) ) );
+			$target = home_url( self::path() . substr( $path, strlen( $legacy ) ) );
 			$query  = (string) wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY );
 
 			if ( '' !== $query ) {

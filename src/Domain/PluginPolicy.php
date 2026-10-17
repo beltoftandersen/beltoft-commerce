@@ -2,6 +2,7 @@
 
 namespace BeltoftCommerce\Domain;
 
+use BeltoftCommerce\Support\Config;
 use BeltoftCommerce\Support\Hosts;
 
 defined( 'ABSPATH' ) || exit;
@@ -69,53 +70,22 @@ defined( 'ABSPATH' ) || exit;
  */
 class PluginPolicy {
 
-	/** Plugin directory names, matched against the start of the plugin file. */
-	private const UNUSED_ON_B2B = array(
-		'super-socializer/',
-		'woo-smart-wishlist/',
-		'wpc-composite-products/',
-		'pymntpl-paypal-woocommerce/',
-		'multibanco-ifthen-software-gateway-for-woocommerce/',
-		'beltoft-loyalty-rewards/',
-		'beltoft-loyalty-rewards-pro/',
-		'duracelltomi-google-tag-manager/',
-		'pressidium-cookie-consent/',
-		/*
-		 * Measured before adding, on the trade host:
-		 *
-		 * - woocommerce-subscriptions: zero subscription products exist. The
-		 *   heaviest plugin here, and trade sells nothing recurring.
-		 * - meta-box: its three field groups (promotion_date, workshop_date,
-		 *   ingredients) are registered by bricks-child for the retail site and
-		 *   appear nowhere in the ordering page or its quick-view popup. The
-		 *   rwmb_meta_boxes filters simply never fire here.
-		 * - beltoft-gift-cards: the one gift-card product returns no results in
-		 *   the trade catalogue, and of fifteen redemptions to date none were on
-		 *   a trade order - gift cards are a consumer product.
-		 *
-		 * If trade ever sells a gift card or a subscription, remove the matching
-		 * line here first: the product type will not exist on this host until it
-		 * is loaded, and the product renders as a broken type rather than erroring.
-		 */
-		'woocommerce-subscriptions/',
-		'meta-box/',
-		'beltoft-gift-cards/',
-		/*
-		 * woo-cancel-abandoned-order cancels unpaid orders on a schedule, and on
-		 * this install it is switched off. Its control is per gateway: bacs has
-		 * woocao_enabled = no, cheque is not configured at all, and the one gateway
-		 * that does have it turned on - multibanco, added to the list by the
-		 * woo_cao_gateways filter in bricks-child - is itself disabled store-wide,
-		 * and is already unloaded here besides. There is no gateway on the trade
-		 * host it can act on.
-		 *
-		 * The cancelling itself is an Action Scheduler job (woo_cao_cron), and cron
-		 * keeps the full plugin set, so unloading it from trade page views does not
-		 * touch the job. Turn any gateway's woocao_enabled back on and this line
-		 * should come out.
-		 */
-		'woo-cancel-abandoned-order/',
-	);
+	/**
+	 * Plugin directory names, matched against the start of the plugin file:
+	 * Config 'unload_on_trade'. mindthetrash's list, measured before each was
+	 * added: woocommerce-subscriptions (no subscription products on trade),
+	 * meta-box (its field groups appear nowhere on the trade pages),
+	 * beltoft-gift-cards (a consumer product; no trade redemptions), and
+	 * woo-cancel-abandoned-order (no gateway on the trade host it can act on;
+	 * its job runs on cron, which keeps every plugin). If trade ever sells a
+	 * gift card or a subscription, take its line out first: the product type
+	 * does not exist on this host until its plugin loads.
+	 *
+	 * @return string[]
+	 */
+	private static function unused_on_b2b(): array {
+		return array_values( array_filter( array_map( 'strval', (array) Config::get( 'unload_on_trade' ) ) ) );
+	}
 
 	public static function register(): void {
 		add_filter( 'option_active_plugins', array( __CLASS__, 'filter' ), 1 );
@@ -131,7 +101,7 @@ class PluginPolicy {
 		}
 
 		$kept = array_values( array_filter( $plugins, static function ( $plugin ) {
-			foreach ( self::UNUSED_ON_B2B as $unused ) {
+			foreach ( self::unused_on_b2b() as $unused ) {
 				if ( 0 === strpos( (string) $plugin, $unused ) ) {
 					return false;
 				}

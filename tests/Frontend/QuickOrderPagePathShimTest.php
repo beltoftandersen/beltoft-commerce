@@ -24,7 +24,7 @@ class QuickOrderPagePathShimTest extends WP_UnitTestCase {
 	public function test_it_recognises_the_configured_page_and_nothing_else() {
 		$page  = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'trade-list' ) );
 		$other = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'contacto' ) );
-		update_option( HostPages::OPTION, array( OrderingPage::SLUG => $page ) );
+		update_option( HostPages::OPTION, array( OrderingPage::slug() => $page ) );
 
 		$this->go_to( get_permalink( $page ) );
 		$this->assertTrue( QuickOrderPagePathShim::is_ordering_page(), 'the configured page' );

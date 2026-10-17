@@ -2,6 +2,7 @@
 
 namespace BeltoftCommerce\QuickOrder;
 
+use BeltoftCommerce\Support\Config;
 use BeltoftCommerce\QuickOrder\Sheet\Reader;
 use BeltoftCommerce\QuickOrder\Sheet\Writer;
 use BeltoftCommerce\Support\Hosts;
@@ -17,12 +18,11 @@ defined( 'ABSPATH' ) || exit;
  */
 class Page {
 
-	/*
-	 * Duplicated as a literal in Domain\HostRoutes::b2b_only_paths(), which
-	 * cannot reference this class: it is loaded by the mu-plugin before any
-	 * plugin. If this value changes, change it there too.
-	 */
-	public const PATH      = '/encomenda-rapida/';
+	/** Config 'quick_order_path', which HostRoutes also reads. */
+	public static function path(): string {
+		return Config::path( 'quick_order_path' );
+	}
+
 	public const SHORTCODE = 'beltoft_quick_order';
 
 
@@ -295,7 +295,7 @@ class Page {
 	 * @return array<int, string>
 	 */
 	public static function paths(): array {
-		return array( self::PATH );
+		return array( self::path() );
 	}
 
 	/**
@@ -303,14 +303,14 @@ class Page {
 	 *
 	 * Everything that leaves this page and comes back - the redirect after a
 	 * submission, the link that downloads the sheet - has to return to the page
-	 * the buyer is on. Sending them to self::PATH would quietly move anyone
+	 * the buyer is on. Sending them to self::path() would quietly move anyone
 	 * working on the copy over to the live page mid-task.
 	 */
 	private static function current_page_url(): string {
 		$id  = function_exists( 'get_queried_object_id' ) ? (int) get_queried_object_id() : 0;
 		$url = $id ? get_permalink( $id ) : '';
 
-		return is_string( $url ) && '' !== $url ? $url : home_url( self::PATH );
+		return is_string( $url ) && '' !== $url ? $url : home_url( self::path() );
 	}
 
 	private static function is_quick_order_request(): bool {

@@ -43,6 +43,7 @@ class Installer {
 	}
 
 	public static function install(): void {
+		MuPlugin::install();
 		Roles::install();
 		LookupIndex::install();
 

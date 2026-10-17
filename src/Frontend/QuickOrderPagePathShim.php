@@ -8,16 +8,13 @@ defined( 'ABSPATH' ) || exit;
  * The ordering page's path, in one place.
  *
  * Kept as the name every caller already uses; the answers come from
- * Frontend\OrderingPage, which owns the page. Domain\HostRoutes still holds
- * the OLD path as a literal, because it is loaded by the mu-plugin before any
- * plugin and cannot reference either class - that literal is what keeps
- * /encomendar/ on the trade host so the forward from it can fire.
+ * Frontend\OrderingPage, which owns the page (Config 'ordering_page').
  */
 class QuickOrderPagePathShim {
 
 	/** Where to send someone who should be on the ordering page. */
 	public static function ordering_path(): string {
-		return OrderingPage::PATH;
+		return OrderingPage::path();
 	}
 
 	/**
@@ -30,7 +27,7 @@ class QuickOrderPagePathShim {
 	 * @return array<int, string>
 	 */
 	public static function ordering_paths(): array {
-		return array( OrderingPage::PATH );
+		return array( OrderingPage::path() );
 	}
 
 	/** Whether the current request is rendering the ordering surface. */

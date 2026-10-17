@@ -2,6 +2,7 @@
 
 namespace BeltoftCommerce\Domain;
 
+use BeltoftCommerce\Support\Config;
 use BeltoftCommerce\Support\Hosts;
 
 defined( 'ABSPATH' ) || exit;
@@ -24,8 +25,12 @@ class LoginGate {
 	 * authentication: the Bricks form's login action calls wp_signon(), so
 	 * every authenticate filter - including the administrator-location block
 	 * in beltoft-hardening - still applies.
+	 *
+	 * Config 'login_path'.
 	 */
-	public const LOGIN_PATH = '/entrar/';
+	public static function login_path(): string {
+		return Config::path( 'login_path' );
+	}
 
 	/**
 	 * The B2B application form.
@@ -34,8 +39,12 @@ class LoginGate {
 	 * registration page and nothing else". Fourteen fields do not belong in the
 	 * 360px login card, so registration is its own page - both reachable,
 	 * nothing else is, which is what the rule is protecting.
+	 *
+	 * Config 'register_path'.
 	 */
-	public const REGISTER_PATH = '/registo/';
+	public static function register_path(): string {
+		return Config::path( 'register_path' );
+	}
 
 	/**
 	 * Query variables that make WordPress serve something other than the path.
@@ -142,7 +151,7 @@ class LoginGate {
 		 * sent unnormalised) render a trade 404 with the trade header to a
 		 * logged-out visitor.
 		 */
-		if ( in_array( untrailingslashit( $path ) . '/', array( self::LOGIN_PATH, self::REGISTER_PATH ), true ) ) {
+		if ( in_array( untrailingslashit( $path ) . '/', array( self::login_path(), self::register_path() ), true ) ) {
 			return true;
 		}
 
@@ -213,34 +222,21 @@ class LoginGate {
 			 */
 			'/wp-admin/',
 			/*
-			 * WooCommerce's real lost-password URL.
+			 * WooCommerce's lost-password endpoint (Config 'lost_password_paths'):
+			 * on the retail account page, on the trade one - B2B requests resolve
+			 * the account page to Account\B2BAccountPage - and on the trade
+			 * account's old address, where reset links already mailed point.
 			 *
-			 * The endpoint slug is 'recuperar-palavra-passe' since the account
-			 * endpoints were put into Portuguese; the option that holds it is
-			 * woocommerce_myaccount_lost_password_endpoint. A literal for the
-			 * reason given at the top of this list - the gate runs before any
-			 * plugin, so it cannot ask WooCommerce - which means CHANGING THAT
-			 * OPTION MEANS CHANGING THESE TWO LINES. Get it wrong and the only
-			 * symptom is a logged-out partner who cannot reset a password:
-			 * nothing errors, the gate simply bounces them to the login page.
+			 * Paths, not a question to WooCommerce, because the gate runs before
+			 * any plugin. CHANGING woocommerce_myaccount_lost_password_endpoint
+			 * MEANS CHANGING THAT SETTING: get it wrong and the only symptom is a
+			 * logged-out partner who cannot reset a password - nothing errors,
+			 * the gate bounces them to the login page.
 			 *
-			 * The reset link mailed to the customer carries ?key= and ?login=
-			 * on this same path, so one prefix covers both steps.
+			 * The reset link carries ?key= and ?login= on the same path, so one
+			 * prefix covers both steps.
 			 */
-			'/a-minha-conta/recuperar-palavra-passe/',
-			/*
-			 * The same endpoint under the trade account page. B2B requests resolve
-			 * the account page to Account\B2BAccountPage::PATH, so the reset link
-			 * mailed to a partner lands here and not on the retail path above.
-			 */
-			'/conta/recuperar-palavra-passe/',
-			/*
-			 * The account area's first home, kept because reset links already in
-			 * partners' inboxes point at it: the gate has to let them reach the
-			 * 301 that Account\B2BAccountPage puts on the old path, or the forward
-			 * never happens and they land back on the login page.
-			 */
-			'/conta-b2b/recuperar-palavra-passe/',
+			...Config::paths( 'lost_password_paths' ),
 			/*
 			 * The scanner's own REST namespace, and only that one.
 			 *
@@ -319,7 +315,7 @@ class LoginGate {
 		}
 
 		// wp_safe_redirect() is pluggable and not available this early.
-		header( 'Location: https://' . Hosts::b2b() . self::LOGIN_PATH, true, 302 );
+		header( 'Location: https://' . Hosts::b2b() . self::login_path(), true, 302 );
 		header( 'Cache-Control: no-store, private' );
 		exit;
 	}
@@ -353,7 +349,7 @@ class LoginGate {
 			return;
 		}
 
-		wp_safe_redirect( home_url( self::LOGIN_PATH ), 302 );
+		wp_safe_redirect( home_url( self::login_path() ), 302 );
 		exit;
 	}
 }

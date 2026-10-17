@@ -20,7 +20,10 @@ defined( 'ABSPATH' ) || exit;
  */
 class Validator {
 
-	public const HOME_COUNTRY = 'PT';
+	/** The shop's own country (Config 'home_country'): a number from here is a domestic sale. */
+	public static function home_country(): string {
+		return strtoupper( (string) \BeltoftCommerce\Support\Config::get( 'home_country' ) );
+	}
 
 	/** EU member state codes. */
 	private const EU = array(
@@ -50,7 +53,7 @@ class Validator {
 
 		// Portuguese numbers are NEVER sent to VIES. A domestic sale is a
 		// domestic sale, and a valid PT number is not a zero-rating trigger.
-		if ( self::HOME_COUNTRY === $country ) {
+		if ( self::home_country() === $country ) {
 			$decision->status = 'domestic';
 
 			return $decision;

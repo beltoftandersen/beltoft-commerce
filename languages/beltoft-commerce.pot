@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-15T11:14:59+00:00\n"
+"POT-Creation-Date: 2026-10-17T10:47:28+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: beltoft-commerce\n"
@@ -172,7 +172,7 @@ msgstr ""
 msgid "If your company uses an internal reference, enter it here. It appears on the confirmation and on the order."
 msgstr ""
 
-#: src/Domain/LoginGate.php:166
+#: src/Domain/LoginGate.php:203
 msgid "Sign in to continue."
 msgstr ""
 
@@ -312,15 +312,15 @@ msgstr[1] ""
 msgid "Free"
 msgstr ""
 
-#: src/Monitoring/VatReviewQueue.php:76
+#: src/Monitoring/VatReviewQueue.php:81
 msgid "VAT check"
 msgstr ""
 
-#: src/Monitoring/VatReviewQueue.php:95
+#: src/Monitoring/VatReviewQueue.php:104
 msgid "Needs review"
 msgstr ""
 
-#: src/Plugin.php:146
+#: src/Plugin.php:150
 msgid "Beltoft Commerce has no trade site: set its hostname with <code>define( 'BELTOFT_B2B_HOST', 'b2b.example.com' );</code> in wp-config.php."
 msgstr ""
 
@@ -755,6 +755,12 @@ msgstr ""
 
 #: src/Scanner/ScannerContext.php:106
 msgid "The back-in-stock alert could not be saved. Please try again."
+msgstr ""
+
+#. translators: 1: source file path, 2: target directory
+#: src/Support/MuPlugin.php:90
+#, php-format
+msgid "Beltoft Commerce could not install its early host handler. Copy %1$s into %2$s."
 msgstr ""
 
 #: src/Vat/AccountEndpoint.php:86

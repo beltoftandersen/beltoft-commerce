@@ -2,6 +2,7 @@
 
 namespace BeltoftCommerce\Domain;
 
+use BeltoftCommerce\Support\Config;
 use BeltoftCommerce\Support\Hosts;
 
 defined( 'ABSPATH' ) || exit;
@@ -81,25 +82,17 @@ class HostRoutes {
 	 * which host a page lives on.
 	 */
 	public static function b2b_only_paths(): array {
-		return (array) apply_filters( 'beltoft_commerce_b2b_only_paths', array(
-			LoginGate::LOGIN_PATH,
-			LoginGate::REGISTER_PATH,
-			/*
-			 * The trade account area. A literal, like the rest: this list is read
-			 * before Account\B2BAccountPage exists.
-			 */
-			'/conta/',
-			/*
-			 * A literal, not QuickOrder\Page::PATH. This class is loaded by the
-			 * mu-plugin before any plugin, so QuickOrder\Page does not exist
-			 * yet and referencing it would fatal on every request. Page::PATH
-			 * carries the same value and a comment pointing back here.
-			 */
-			'/encomenda-rapida/',
-			// Also a literal, for the same reason as the line above.
-			'/finalizar-b2b/',
-			// Likewise. Account\B2BAccountPage::PATH carries the same value.
-			'/conta-b2b/',
+		/*
+		 * From Config, not from the page classes: this list is read by the
+		 * mu-plugin before any plugin class exists.
+		 */
+		return (array) apply_filters( 'beltoft_commerce_b2b_only_paths', array_merge( array(
+			LoginGate::login_path(),
+			LoginGate::register_path(),
+			// The trade account area.
+			Config::path( 'account_path' ),
+			Config::path( 'quick_order_path' ),
+		), Config::paths( 'checkout_legacy_paths' ), Config::paths( 'account_legacy_paths' ), array(
 			/*
 			 * The trade posts' PHYSICAL slugs, matched as a prefix.
 			 *
@@ -110,8 +103,8 @@ class HostRoutes {
 			 * /b2b-loja/ would render the trade ordering page, with trade prices,
 			 * to anyone on the consumer site who guessed it.
 			 */
-			'/b2b-',
-		) );
+			strtolower( (string) Config::get( 'trade_page_prefix' ) ),
+		) ) );
 	}
 
 	public static function should_redirect( string $path, bool $is_bricks_builder = false ): bool {

@@ -172,7 +172,7 @@ msgstr "Número da nota de encomenda"
 msgid "If your company uses an internal reference, enter it here. It appears on the confirmation and on the order."
 msgstr "Se a sua empresa usa uma referência interna, indique-a aqui. Aparece na confirmação e na encomenda."
 
-#: src/Domain/LoginGate.php:166
+#: src/Domain/LoginGate.php:203
 msgid "Sign in to continue."
 msgstr "Inicie sessão para continuar."
 
@@ -295,11 +295,11 @@ msgstr[1] "%d códigos"
 msgid "Free"
 msgstr "Grátis"
 
-#: src/Monitoring/VatReviewQueue.php:76
+#: src/Monitoring/VatReviewQueue.php:81
 msgid "VAT check"
 msgstr "Verificação de IVA"
 
-#: src/Monitoring/VatReviewQueue.php:95
+#: src/Monitoring/VatReviewQueue.php:104
 msgid "Needs review"
 msgstr "Requer revisão"
 
@@ -895,7 +895,7 @@ msgstr "Apenas %d em stock."
 msgid "Could not add. Only %d in stock."
 msgstr "Não foi possível adicionar. Apenas %d em stock."
 
-#: src/Plugin.php:146
+#: src/Plugin.php:150
 msgid "Beltoft Commerce has no trade site: set its hostname with <code>define( 'BELTOFT_B2B_HOST', 'b2b.example.com' );</code> in wp-config.php."
 msgstr "O Beltoft Commerce não tem site de revenda: defina o nome do anfitrião com <code>define( 'BELTOFT_B2B_HOST', 'b2b.example.com' );</code> no wp-config.php."
 
@@ -912,3 +912,9 @@ msgstr "data desconhecida"
 #: src/Vat/OrderEvidence.php:94
 msgid "none"
 msgstr "nenhuma"
+
+#. translators: 1: source file path, 2: target directory
+#: src/Support/MuPlugin.php:90
+#, php-format
+msgid "Beltoft Commerce could not install its early host handler. Copy %1$s into %2$s."
+msgstr "O Beltoft Commerce não conseguiu instalar o seu tratamento antecipado de anfitriões. Copie %1$s para %2$s."

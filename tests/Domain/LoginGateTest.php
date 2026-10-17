@@ -72,7 +72,7 @@ class LoginGateTest extends WP_UnitTestCase {
 
 	public static function allowlisted_paths(): array {
 		return array(
-			array( LoginGate::LOGIN_PATH ),
+			array( LoginGate::login_path() ),
 			array( '/wp-login.php' ),
 			array( '/wp-admin/' ),
 			array( '/wp-admin/admin-ajax.php' ),
@@ -96,8 +96,8 @@ class LoginGateTest extends WP_UnitTestCase {
 	public function test_the_login_page_is_not_gated() {
 		$_SERVER['HTTP_HOST'] = Hosts::b2b();
 
-		$this->assertFalse( LoginGate::should_gate( LoginGate::LOGIN_PATH ) );
-		$this->assertFalse( LoginGate::should_gate_early( LoginGate::LOGIN_PATH, false ) );
+		$this->assertFalse( LoginGate::should_gate( LoginGate::login_path() ) );
+		$this->assertFalse( LoginGate::should_gate_early( LoginGate::login_path(), false ) );
 	}
 
 	/**

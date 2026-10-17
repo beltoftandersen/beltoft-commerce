@@ -30,9 +30,9 @@ tests_add_filter( 'option_active_plugins', function ( $plugins ) {
 } );
 
 tests_add_filter( 'muplugins_loaded', function () {
-	// The staging mu-plugin is not in the test install's mu-plugins directory,
-	// so load it explicitly, before WooCommerce, as the real one does.
-	require dirname( BELTOFT_SITE_PLUGINS ) . '/mu-plugins/beltoft-commerce-host.php';
+	// The early host handler the plugin ships (mu-plugin/), loaded before
+	// WooCommerce as the installed copy is.
+	require BELTOFT_SITE_PLUGINS . '/beltoft-commerce/mu-plugin/beltoft-commerce-host.php';
 
 	require BELTOFT_SITE_PLUGINS . '/woocommerce/woocommerce.php';
 

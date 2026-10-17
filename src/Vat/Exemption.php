@@ -132,7 +132,7 @@ class Exemption {
 		 * number with the goods shipped to a Portuguese address, or collected
 		 * here, is a domestic sale and is charged IVA.
 		 */
-		if ( Validator::HOME_COUNTRY === self::destination() ) {
+		if ( Validator::home_country() === self::destination() ) {
 			self::$decided = false;
 
 			return false;
@@ -268,7 +268,7 @@ class Exemption {
 
 		foreach ( $methods as $method ) {
 			if ( 0 === strpos( (string) $method, 'local_pickup' ) || 0 === strpos( (string) $method, 'pickup_location' ) ) {
-				return Validator::HOME_COUNTRY;
+				return Validator::home_country();
 			}
 		}
 

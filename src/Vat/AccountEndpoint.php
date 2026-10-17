@@ -99,7 +99,7 @@ class AccountEndpoint {
 	private static function billing_country( int $user_id ): string {
 		$country = (string) get_user_meta( $user_id, 'billing_country', true );
 
-		return '' !== $country ? $country : Validator::HOME_COUNTRY;
+		return '' !== $country ? $country : Validator::home_country();
 	}
 
 	/**

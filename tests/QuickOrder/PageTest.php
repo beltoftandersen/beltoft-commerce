@@ -7,11 +7,11 @@ class PageTest extends WP_UnitTestCase {
 
 	/**
 	 * The page is B2B-only like every other B2B surface, and HostRoutes is
-	 * what keeps it off the retail host. Deriving the path from Page::PATH
+	 * what keeps it off the retail host. Deriving the path from Page::path()
 	 * rather than repeating the string is what stops the two disagreeing.
 	 */
 	public function test_the_page_is_a_b2b_only_path() {
-		$this->assertContains( Page::PATH, HostRoutes::b2b_only_paths() );
+		$this->assertContains( Page::path(), HostRoutes::b2b_only_paths() );
 	}
 
 	public function test_the_pad_parses_pasted_lines() {
