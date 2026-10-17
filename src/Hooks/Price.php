@@ -52,6 +52,9 @@ class Price {
 		}
 
 		add_filter( 'woocommerce_product_is_on_sale', array( __CLASS__, 'on_sale' ), self::PRIORITY, 2 );
+
+		// Before WooCommerce's own handler (10), which prices the new lines.
+		add_action( 'wp_ajax_woocommerce_add_order_item', array( __CLASS__, 'price_added_items_for_customer' ), 0 );
 		add_filter( 'woocommerce_product_variation_is_on_sale', array( __CLASS__, 'on_sale' ), self::PRIORITY, 2 );
 	}
 
@@ -99,5 +102,21 @@ class Price {
 		// Must reflect the group's own sale state, or B2B customers see
 		// sale badges driven by retail campaigns that do not apply.
 		return PriceResolver::is_on_sale( $product, $group );
+	}
+
+	/**
+	 * Lines added to an order in wp-admin are priced for the order's customer.
+	 * WooCommerce's add-item handler prices them from get_price(), which these
+	 * filters answer for the signed-in user - the shop manager, at retail - so
+	 * a phone order for a partner came out at retail prices.
+	 */
+	public static function price_added_items_for_customer(): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WooCommerce checks the nonce and capability in its own handler, which runs next.
+		$order_id = isset( $_POST['order_id'] ) ? absint( wp_unslash( $_POST['order_id'] ) ) : 0;
+		$order    = $order_id && current_user_can( 'edit_shop_orders' ) ? wc_get_order( $order_id ) : null;
+
+		if ( $order instanceof \WC_Order && $order->get_customer_id() ) {
+			PricingContext::act_for( (int) $order->get_customer_id() );
+		}
 	}
 }

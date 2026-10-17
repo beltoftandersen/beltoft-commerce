@@ -15,8 +15,25 @@ class PricingContext {
 
 	public const OVERRIDE_META = '_beltoft_pricing_group';
 
+	/** A customer whose prices this request quotes in place of the signed-in user's. */
+	private static ?int $acting_for = null;
+
 	public static function current(): string {
-		return self::for_user( get_current_user_id() );
+		return self::for_user( null !== self::$acting_for ? self::$acting_for : get_current_user_id() );
+	}
+
+	/**
+	 * Quote prices for another customer for the rest of this request (or until
+	 * stop_acting()). For staff building an order for a partner in wp-admin:
+	 * WooCommerce prices the line from get_price(), which otherwise answers for
+	 * the shop manager - at retail.
+	 */
+	public static function act_for( int $user_id ): void {
+		self::$acting_for = $user_id;
+	}
+
+	public static function stop_acting(): void {
+		self::$acting_for = null;
 	}
 
 	/**

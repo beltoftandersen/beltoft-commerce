@@ -44,7 +44,39 @@ class B2BCheckoutPage {
 		return Config::paths( 'checkout_legacy_paths' );
 	}
 
+	/**
+	 * The Store API's checkout is refused on the trade host.
+	 *
+	 * The trade checkout is the classic one (this page): that is where the VAT
+	 * number is checked against VIES and its evidence written to the order
+	 * (Vat\Field, Vat\OrderEvidence), on hooks the Store API never fires. A
+	 * signed-in partner posting /wc/store/v1/checkout got a zero-rated order
+	 * decided from a cached answer, with no evidence and no review flag.
+	 * Batch requests are dispatched one by one through the same filter.
+	 *
+	 * @param mixed            $result
+	 * @param mixed            $server
+	 * @param \WP_REST_Request $request
+	 * @return mixed
+	 */
+	public static function refuse_store_api_checkout( $result, $server = null, $request = null ) {
+		if ( null !== $result || ! $request instanceof \WP_REST_Request || ! Hosts::is_b2b_host() ) {
+			return $result;
+		}
+
+		if ( ! preg_match( '#^/wc/store(/v\d+)?/checkout(/|$)#i', $request->get_route() ) ) {
+			return $result;
+		}
+
+		return new \WP_Error(
+			'beltoft_commerce_use_checkout_page',
+			__( 'Please place trade orders from the checkout page.', 'beltoft-commerce' ),
+			array( 'status' => 403 )
+		);
+	}
+
 	public static function register(): void {
+		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'refuse_store_api_checkout' ), 10, 3 );
 		add_filter( 'woocommerce_get_checkout_page_id', array( __CLASS__, 'page_id' ) );
 		add_action( 'template_redirect', array( __CLASS__, 'forward_legacy' ), 1 );
 	}

@@ -172,4 +172,15 @@ class QueryResultCacheTest extends WP_UnitTestCase {
 
 		$this->assertSame( 1, $writes );
 	}
+
+	/** Rows rendered in another language are another entry. */
+	public function test_the_language_separates_entries() {
+		$_SERVER['HTTP_HOST'] = BeltoftCommerce\Support\Hosts::b2b();
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'b2b_customer' ) ) );
+
+		$base = $this->key( $this->body() );
+		add_filter( 'determine_locale', static fn() => 'en_GB' );
+
+		$this->assertNotSame( $base, $this->key( $this->body() ) );
+	}
 }

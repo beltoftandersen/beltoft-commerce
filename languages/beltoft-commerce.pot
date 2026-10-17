@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-17T10:47:28+00:00\n"
+"POT-Creation-Date: 2026-10-17T15:05:10+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: beltoft-commerce\n"
@@ -132,6 +132,10 @@ msgstr ""
 msgid "Retail and B2B"
 msgstr ""
 
+#: src/Checkout/B2BCheckoutPage.php:73
+msgid "Please place trade orders from the checkout page."
+msgstr ""
+
 #: src/Checkout/B2BPaymentMethods.php:98
 msgid "Bank transfer"
 msgstr ""
@@ -172,7 +176,7 @@ msgstr ""
 msgid "If your company uses an internal reference, enter it here. It appears on the confirmation and on the order."
 msgstr ""
 
-#: src/Domain/LoginGate.php:203
+#: src/Domain/LoginGate.php:246
 msgid "Sign in to continue."
 msgstr ""
 
@@ -320,7 +324,7 @@ msgstr ""
 msgid "Needs review"
 msgstr ""
 
-#: src/Plugin.php:150
+#: src/Plugin.php:151
 msgid "Beltoft Commerce has no trade site: set its hostname with <code>define( 'BELTOFT_B2B_HOST', 'b2b.example.com' );</code> in wp-config.php."
 msgstr ""
 
@@ -484,7 +488,7 @@ msgid "B2B rejected"
 msgstr ""
 
 #: src/Registration/AdminUsers.php:209
-#: src/Registration/AdminUsers.php:351
+#: src/Registration/AdminUsers.php:355
 msgid "B2B application"
 msgstr ""
 
@@ -513,7 +517,7 @@ msgid "Reject B2B application"
 msgstr ""
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:304
+#: src/Registration/AdminUsers.php:308
 #, php-format
 msgid "%d application approved."
 msgid_plural "%d applications approved."
@@ -521,24 +525,24 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:306
+#: src/Registration/AdminUsers.php:310
 #, php-format
 msgid "%d application rejected."
 msgid_plural "%d applications rejected."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Registration/AdminUsers.php:354
+#: src/Registration/AdminUsers.php:358
 #: src/Registration/Fields.php:130
 msgid "Shop name"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:359
+#: src/Registration/AdminUsers.php:363
 #: src/Registration/Fields.php:124
 msgid "Company information"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:365
+#: src/Registration/AdminUsers.php:369
 msgid "Status"
 msgstr ""
 
@@ -603,25 +607,26 @@ msgid "We have received your application. We have sent you an email and will be 
 msgstr ""
 
 #. translators: %s: field label.
-#: src/Registration/Registrar.php:41
+#: src/Registration/Registrar.php:40
 #, php-format
 msgid "Fill in the \"%s\" field."
 msgstr ""
 
-#: src/Registration/Registrar.php:51
+#: src/Registration/Registrar.php:50
 msgid "Enter a valid email address."
 msgstr ""
 
-#: src/Registration/Registrar.php:55
+#: src/Registration/Registrar.php:54
 msgid "An account with this email already exists."
 msgstr ""
 
-#: src/Registration/Registrar.php:160
-#: src/Registration/Registrar.php:171
+#: src/Registration/Registrar.php:191
+#: src/Registration/Registrar.php:202
+#: src/Vat/Field.php:118
 msgid "The tax number given is not valid."
 msgstr ""
 
-#: src/Registration/Registrar.php:177
+#: src/Registration/Registrar.php:208
 msgid "The VAT number given is from a different country than the one selected."
 msgstr ""
 
@@ -865,35 +870,35 @@ msgstr ""
 msgid "If you have an EU VAT number, enter it here. Leave empty for a normal purchase."
 msgstr ""
 
-#: src/Vat/Field.php:112
+#: src/Vat/Field.php:125
 msgid "This VAT number is from a different country than your billing address. Change the billing country to the VAT number's country, or leave the field empty."
 msgstr ""
 
-#: src/Vat/Field.php:117
+#: src/Vat/Field.php:130
 msgid "The VAT number you entered could not be validated. Please correct it or leave the field empty."
 msgstr ""
 
 #. translators: 1: date of the account's VIES check, 2: VIES consultation number
-#: src/Vat/OrderEvidence.php:92
+#: src/Vat/OrderEvidence.php:100
 #, php-format
 msgid "VIES was unreachable at checkout. Reverse charge was applied on the account's VIES confirmation of %1$s (consultation %2$s)."
 msgstr ""
 
-#: src/Vat/OrderEvidence.php:93
+#: src/Vat/OrderEvidence.php:101
 msgid "unknown date"
 msgstr ""
 
-#: src/Vat/OrderEvidence.php:94
+#: src/Vat/OrderEvidence.php:102
 msgid "none"
 msgstr ""
 
 #. translators: %s: error detail from the VIES service
-#: src/Vat/OrderEvidence.php:110
+#: src/Vat/OrderEvidence.php:118
 #, php-format
 msgid "VAT number could not be verified: VIES was unreachable (%s). IVA has been charged and this order needs manual review."
 msgstr ""
 
-#: src/Vat/OrderEvidence.php:111
+#: src/Vat/OrderEvidence.php:119
 msgid "no detail"
 msgstr ""
 

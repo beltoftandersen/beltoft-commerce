@@ -2,7 +2,6 @@
 
 namespace BeltoftCommerce\Registration;
 
-use BeltoftCommerce\Vat\PtNif;
 use BeltoftCommerce\Vat\Validator;
 use WP_Error;
 
@@ -76,6 +75,12 @@ class Registrar {
 			return $user_id;
 		}
 
+		// The district as WooCommerce's state code ('MD'), not its name: zones
+		// and the checkout's state select both match on the code.
+		if ( isset( $clean['state'] ) ) {
+			$clean['state'] = self::state_code( (string) $clean['state'], (string) ( $clean['country'] ?? Validator::home_country() ) );
+		}
+
 		foreach ( $fields as $key => $field ) {
 			if ( ! isset( $clean[ $key ] ) ) {
 				continue;
@@ -130,6 +135,32 @@ class Registrar {
 	}
 
 	/**
+	 * A district as the form sends it - a name such as 'Madeira' or already a
+	 * code - mapped to WooCommerce's state code for the country ('MD'). The
+	 * form's options are names, and stored as names they matched no shipping
+	 * zone (zones list PT:MD, PT:AC) and no option of the checkout's state
+	 * select. Unknown values are kept as given.
+	 */
+	public static function state_code( string $state, string $country ): string {
+		$state  = trim( $state );
+		$states = function_exists( 'WC' ) && WC()->countries ? (array) WC()->countries->get_states( strtoupper( $country ) ) : array();
+
+		if ( '' === $state || ! $states || isset( $states[ strtoupper( $state ) ] ) ) {
+			return isset( $states[ strtoupper( $state ) ] ) ? strtoupper( $state ) : $state;
+		}
+
+		$plain = static fn( $text ) => strtolower( remove_accents( html_entity_decode( (string) $text, ENT_QUOTES, 'UTF-8' ) ) );
+
+		foreach ( $states as $code => $name ) {
+			if ( $plain( $name ) === $plain( $state ) ) {
+				return (string) $code;
+			}
+		}
+
+		return $state;
+	}
+
+	/**
 	 * Validate the NIF without ever blocking on someone else's downtime.
 	 *
 	 * Portuguese numbers are checked locally - Validator treats PT as domestic
@@ -156,7 +187,7 @@ class Registrar {
 		 * here, at the point of entry, where a wrong number can still be
 		 * corrected by the person who typed it.
 		 */
-		if ( 'domestic' === $decision->status && ! PtNif::is_valid( $nif ) ) {
+		if ( 'domestic' === $decision->status && ! Validator::domestic_number_ok( $nif ) ) {
 			return new WP_Error( 'beltoft_nif', __( 'The tax number given is not valid.', 'beltoft-commerce' ) );
 		}
 

@@ -25,12 +25,25 @@ class Validator {
 		return strtoupper( (string) \BeltoftCommerce\Support\Config::get( 'home_country' ) );
 	}
 
-	/** EU member state codes. */
+	/**
+	 * EU member state codes - and XI, Northern Ireland, whose businesses buy
+	 * goods under EU VAT rules (Windsor Framework) and which VIES checks.
+	 */
 	private const EU = array(
 		'AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR',
 		'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PL',
-		'PT', 'RO', 'SE', 'SI', 'SK',
+		'PT', 'RO', 'SE', 'SI', 'SK', 'XI',
 	);
+
+	/**
+	 * Whether a number from the shop's own country passes that country's
+	 * check. Only Portugal's algorithm (PtNif) is known; for another home
+	 * country this accepts the number rather than refusing every domestic
+	 * applicant with a Portuguese test.
+	 */
+	public static function domestic_number_ok( string $number ): bool {
+		return 'PT' !== self::home_country() || PtNif::is_valid( $number );
+	}
 
 	/**
 	 * @param bool $allow_remote Passed through to ViesClient. False means
@@ -60,7 +73,8 @@ class Validator {
 		}
 
 		if ( ! in_array( $country, self::EU, true ) ) {
-			// Out of scope here; handled as an export.
+			// Outside the EU: no reverse charge here. Whether a sale outside
+			// the EU is an export is not decided by this plugin.
 			return $decision;
 		}
 
@@ -69,7 +83,7 @@ class Validator {
 		 * not a Spanish business buying from Portugal, whatever VIES says
 		 * about the number. Billing must be the number's own member state.
 		 */
-		if ( strtoupper( trim( $billing_country ) ) !== $country ) {
+		if ( self::billing_country_of( $billing_country, $country ) !== $country ) {
 			$decision->status          = 'country_mismatch';
 			$decision->blocks_checkout = true;
 
@@ -122,6 +136,16 @@ class Validator {
 		}
 
 		return strtoupper( substr( (string) $billing_country, 0, 2 ) );
+	}
+
+	/**
+	 * The billing country as compared with the number's: WooCommerce has no
+	 * Northern Ireland, so an XI number is billed in GB.
+	 */
+	private static function billing_country_of( string $billing_country, string $number_country ): string {
+		$billing = strtoupper( trim( $billing_country ) );
+
+		return ( 'XI' === $number_country && 'GB' === $billing ) ? 'XI' : $billing;
 	}
 
 	private static function number_of( string $raw, string $country ): string {

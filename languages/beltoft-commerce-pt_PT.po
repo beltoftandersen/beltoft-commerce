@@ -172,7 +172,7 @@ msgstr "Número da nota de encomenda"
 msgid "If your company uses an internal reference, enter it here. It appears on the confirmation and on the order."
 msgstr "Se a sua empresa usa uma referência interna, indique-a aqui. Aparece na confirmação e na encomenda."
 
-#: src/Domain/LoginGate.php:203
+#: src/Domain/LoginGate.php:246
 msgid "Sign in to continue."
 msgstr "Inicie sessão para continuar."
 
@@ -468,7 +468,7 @@ msgid "B2B rejected"
 msgstr "B2B rejeitados"
 
 #: src/Registration/AdminUsers.php:209
-#: src/Registration/AdminUsers.php:351
+#: src/Registration/AdminUsers.php:355
 msgid "B2B application"
 msgstr "Registo B2B"
 
@@ -497,7 +497,7 @@ msgid "Reject B2B application"
 msgstr "Rejeitar registo B2B"
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:304
+#: src/Registration/AdminUsers.php:308
 #, php-format
 msgid "%d application approved."
 msgid_plural "%d applications approved."
@@ -505,24 +505,24 @@ msgstr[0] "%d registo aprovado."
 msgstr[1] "%d registos aprovados."
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:306
+#: src/Registration/AdminUsers.php:310
 #, php-format
 msgid "%d application rejected."
 msgid_plural "%d applications rejected."
 msgstr[0] "%d registo rejeitado."
 msgstr[1] "%d registos rejeitados."
 
-#: src/Registration/AdminUsers.php:354
+#: src/Registration/AdminUsers.php:358
 #: src/Registration/Fields.php:130
 msgid "Shop name"
 msgstr "Nome da loja"
 
-#: src/Registration/AdminUsers.php:359
+#: src/Registration/AdminUsers.php:363
 #: src/Registration/Fields.php:124
 msgid "Company information"
 msgstr "Informação da empresa"
 
-#: src/Registration/AdminUsers.php:365
+#: src/Registration/AdminUsers.php:369
 msgid "Status"
 msgstr "Estado"
 
@@ -587,25 +587,26 @@ msgid "We have received your application. We have sent you an email and will be 
 msgstr "Recebemos o seu registo. Enviámos-lhe um email e entraremos em contacto após a análise."
 
 #. translators: %s: field label.
-#: src/Registration/Registrar.php:41
+#: src/Registration/Registrar.php:40
 #, php-format
 msgid "Fill in the \"%s\" field."
 msgstr "Preencha o campo \"%s\"."
 
-#: src/Registration/Registrar.php:51
+#: src/Registration/Registrar.php:50
 msgid "Enter a valid email address."
 msgstr "Indique um endereço de email válido."
 
-#: src/Registration/Registrar.php:55
+#: src/Registration/Registrar.php:54
 msgid "An account with this email already exists."
 msgstr "Já existe uma conta com este email."
 
-#: src/Registration/Registrar.php:160
-#: src/Registration/Registrar.php:171
+#: src/Registration/Registrar.php:191
+#: src/Registration/Registrar.php:202
+#: src/Vat/Field.php:118
 msgid "The tax number given is not valid."
 msgstr "O número de contribuinte indicado não é válido."
 
-#: src/Registration/Registrar.php:177
+#: src/Registration/Registrar.php:208
 msgid "The VAT number given is from a different country than the one selected."
 msgstr "O número de IVA indicado é de um país diferente do país selecionado."
 
@@ -843,21 +844,21 @@ msgstr "Número de contribuinte (NIF/VAT)"
 msgid "If you have an EU VAT number, enter it here. Leave empty for a normal purchase."
 msgstr "Se tem um número de IVA da UE, introduza-o aqui. Deixe vazio para uma compra normal."
 
-#: src/Vat/Field.php:112
+#: src/Vat/Field.php:125
 msgid "This VAT number is from a different country than your billing address. Change the billing country to the VAT number's country, or leave the field empty."
 msgstr "Este número de IVA é de um país diferente do da morada de faturação. Altere o país de faturação para o país do número de IVA, ou deixe o campo vazio."
 
-#: src/Vat/Field.php:117
+#: src/Vat/Field.php:130
 msgid "The VAT number you entered could not be validated. Please correct it or leave the field empty."
 msgstr "O número de IVA introduzido não pôde ser validado. Corrija-o ou deixe o campo vazio."
 
 #. translators: %s: error detail from the VIES service
-#: src/Vat/OrderEvidence.php:110
+#: src/Vat/OrderEvidence.php:118
 #, php-format
 msgid "VAT number could not be verified: VIES was unreachable (%s). IVA has been charged and this order needs manual review."
 msgstr "Não foi possível verificar o número de IVA: o VIES está indisponível (%s). O IVA foi cobrado e esta encomenda necessita de revisão manual."
 
-#: src/Vat/OrderEvidence.php:111
+#: src/Vat/OrderEvidence.php:119
 msgid "no detail"
 msgstr "sem detalhe"
 
@@ -895,21 +896,21 @@ msgstr "Apenas %d em stock."
 msgid "Could not add. Only %d in stock."
 msgstr "Não foi possível adicionar. Apenas %d em stock."
 
-#: src/Plugin.php:150
+#: src/Plugin.php:151
 msgid "Beltoft Commerce has no trade site: set its hostname with <code>define( 'BELTOFT_B2B_HOST', 'b2b.example.com' );</code> in wp-config.php."
 msgstr "O Beltoft Commerce não tem site de revenda: defina o nome do anfitrião com <code>define( 'BELTOFT_B2B_HOST', 'b2b.example.com' );</code> no wp-config.php."
 
 #. translators: 1: date of the account's VIES check, 2: VIES consultation number
-#: src/Vat/OrderEvidence.php:92
+#: src/Vat/OrderEvidence.php:100
 #, php-format
 msgid "VIES was unreachable at checkout. Reverse charge was applied on the account's VIES confirmation of %1$s (consultation %2$s)."
 msgstr "O VIES estava indisponível na finalização da compra. A autoliquidação foi aplicada com base na confirmação VIES da conta de %1$s (consulta %2$s)."
 
-#: src/Vat/OrderEvidence.php:93
+#: src/Vat/OrderEvidence.php:101
 msgid "unknown date"
 msgstr "data desconhecida"
 
-#: src/Vat/OrderEvidence.php:94
+#: src/Vat/OrderEvidence.php:102
 msgid "none"
 msgstr "nenhuma"
 
@@ -918,3 +919,7 @@ msgstr "nenhuma"
 #, php-format
 msgid "Beltoft Commerce could not install its early host handler. Copy %1$s into %2$s."
 msgstr "O Beltoft Commerce não conseguiu instalar o seu tratamento antecipado de anfitriões. Copie %1$s para %2$s."
+
+#: src/Checkout/B2BCheckoutPage.php:73
+msgid "Please place trade orders from the checkout page."
+msgstr "Faça as encomendas de revenda a partir da página de finalização da compra."

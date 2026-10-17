@@ -242,9 +242,17 @@ class QueryResultCache {
 		unset( $body['nonce'] );
 		ksort( $body );
 
+		/*
+		 * And the language the rows are rendered in. On a REST request a
+		 * language plugin (Zerolang) takes it from the Referer, so one
+		 * partner's English rows - English names, /en/ links - were served to
+		 * every partner in the group.
+		 */
 		$vary = array(
-			'group' => $group,
-			'body'  => $body,
+			'group'    => $group,
+			'body'     => $body,
+			'language' => class_exists( '\Zerolang\Request' ) ? (string) \Zerolang\Request::current() : '',
+			'locale'   => determine_locale(),
 		);
 
 		return 'blt_rows_' . self::version() . '_' . md5( (string) wp_json_encode( $vary ) );

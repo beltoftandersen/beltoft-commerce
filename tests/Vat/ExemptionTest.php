@@ -90,6 +90,8 @@ class ExemptionTest extends WP_UnitTestCase {
 	}
 
 	public function test_an_eu_number_with_a_cached_invalid_answer_is_not_exempt() {
+		// Billing in the number's country, so the decision gets past the country check.
+		$this->billing_in( 'ES' );
 		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
 		$this->cache_vies( 'ES', 'B12345678', 'invalid' );
 
@@ -97,6 +99,8 @@ class ExemptionTest extends WP_UnitTestCase {
 	}
 
 	public function test_an_unchecked_eu_number_fails_closed_without_calling_vies() {
+		// Billing in the number's country, so the decision gets past the country check.
+		$this->billing_in( 'ES' );
 		/*
 		 * The whole point of the non-blocking path: totals are recalculated
 		 * on nearly every request, so this must neither zero-rate on a guess
@@ -192,12 +196,16 @@ class ExemptionTest extends WP_UnitTestCase {
 	}
 
 	public function test_an_old_account_answer_charges_iva() {
+		// Billing in the number's country, so the decision gets past the country check.
+		$this->billing_in( 'DK' );
 		$this->forbid_http();
 		$this->account_evidence( 'DK40817921', 'valid', 31 );
 		$this->assertFalse( Exemption::is_exempt() );
 	}
 
 	public function test_an_invalid_or_unverified_account_answer_charges_iva() {
+		// Billing in the number's country, so the decision gets past the country check.
+		$this->billing_in( 'DK' );
 		$this->forbid_http();
 		$this->account_evidence( 'DK40817921', 'invalid', 1 );
 		$this->assertFalse( Exemption::is_exempt() );
@@ -207,6 +215,8 @@ class ExemptionTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_different_number_typed_at_checkout_does_not_borrow_the_account_answer() {
+		// Billing in the number's country, so the decision gets past the country check.
+		$this->billing_in( 'DK' );
 		$this->forbid_http();
 		$this->account_evidence( 'DK40817921', 'valid', 1 );
 		$_POST['beltoft_vat_number'] = 'DK12345678';
@@ -215,6 +225,8 @@ class ExemptionTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_cached_invalid_answer_wins_over_the_account() {
+		// Billing in the number's country, so the decision gets past the country check.
+		$this->billing_in( 'DK' );
 		$this->forbid_http();
 		$this->account_evidence( 'DK40817921', 'valid', 1 );
 		$this->cache_vies( 'DK', '40817921', 'invalid' );

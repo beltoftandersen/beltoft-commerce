@@ -85,7 +85,7 @@ class AccountUpdate {
 			);
 		}
 
-		if ( 'domestic' === $decision->status && ! PtNif::is_valid( $submitted ) ) {
+		if ( 'domestic' === $decision->status && ! Validator::domestic_number_ok( $submitted ) ) {
 			return array(
 				'outcome' => self::REFUSED,
 				'status'  => $decision->status,

@@ -106,7 +106,13 @@ class B2BPaymentMethods {
 		return __( 'We send the bank details and the order reference with the confirmation. The order is prepared once the payment is confirmed.', 'beltoft-commerce' );
 	}
 
+	/**
+	 * Wherever trade prices are charged - not only on the trade host. Pricing
+	 * follows the account, so a partner signed in on the retail site sees
+	 * trade prices and trade shipping there; with retail gateways on top, a
+	 * wholesale order was paid by card.
+	 */
 	private static function applies(): bool {
-		return Session::is_trade();
+		return \BeltoftCommerce\Pricing\Registry::is_trade( \BeltoftCommerce\Pricing\PricingContext::current() );
 	}
 }

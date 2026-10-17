@@ -75,4 +75,18 @@ class HostRoutesTest extends WP_UnitTestCase {
 		$_SERVER['HTTP_HOST'] = Hosts::retail();
 		$this->assertSame( '', HostRoutes::admin_redirect_target( '/wp-admin/' ) );
 	}
+
+	/** An editor's preview of a trade page stays on the retail host, where the session is. */
+	public function test_an_editors_preview_is_not_sent_to_the_trade_host() {
+		$_SERVER['HTTP_HOST'] = Hosts::retail();
+		$page = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'b2b-preview-test', 'post_status' => 'publish' ) );
+
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
+		$this->go_to( home_url( '/?page_id=' . $page . '&preview=true' ) );
+		$this->assertSame( '', HostRoutes::resolved_redirect_target() );
+
+		wp_set_current_user( 0 );
+		$this->go_to( home_url( '/?page_id=' . $page ) );
+		$this->assertStringStartsWith( 'https://' . Hosts::b2b(), HostRoutes::resolved_redirect_target() );
+	}
 }

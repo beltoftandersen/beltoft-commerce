@@ -169,6 +169,15 @@ class HostRoutes {
 			return '';
 		}
 
+		/*
+		 * An editor's preview stays here. HostPages::preview_link() keeps it on
+		 * the retail host on purpose - the admin session lives there - and
+		 * sending it to the trade host landed the editor on its login page.
+		 */
+		if ( is_preview() && current_user_can( 'edit_post', $post->ID ) ) {
+			return '';
+		}
+
 		$path = '/' . trim( (string) get_page_uri( $post ), '/' ) . '/';
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only compared, never stored.

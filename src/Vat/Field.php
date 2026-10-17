@@ -107,6 +107,19 @@ class Field {
 		// That call warmed the VIES cache; the totals still to come should see it.
 		Exemption::forget();
 
+		/*
+		 * The rules the fiscal-data page applies (AccountUpdate): a number with
+		 * nothing readable in it, or a domestic one failing its check digit,
+		 * is refused here too. Otherwise the order went through and
+		 * save_to_customer() replaced the partner's confirmed number - and its
+		 * VIES proof - with it.
+		 */
+		if ( '' === $decision->vat_number || ( 'domestic' === $decision->status && ! Validator::domestic_number_ok( $number ) ) ) {
+			wc_add_notice( __( 'The tax number given is not valid.', 'beltoft-commerce' ), 'error' );
+
+			return;
+		}
+
 		if ( 'country_mismatch' === $decision->status ) {
 			wc_add_notice(
 				__( 'This VAT number is from a different country than your billing address. Change the billing country to the VAT number\'s country, or leave the field empty.', 'beltoft-commerce' ),

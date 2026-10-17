@@ -23,7 +23,14 @@ class BackInStockLink {
 
 	public static function register(): void {
 		if ( class_exists( '\BeltoftInStockNotifier\Subscription\Repository' ) ) {
-			add_filter( 'bisn_email_product_url', array( __CLASS__, 'filter' ), 10, 3 );
+			/*
+			 * After everything else on the hook: the notifier's pro add-on
+			 * replaces the link with a click-tracking URL at 10, which threw
+			 * this rewrite away. Whatever URL arrives - the product's or the
+			 * tracker's - gets the trade host; the tracker then redirects to
+			 * the product on the host it was asked on.
+			 */
+			add_filter( 'bisn_email_product_url', array( __CLASS__, 'filter' ), PHP_INT_MAX, 3 );
 		}
 	}
 

@@ -76,12 +76,23 @@ class Exemption {
 	 * warms the cache for the totals that follow.
 	 */
 	public static function capture_review( $post_data ): void {
+		/*
+		 * The trade host only, like the field: the retail checkout has no VAT
+		 * field, and answering here let an anonymous visitor make the server
+		 * call VIES - up to ten seconds each - with any number they liked.
+		 */
+		if ( ! Hosts::is_b2b_host() || ! is_string( $post_data ) ) {
+			return;
+		}
+
 		$fields = array();
-		parse_str( (string) $post_data, $fields );
+		parse_str( $post_data, $fields );
+
+		$text = static fn( $value ) => is_string( $value ) ? sanitize_text_field( $value ) : '';
 
 		self::$posted_review = array(
-			'number'  => isset( $fields['beltoft_vat_number'] ) ? sanitize_text_field( (string) $fields['beltoft_vat_number'] ) : '',
-			'country' => isset( $fields['billing_country'] ) ? sanitize_text_field( (string) $fields['billing_country'] ) : '',
+			'number'  => $text( $fields['beltoft_vat_number'] ?? '' ),
+			'country' => $text( $fields['billing_country'] ?? '' ),
 		);
 
 		self::$decided = null;

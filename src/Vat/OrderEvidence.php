@@ -36,7 +36,15 @@ class OrderEvidence {
 			return;
 		}
 
-		$decision = Validator::decide( $number, (string) ( $data['billing_country'] ?? '' ) );
+		/*
+		 * From what this checkout already learnt, not a second VIES call: the
+		 * totals were worked out from the answer Field::validate() cached (or
+		 * from the account's), and asking again could get a different one -
+		 * an order charged IVA recorded as 'valid' with nothing flagging the
+		 * refund, or a zero-rated one recorded as 'invalid' - and while VIES
+		 * is down it added another ten-second wait to the checkout.
+		 */
+		$decision = Validator::decide( $number, (string) ( $data['billing_country'] ?? '' ), false );
 
 		/*
 		 * VIES was down, and the totals were zero-rated on the account's own
