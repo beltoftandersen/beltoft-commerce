@@ -4,6 +4,14 @@ namespace BeltoftCommerce\Support;
 
 defined( 'ABSPATH' ) || exit;
 
+/*
+ * Config by path, not the autoloader: this class is loaded by the early host
+ * handler (mu-plugin) before the autoloader exists, and an installed copy of
+ * that handler from an older version does not list Config. Without this, an
+ * update fataled every request before the plugin could replace the handler.
+ */
+require_once __DIR__ . '/Config.php';
+
 /**
  * The only place in the codebase that knows a hostname.
  *

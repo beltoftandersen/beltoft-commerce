@@ -258,14 +258,18 @@ class AdminUsers {
 	}
 
 	/**
-	 * WordPress has already checked the nonce and the screen capability before
-	 * this runs, but not that the acting user may edit these particular
-	 * accounts - so that is checked per user rather than once for the batch.
+	 * The nonce is checked here: WordPress checks it for its own bulk actions
+	 * but not before handing a custom one to this filter (wp-admin/users.php,
+	 * the default case), so a crafted link opened by a signed-in administrator
+	 * approved or rejected accounts. Whether the acting user may edit each
+	 * account is checked per user rather than once for the batch.
 	 */
 	public static function handle_bulk( $redirect, $action, $user_ids ) {
 		if ( ! in_array( $action, array( 'beltoft_b2b_approve', 'beltoft_b2b_reject' ), true ) ) {
 			return $redirect;
 		}
+
+		check_admin_referer( 'bulk-users' );
 
 		$done = 0;
 

@@ -7,6 +7,9 @@ use BeltoftCommerce\Support\Hosts;
 
 defined( 'ABSPATH' ) || exit;
 
+// Loaded early by path (mu-plugin); see Support/Hosts.php for why Config is required here.
+require_once dirname( __DIR__ ) . '/Support/Config.php';
+
 /**
  * Logged-out visitors to the B2B host get the login page and nothing else.
  *

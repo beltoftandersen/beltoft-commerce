@@ -37,10 +37,25 @@ class ShopManagerAccessTest extends WP_UnitTestCase {
 
 	public function test_a_shop_manager_can_approve_through_the_bulk_action() {
 		$applicant = self::factory()->user->create( array( 'role' => 'b2b_pending' ) );
+		$_REQUEST['_wpnonce'] = wp_create_nonce( 'bulk-users' );
 
 		$redirect = AdminUsers::handle_bulk( 'http://example.org/wp-admin/users.php', 'beltoft_b2b_approve', array( $applicant ) );
 
+		unset( $_REQUEST['_wpnonce'] );
 		$this->assertSame( Status::APPROVED, Status::get( $applicant ), $redirect );
+	}
+
+	/** A custom bulk action gets no nonce check from core; a forged request is refused. */
+	public function test_the_bulk_action_without_the_nonce_is_refused() {
+		$applicant = self::factory()->user->create( array( 'role' => 'b2b_pending' ) );
+		unset( $_REQUEST['_wpnonce'] );
+
+		try {
+			AdminUsers::handle_bulk( 'http://example.org/wp-admin/users.php', 'beltoft_b2b_approve', array( $applicant ) );
+			$this->fail( 'the request went through' );
+		} catch ( WPDieException $e ) {
+			$this->assertNotSame( Status::APPROVED, Status::get( $applicant ) );
+		}
 	}
 
 	public function test_administrators_stay_out_of_a_shop_managers_reach() {
