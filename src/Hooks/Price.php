@@ -55,7 +55,9 @@ class Price {
 
 		// Before WooCommerce's own handler (10), which prices the new lines.
 		add_action( 'wp_ajax_woocommerce_add_order_item', array( __CLASS__, 'price_added_items_for_customer' ), 0 );
+		add_action( 'wp_ajax_woocommerce_add_order_item', array( __CLASS__, 'refuse_unpriced_batch' ), 1 );
 		add_filter( 'woocommerce_ajax_add_order_item_validation', array( __CLASS__, 'refuse_unpriced_item' ), 10, 4 );
+		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'price_rest_order_for_customer' ), 10, 3 );
 		add_action( 'admin_footer', array( __CLASS__, 'send_customer_with_added_items' ) );
 		add_filter( 'woocommerce_product_variation_is_on_sale', array( __CLASS__, 'on_sale' ), self::PRIORITY, 2 );
 	}
@@ -136,6 +138,66 @@ class Price {
 		if ( $customer && get_userdata( $customer ) ) {
 			PricingContext::act_for( $customer );
 		}
+	}
+
+	/**
+	 * Before any line is added: WooCommerce saves each product as it goes, so
+	 * refusing the second of three left the first on the order but not on
+	 * screen. The whole batch is checked first, and refused as a whole.
+	 */
+	public static function refuse_unpriced_batch(): void {
+		$group = PricingContext::current();
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WooCommerce checks the nonce in its handler; nothing is changed here.
+		$items = isset( $_POST['data'] ) && is_array( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : array();
+
+		if ( Registry::inherits_prices( $group ) || ! $items || ! current_user_can( 'edit_shop_orders' ) ) {
+			return;
+		}
+
+		foreach ( $items as $item ) {
+			$product = wc_get_product( absint( is_array( $item ) ? ( $item['id'] ?? 0 ) : 0 ) );
+
+			if ( $product instanceof \WC_Product && null === PriceResolver::resolve( $product, $group ) ) {
+				wp_send_json_error( array(
+					/* translators: %s: product name */
+					'error' => sprintf( __( '%s has no price for this customer.', 'beltoft-commerce' ), $product->get_name() ),
+				) );
+			}
+		}
+	}
+
+	/**
+	 * Orders created or edited through WooCommerce's REST API are priced for
+	 * the order's customer, as in wp-admin: a line sent without totals is
+	 * priced from get_price(), which otherwise answers for the API key's user.
+	 *
+	 * @param mixed            $result
+	 * @param mixed            $server
+	 * @param \WP_REST_Request $request
+	 * @return mixed
+	 */
+	public static function price_rest_order_for_customer( $result, $server = null, $request = null ) {
+		if ( null !== $result || ! $request instanceof \WP_REST_Request || ! in_array( $request->get_method(), array( 'POST', 'PUT', 'PATCH' ), true ) ) {
+			return $result;
+		}
+
+		if ( ! preg_match( '#^/wc/v\d+/orders(?:/(\d+))?$#', $request->get_route(), $m ) || ! current_user_can( 'edit_shop_orders' ) ) {
+			return $result;
+		}
+
+		$customer = (int) $request->get_param( 'customer_id' );
+
+		if ( ! $customer && ! empty( $m[1] ) ) {
+			$order    = wc_get_order( (int) $m[1] );
+			$customer = $order instanceof \WC_Order ? (int) $order->get_customer_id() : 0;
+		}
+
+		if ( $customer && get_userdata( $customer ) ) {
+			PricingContext::act_for( $customer );
+		}
+
+		return $result;
 	}
 
 	/**

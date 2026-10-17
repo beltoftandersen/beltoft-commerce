@@ -289,4 +289,63 @@ class ReviewLowFixesTest extends WP_UnitTestCase {
 		$this->assertFalse( Status::reject( $manager ) );
 		$this->assertContains( 'shop_manager', get_userdata( $manager )->roles );
 	}
+
+	/** Final check: variations of a private product are not listed to visitors. */
+	public function test_variations_of_a_private_product_are_not_listed() {
+		$parent = new WC_Product_Variable();
+		$parent->set_status( 'private' );
+		$parent->save();
+		$variation = new WC_Product_Variation();
+		$variation->set_parent_id( $parent->get_id() );
+		$variation->set_regular_price( '9' );
+		$variation->save();
+		BeltoftCommerce\Catalog\CatalogAudience::flush();
+
+		$ids = ( new WP_Query( array( 'post_type' => 'product_variation', 'post_parent__in' => array( $parent->get_id() ), 'fields' => 'ids', 'posts_per_page' => -1 ) ) )->posts;
+
+		$this->assertNotContains( $variation->get_id(), array_map( 'intval', $ids ) );
+	}
+
+	/** Final check: rest_route on admin-ajax.php does not change what the gate sees. */
+	public function test_admin_ajax_with_a_rest_route_is_still_guarded() {
+		$this->assertFalse( LoginGate::admin_endpoint_allowed( '/wp-admin/admin-ajax.php', 'woocommerce_get_cart_totals', array( 'rest_route' => '/x' ) ) );
+	}
+
+	/** Final check: "Change role" never runs a B2B action left in the other select. */
+	public function test_change_role_does_not_run_a_b2b_bulk_action() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$applicant = self::factory()->user->create( array( 'role' => 'b2b_pending' ) );
+		$_REQUEST  = array( 'action' => 'beltoft_b2b_reject', 'changeit' => 'Change', 'new_role' => 'customer', 'users' => array( $applicant ), '_wpnonce' => wp_create_nonce( 'bulk-users' ) );
+
+		$this->assertNull( BeltoftCommerce\Registration\AdminUsers::bulk_from_request() );
+		$this->assertNotSame( Status::REJECTED, Status::get( $applicant ) );
+		$_REQUEST = array();
+	}
+
+	/** Final check: a checkout without the VAT field leaves the account's number alone. */
+	public function test_a_checkout_without_the_vat_field_keeps_the_account_number() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+		$user = self::factory()->user->create( array( 'role' => 'b2b_customer' ) );
+		update_user_meta( $user, '_vat_number', 'DE123456789' );
+		unset( $_POST['beltoft_vat_number'] );
+
+		$customer = new WC_Customer( $user );
+		BeltoftCommerce\Vat\Field::save_to_customer( $customer, array() );
+		$customer->save();
+
+		$this->assertSame( 'DE123456789', get_user_meta( $user, '_vat_number', true ) );
+	}
+
+	/** Final check: REST-created orders are priced for the order's customer. */
+	public function test_rest_orders_are_priced_for_the_customer() {
+		$partner = self::factory()->user->create( array( 'role' => 'b2b_customer' ) );
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'shop_manager' ) ) );
+
+		$request = new WP_REST_Request( 'POST', '/wc/v3/orders' );
+		$request->set_param( 'customer_id', $partner );
+		BeltoftCommerce\Hooks\Price::price_rest_order_for_customer( null, null, $request );
+
+		$this->assertSame( 'b2b_standard', PricingContext::current() );
+		PricingContext::stop_acting();
+	}
 }

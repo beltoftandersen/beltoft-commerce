@@ -155,6 +155,16 @@ class Field {
 			return;
 		}
 
+		/*
+		 * Not on this checkout's form (a payment plugin's own checkout route,
+		 * a hand-built request): the account's number is left as it is. Read as
+		 * "emptied", it was wiped - with its VIES proof - after the totals had
+		 * already been zero-rated with it, leaving the order no evidence.
+		 */
+		if ( ! self::was_posted() ) {
+			return;
+		}
+
 		$number   = self::posted();
 		$user_id  = (int) $customer->get_id();
 		$previous = (string) $customer->get_meta( self::META_KEY );

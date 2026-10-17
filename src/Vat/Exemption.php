@@ -300,7 +300,31 @@ class Exemption {
 		}
 
 		// WooCommerce has no Northern Ireland: a GB address with a BT postcode is.
-		return ( 'GB' === $shipping && 0 === strpos( $postcode, 'BT' ) ) ? 'XI' : $shipping;
+		if ( 'GB' === $shipping && 0 === strpos( $postcode, 'BT' ) ) {
+			return 'XI';
+		}
+
+		return self::outside_vat_territory( $shipping, $customer ) ? 'XX' : $shipping;
+	}
+
+	/**
+	 * Parts of a member state outside the EU VAT area, which WooCommerce files
+	 * under that state's country code: Spain's Canary Islands, Ceuta and
+	 * Melilla (states GC, TF, CE, ML), Heligoland and Büsingen, Livigno and
+	 * Campione d'Italia (by postcode). A sale there leaves the EU VAT area.
+	 */
+	private static function outside_vat_territory( string $country, $customer ): bool {
+		if ( ! $customer instanceof \WC_Customer ) {
+			return false;
+		}
+
+		$state    = strtoupper( (string) ( $customer->get_shipping_country() ? $customer->get_shipping_state() : $customer->get_billing_state() ) );
+		$postcode = preg_replace( '/\s+/', '', (string) ( $customer->get_shipping_country() ? $customer->get_shipping_postcode() : $customer->get_billing_postcode() ) );
+
+		$by_state    = array( 'ES' => array( 'GC', 'TF', 'CE', 'ML' ) );
+		$by_postcode = array( 'DE' => array( '27498', '78266' ), 'IT' => array( '23041', '22061', '22060' ) );
+
+		return in_array( $state, $by_state[ $country ] ?? array(), true ) || in_array( $postcode, $by_postcode[ $country ] ?? array(), true );
 	}
 
 	/**

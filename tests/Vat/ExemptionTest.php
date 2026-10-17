@@ -364,4 +364,32 @@ class ExemptionTest extends WP_UnitTestCase {
 
 		$this->assertTrue( Exemption::is_exempt() );
 	}
+
+	/** Final check: the Canary Islands are outside the EU VAT area. */
+	public function test_a_delivery_to_the_canary_islands_charges_iva() {
+		$this->shippable_cart();
+		update_user_meta( $this->user, Field::META_KEY, 'ESB12345678' );
+		$this->cache_vies( 'ES', 'B12345678', 'valid' );
+		$this->billing_in( 'ES' );
+		WC()->customer->set_shipping_country( 'ES' );
+		WC()->customer->set_shipping_state( 'GC' );
+
+		$this->assertFalse( Exemption::is_exempt() );
+	}
+
+	/** Final check: an XI number with the goods sent to Great Britain (not NI) is charged IVA. */
+	public function test_xi_to_great_britain_charges_iva_and_to_northern_ireland_does_not() {
+		$this->shippable_cart();
+		update_user_meta( $this->user, Field::META_KEY, 'XI123456789' );
+		$this->cache_vies( 'XI', '123456789', 'valid' );
+		$this->billing_in( 'GB' );
+		WC()->customer->set_shipping_country( 'GB' );
+		WC()->customer->set_shipping_postcode( 'SW1A 1AA' );
+
+		$this->assertFalse( Exemption::is_exempt() );
+
+		Exemption::reset();
+		WC()->customer->set_shipping_postcode( 'BT1 1AA' );
+		$this->assertTrue( Exemption::is_exempt() );
+	}
 }

@@ -107,6 +107,8 @@ class QueryFilter {
 			return;
 		}
 
+		self::only_variations_of_public_products( $query );
+
 		$restricted = CatalogAudience::restricts_current_request();
 
 		// §2.7 requires guest and retail queries to be untouched so the
@@ -166,6 +168,44 @@ class QueryFilter {
 	/** See CatalogAudience::published_b2b_only_exist(). */
 	private static function published_b2b_only_products_exist(): bool {
 		return CatalogAudience::published_b2b_only_exist();
+	}
+
+	/**
+	 * A variation listed on its own is shown only if its product is public.
+	 *
+	 * WooCommerce keeps a variation 'publish' when its product is private or a
+	 * draft, so forcing post_status = publish still listed them - names, prices
+	 * and stock of products nobody may see - through a Bricks loop or the
+	 * Store API asking for product_variation. For visitors who may not read
+	 * private products, on listing queries (internal get_posts() lookups and a
+	 * product's own children are left alone, as in exclude_by_id()).
+	 */
+	private static function only_variations_of_public_products( \WP_Query $query ): void {
+		if ( current_user_can( 'read_private_products' ) || $query->get( 'suppress_filters' ) || '' !== (string) $query->get( 'post_parent' ) ) {
+			return;
+		}
+
+		if ( ! in_array( 'product_variation', (array) $query->get( 'post_type' ), true ) ) {
+			return;
+		}
+
+		$hidden = CatalogAudience::non_public_product_ids();
+
+		if ( ! $hidden ) {
+			return;
+		}
+
+		$in = array_map( 'intval', (array) $query->get( 'post_parent__in' ) );
+
+		// post_parent__in makes WordPress ignore post_parent__not_in.
+		if ( $in ) {
+			$kept = array_values( array_diff( $in, $hidden ) );
+			$query->set( 'post_parent__in', $kept ? $kept : array( 0 ) );
+
+			return;
+		}
+
+		$query->set( 'post_parent__not_in', array_values( array_unique( array_merge( array_map( 'intval', (array) $query->get( 'post_parent__not_in' ) ), $hidden ) ) ) );
 	}
 
 	/**

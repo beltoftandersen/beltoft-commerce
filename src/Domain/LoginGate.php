@@ -382,10 +382,14 @@ class LoginGate {
 			return;
 		}
 
-		$path = self::effective_path( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ) );
+		$request_uri = (string) ( $_SERVER['REQUEST_URI'] ?? '/' );
+		$raw_path    = (string) ( wp_parse_url( $request_uri, PHP_URL_PATH ) ?: '/' );
+		$path        = self::effective_path( $request_uri );
 
-		if ( in_array( $path, array( '/wp-admin/admin-ajax.php', '/wp-admin/admin-post.php' ), true ) ) {
-			self::guard_admin_endpoints( $path );
+		// The real file, whatever ?rest_route= says: admin-ajax.php never
+		// dispatches REST, so a rest_route on it only dodged this guard.
+		if ( in_array( $raw_path, array( '/wp-admin/admin-ajax.php', '/wp-admin/admin-post.php' ), true ) ) {
+			self::guard_admin_endpoints( $raw_path );
 
 			return;
 		}

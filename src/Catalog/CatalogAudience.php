@@ -97,6 +97,7 @@ class CatalogAudience {
 		self::$products = array();
 		self::$hidden   = array();
 		self::$published_b2b_only = null;
+		self::$non_public         = null;
 	}
 
 	/** @var bool|null */
@@ -154,6 +155,20 @@ class CatalogAudience {
 	 */
 	public static function may_hide_any(): bool {
 		return self::restricts_current_request() || self::published_b2b_only_exist();
+	}
+
+	/** @var int[]|null */
+	private static ?array $non_public = null;
+
+	/** @return int[] Products that are not published (private, draft, pending, future). */
+	public static function non_public_product_ids(): array {
+		if ( null === self::$non_public ) {
+			global $wpdb;
+
+			self::$non_public = array_map( 'intval', $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'product' AND post_status IN ( 'private', 'draft', 'pending', 'future' )" ) );
+		}
+
+		return self::$non_public;
 	}
 
 	/** @var array<string,int[]> Products outside each audience, keyed trade|retail. */

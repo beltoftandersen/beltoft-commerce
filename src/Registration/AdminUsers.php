@@ -293,6 +293,12 @@ class AdminUsers {
 			$action = sanitize_key( wp_unslash( $_REQUEST['action2'] ) );
 		}
 
+		// "Change role" submits the same form; WordPress gives it priority, and
+		// so does this - a B2B action left in the other select is not run.
+		if ( ! empty( $_REQUEST['changeit'] ) ) {
+			return null;
+		}
+
 		if ( ! in_array( $action, array( 'beltoft_b2b_approve', 'beltoft_b2b_reject' ), true ) || empty( $_REQUEST['users'] ) ) {
 			return null;
 		}
