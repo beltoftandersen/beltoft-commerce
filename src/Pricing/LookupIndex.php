@@ -218,13 +218,12 @@ class LookupIndex {
 		 * user and so reads as retail, and the audience filter would leave the
 		 * B2B-only products - the ones that most need a trade price row - out.
 		 */
-		$ids = get_posts( array(
-			'post_type'               => 'product',
-			'post_status'             => array( 'publish', 'private' ),
-			'numberposts'             => -1,
-			'fields'                  => 'ids',
-			'beltoft_bypass_audience' => true,
-		) );
+		$ids = \BeltoftCommerce\Enforcement\QueryFilter::without_audience( static fn() => get_posts( array(
+			'post_type'   => 'product',
+			'post_status' => array( 'publish', 'private' ),
+			'numberposts' => -1,
+			'fields'      => 'ids',
+		) ) );
 
 		foreach ( $ids as $id ) {
 			self::update_for_product( (int) $id );

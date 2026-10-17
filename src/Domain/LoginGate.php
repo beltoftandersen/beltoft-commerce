@@ -140,7 +140,41 @@ class LoginGate {
 	}
 
 	private static function selects_other_content( array $query ): bool {
-		return (bool) array_intersect( array_keys( $query ), self::CONTENT_VARS );
+		if ( array_intersect( array_keys( $query ), self::CONTENT_VARS ) ) {
+			return true;
+		}
+
+		/*
+		 * Once WordPress has registered its query vars, any public one counts:
+		 * the fixed list missed bricks_template (any Bricks template, product
+		 * templates with prices, rendered on /entrar/?bricks_template=...),
+		 * template_tag, wc-api, the order-pay endpoint and attribute vars. The
+		 * fixed list stays for the early gate, which runs before they exist.
+		 */
+		return (bool) array_intersect( array_keys( $query ), self::public_query_vars() );
+	}
+
+	/** @return string[] WordPress's public query vars, post type and taxonomy ones included; [] before init. */
+	private static function public_query_vars(): array {
+		if ( ! did_action( 'init' ) || ! isset( $GLOBALS['wp'] ) || ! $GLOBALS['wp'] instanceof \WP ) {
+			return array();
+		}
+
+		$vars = (array) apply_filters( 'query_vars', $GLOBALS['wp']->public_query_vars );
+
+		foreach ( get_post_types( array( 'publicly_queryable' => true ), 'objects' ) as $type ) {
+			if ( $type->query_var ) {
+				$vars[] = $type->query_var;
+			}
+		}
+
+		foreach ( get_taxonomies( array( 'public' => true ), 'objects' ) as $taxonomy ) {
+			if ( $taxonomy->query_var ) {
+				$vars[] = $taxonomy->query_var;
+			}
+		}
+
+		return array_values( array_unique( array_map( 'strval', $vars ) ) );
 	}
 
 	private static function allowlisted( string $path, array $query ): bool {
@@ -155,6 +189,12 @@ class LoginGate {
 		 * logged-out visitor.
 		 */
 		if ( in_array( untrailingslashit( $path ) . '/', array( self::login_path(), self::register_path() ), true ) ) {
+			return true;
+		}
+
+		// Exact paths: as prefixes, /robots.txt/<anything> reached WordPress's
+		// rewrite rules and rendered pages in trade chrome to a logged-out visitor.
+		if ( in_array( $path, self::exact_public_paths(), true ) || in_array( untrailingslashit( $path ) . '/', self::exact_public_paths(), true ) ) {
 			return true;
 		}
 
@@ -215,7 +255,6 @@ class LoginGate {
 	private static function allowlist(): array {
 		// The login and application pages are matched exactly, in allowlisted().
 		return (array) apply_filters( 'beltoft_commerce_b2b_public_paths', array(
-			'/wp-login.php',
 			/*
 			 * LoginGate runs before HostRoutes, so it must let wp-admin through
 			 * for HostRoutes to move interactive administration to the canonical
@@ -224,22 +263,6 @@ class LoginGate {
 			 * their actions still enforce their own nonce and capability checks.
 			 */
 			'/wp-admin/',
-			/*
-			 * WooCommerce's lost-password endpoint (Config 'lost_password_paths'):
-			 * on the retail account page, on the trade one - B2B requests resolve
-			 * the account page to Account\B2BAccountPage - and on the trade
-			 * account's old address, where reset links already mailed point.
-			 *
-			 * Paths, not a question to WooCommerce, because the gate runs before
-			 * any plugin. CHANGING woocommerce_myaccount_lost_password_endpoint
-			 * MEANS CHANGING THAT SETTING: get it wrong and the only symptom is a
-			 * logged-out partner who cannot reset a password - nothing errors,
-			 * the gate bounces them to the login page.
-			 *
-			 * The reset link carries ?key= and ?login= on the same path, so one
-			 * prefix covers both steps.
-			 */
-			...Config::paths( 'lost_password_paths' ),
 			/*
 			 * The scanner's own REST namespace, and only that one.
 			 *
@@ -256,9 +279,26 @@ class LoginGate {
 			 * core's own routes would otherwise list this catalogue to anyone.
 			 */
 			'/wp-json/beltoft-scanner/v1/',
-			'/robots.txt',
-			'/favicon.ico',
 		) );
+	}
+
+	/**
+	 * Public paths matched exactly (a trailing slash either way): the login
+	 * screen, robots.txt, the favicon, and WooCommerce's lost-password
+	 * endpoint (Config 'lost_password_paths') - on the retail account page, on
+	 * the trade one, and on the trade account's old address where reset links
+	 * already mailed point. The reset link carries ?key= and ?login= on the
+	 * same path.
+	 *
+	 * Paths, not a question to WooCommerce, because the gate runs before any
+	 * plugin. CHANGING woocommerce_myaccount_lost_password_endpoint MEANS
+	 * CHANGING THAT SETTING: get it wrong and the only symptom is a logged-out
+	 * partner who cannot reset a password.
+	 *
+	 * @return string[]
+	 */
+	private static function exact_public_paths(): array {
+		return array_merge( array( '/wp-login.php', '/robots.txt', '/favicon.ico' ), Config::paths( 'lost_password_paths' ) );
 	}
 
 	public static function should_gate( string $path, array $query = array() ): bool {

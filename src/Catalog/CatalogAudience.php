@@ -128,7 +128,7 @@ class CatalogAudience {
 			return self::$published_b2b_only;
 		}
 
-		$ids = get_posts( array(
+		$ids = \BeltoftCommerce\Enforcement\QueryFilter::without_audience( static fn() => get_posts( array(
 			'post_type'               => 'product',
 			'post_status'             => 'publish',
 			'fields'                  => 'ids',
@@ -136,7 +136,6 @@ class CatalogAudience {
 			'no_found_rows'           => true,
 			'update_post_meta_cache'  => false,
 			'update_post_term_cache'  => false,
-			'beltoft_bypass_audience' => true,
 			'tax_query'               => array(
 				array(
 					'taxonomy' => Taxonomy::TAXONOMY,
@@ -144,7 +143,7 @@ class CatalogAudience {
 					'terms'    => array( Taxonomy::B2B ),
 				),
 			),
-		) );
+		) ) );
 
 		return self::$published_b2b_only = ! empty( $ids );
 	}

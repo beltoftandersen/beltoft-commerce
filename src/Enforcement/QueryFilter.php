@@ -23,8 +23,54 @@ defined( 'ABSPATH' ) || exit;
  */
 class QueryFilter {
 
+	/** Depth of without_audience() calls in progress. */
+	private static int $bypass = 0;
+
 	public static function register(): void {
 		add_action( 'pre_get_posts', array( __CLASS__, 'filter' ), 20 );
+		add_filter( 'bricks/posts/query_vars', array( __CLASS__, 'clean_bricks_query_vars' ), PHP_INT_MAX );
+	}
+
+	/**
+	 * Run $callback with the audience filter off, for internal queries that
+	 * must see the whole catalogue whoever is asking - a job run from cron has
+	 * no user and reads as retail. Never for a query whose results reach a
+	 * visitor.
+	 *
+	 * A flag in code, not a query var: it used to be
+	 * 'beltoft_bypass_audience' => true, which Bricks copied from the
+	 * browser's originalQueryVars into the trade list's query - one request
+	 * field switched the catalogue rules off.
+	 *
+	 * @template T
+	 * @param callable():T $callback
+	 * @return T
+	 */
+	public static function without_audience( callable $callback ) {
+		self::$bypass++;
+
+		try {
+			return $callback();
+		} finally {
+			self::$bypass--;
+		}
+	}
+
+	/**
+	 * Bricks builds a loop's query from client-supplied query vars
+	 * (originalQueryVars, queryVars on load more). Those may not ask for
+	 * suppressed filters, which the id exclusion below reads as an internal
+	 * lookup and leaves alone.
+	 *
+	 * @param mixed $vars
+	 * @return mixed
+	 */
+	public static function clean_bricks_query_vars( $vars ) {
+		if ( is_array( $vars ) ) {
+			unset( $vars['suppress_filters'], $vars['beltoft_bypass_audience'] );
+		}
+
+		return $vars;
 	}
 
 	public static function filter( $query ): void {
@@ -42,16 +88,8 @@ class QueryFilter {
 			return;
 		}
 
-		/*
-		 * An explicit opt-out for internal queries that must see the whole
-		 * catalog regardless of who is asking - a job run from cron has no
-		 * user, resolves to retail context, and would otherwise have this
-		 * filter hide the B2B-only products.
-		 *
-		 * Only ever set this on a query whose results are not rendered to a
-		 * visitor.
-		 */
-		if ( $query->get( 'beltoft_bypass_audience' ) ) {
+		// Internal queries that must see everything: without_audience().
+		if ( self::$bypass > 0 ) {
 			return;
 		}
 
@@ -82,9 +120,14 @@ class QueryFilter {
 			return;
 		}
 
-		$tax_query = (array) $query->get( 'tax_query' );
+		/*
+		 * Nested, never appended: a tax_query with relation OR (core REST's
+		 * ?tax_relation=OR, a Bricks loop set to OR) turned an appended
+		 * audience clause into one alternative among others.
+		 */
+		$existing = array_filter( (array) $query->get( 'tax_query' ), static fn( $clause, $key ) => 'relation' === $key || is_array( $clause ), ARRAY_FILTER_USE_BOTH );
 
-		$tax_query[] = $restricted
+		$audience = $restricted
 			// A B2B session sees only b2b and both. Expressed as IN rather
 			// than NOT IN because untagged products are retail-only and
 			// must be excluded.
@@ -101,7 +144,9 @@ class QueryFilter {
 				'operator' => 'NOT IN',
 			);
 
-		$query->set( 'tax_query', $tax_query );
+		$clauses = array_diff_key( $existing, array( 'relation' => true ) );
+
+		$query->set( 'tax_query', $clauses ? array( 'relation' => 'AND', $existing, $audience ) : array( $audience ) );
 	}
 
 	/** See CatalogAudience::published_b2b_only_exist(). */
@@ -131,7 +176,9 @@ class QueryFilter {
 	 *   lookups are, as their product half always was.
 	 */
 	private static function exclude_by_id( \WP_Query $query, bool $trade ): void {
-		if ( '' !== (string) $query->get( 'post_parent' ) ) {
+		// Internal lookups only (suppress_filters): Bricks strips that flag
+		// from client query vars (clean_bricks_query_vars()).
+		if ( '' !== (string) $query->get( 'post_parent' ) && $query->get( 'suppress_filters' ) ) {
 			return;
 		}
 
@@ -179,7 +226,9 @@ class QueryFilter {
 
 		$post_type = is_array( $post_type ) ? $post_type : array( $post_type );
 
-		return (bool) array_intersect( array( 'product', 'product_variation' ), $post_type );
+		// 'any' includes products: a client-supplied post_type => any must
+		// not step around the filter.
+		return (bool) array_intersect( array( 'product', 'product_variation', 'any' ), $post_type );
 	}
 
 	/** Whether every row the query can return is a product (not a variation, not another type). */

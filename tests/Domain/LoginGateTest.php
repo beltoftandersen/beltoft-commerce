@@ -223,4 +223,28 @@ class LoginGateTest extends WP_UnitTestCase {
 	public function test_the_admin_endpoint_check_runs_before_woocommerces_form_handler() {
 		$this->assertSame( 0, has_action( 'wp_loaded', array( LoginGate::class, 'maybe_redirect_loaded' ) ) );
 	}
+
+	/** Any public query var on the login page counts, not only the fixed list. */
+	public function test_a_public_query_var_on_the_login_page_is_gated() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		// Like Bricks' templates: a public post type with its own query var.
+		register_post_type( 'demo_template', array( 'public' => true, 'publicly_queryable' => true, 'query_var' => 'demo_template' ) );
+
+		$this->assertTrue( LoginGate::should_gate( '/entrar/', array( 'demo_template' => 'x' ) ) );
+		$this->assertFalse( LoginGate::should_gate( '/entrar/', array( 'redirect_to' => '/loja/' ) ) );
+
+		unregister_post_type( 'demo_template' );
+	}
+
+	/** robots.txt, the favicon and the lost-password page are exact paths, not prefixes. */
+	public function test_public_files_are_exact_paths() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$this->assertFalse( LoginGate::should_gate( '/robots.txt' ) );
+		$this->assertTrue( LoginGate::should_gate( '/robots.txt/favoritos/abc/' ) );
+		$this->assertTrue( LoginGate::should_gate( '/favicon.ico/../loja/' ) );
+		$this->assertFalse( LoginGate::should_gate( '/conta/recuperar-palavra-passe/', array( 'key' => 'k', 'login' => 'x' ) ) );
+		$this->assertTrue( LoginGate::should_gate( '/conta/recuperar-palavra-passe/qualquer/' ) );
+	}
 }

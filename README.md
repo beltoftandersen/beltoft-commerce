@@ -73,7 +73,7 @@ Trade-only paths and paths reachable logged out can also be extended with `belto
 - Bricks: dynamic tags `{beltoft_rrp}`, `{beltoft_ean}`, `{beltoft_summary}`, `{beltoft_buy}`, `{beltoft_cart_shipping}`, `{beltoft_cart_product_id}`; element condition **Host (retail / B2B)** (`beltoft_host`).
 - beltoft-scanner: registers the `b2b-loja` context and answers `beltoft_scanner_assess` / `beltoft_scanner_notify` (the latter only with beltoft-in-stock-notifier).
 
-Staff (wp-admin, the management REST APIs, WP-CLI outside cron) see the whole catalogue. Internal queries that must too pass `'beltoft_bypass_audience' => true`.
+Staff (wp-admin, the management REST APIs, WP-CLI outside cron) see the whole catalogue. Internal queries that must too run inside `Enforcement\QueryFilter::without_audience( fn() => ... )`.
 
 ## Development
 

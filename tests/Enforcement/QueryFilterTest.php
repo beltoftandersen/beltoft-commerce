@@ -194,4 +194,41 @@ class QueryFilterTest extends WP_UnitTestCase {
 
 		$this->assertContains( $post, array_map( 'intval', $q->posts ) );
 	}
+
+	/** A query var cannot switch the filter off; only code can (without_audience). */
+	public function test_the_bypass_cannot_come_from_query_vars() {
+		wp_set_current_user( $this->b2b_user );
+
+		$this->assertNotContains( $this->retail_only, $this->ids( array( 'beltoft_bypass_audience' => true ) ) );
+		$this->assertContains( $this->retail_only, BeltoftCommerce\Enforcement\QueryFilter::without_audience( fn() => $this->ids() ) );
+	}
+
+	public function test_post_type_any_is_filtered() {
+		wp_set_current_user( $this->b2b_user );
+
+		$this->assertNotContains( $this->retail_only, $this->ids( array( 'post_type' => 'any' ) ) );
+	}
+
+	/** A relation OR in the query does not make the audience one alternative of several. */
+	public function test_an_or_relation_does_not_dilute_the_audience() {
+		wp_set_current_user( $this->b2b_user );
+		$cat = self::factory()->term->create( array( 'taxonomy' => 'product_cat' ) );
+		wp_set_object_terms( $this->both, array( $cat ), 'product_cat' );
+
+		$ids = $this->ids( array( 'tax_query' => array(
+			'relation' => 'OR',
+			array( 'taxonomy' => 'product_cat', 'terms' => array( $cat ) ),
+			array( 'taxonomy' => 'product_cat', 'terms' => array( $cat ), 'operator' => 'NOT IN' ),
+		) ) );
+
+		$this->assertContains( $this->both, $ids );
+		$this->assertNotContains( $this->retail_only, $ids );
+	}
+
+	/** Bricks loops may not ask for suppressed filters (which the id exclusion trusts). */
+	public function test_bricks_query_vars_lose_suppress_filters() {
+		$vars = BeltoftCommerce\Enforcement\QueryFilter::clean_bricks_query_vars( array( 'post_type' => 'product', 'suppress_filters' => true, 'beltoft_bypass_audience' => true ) );
+
+		$this->assertSame( array( 'post_type' => 'product' ), $vars );
+	}
 }
