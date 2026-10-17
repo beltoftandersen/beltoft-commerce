@@ -51,6 +51,11 @@ class Config {
 			// Where the trade checkout is served on the trade host (a HostPages key).
 			'checkout_path'         => '/finalizar/',
 
+			// More paths for logged-out visitors on the trade host (prefixes), and
+			// more trade-only paths that redirect there from anywhere else.
+			'extra_public_paths'     => array(),
+			'extra_trade_only_paths' => array(),
+
 			// Path prefix of the trade copies' physical slugs (HostPages), e.g. /b2b-loja/.
 			'trade_page_prefix'     => '/b2b-',
 

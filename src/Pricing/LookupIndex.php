@@ -128,8 +128,14 @@ class LookupIndex {
 		}
 	}
 
+	/**
+	 * Queued, not rebuilt on the spot: saving the trade prices of a variable
+	 * product writes two keys per variation, and each write rebuilt the whole
+	 * row - every variation loaded again, every time. The row is rebuilt once,
+	 * at the end of the request (flush_pending()).
+	 */
 	public static function on_price_changed( int $product_id, $parent_id = 0 ): void {
-		self::update_for_product( $parent_id ? (int) $parent_id : $product_id );
+		self::queue_product( $parent_id ? (int) $parent_id : $product_id );
 	}
 
 	/**

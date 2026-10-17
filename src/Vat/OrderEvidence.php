@@ -109,7 +109,10 @@ class OrderEvidence {
 		$order->update_meta_data( self::VAT_NUMBER, $decision->vat_number );
 		$order->update_meta_data( self::CHECK_STATUS, $decision->status );
 		$order->update_meta_data( self::REQUEST_ID, $decision->request_identifier );
-		$order->update_meta_data( self::REQUEST_DATE, $decision->checked_at ? gmdate( 'c', $decision->checked_at ) : '' );
+		// A date only when VIES was asked - as for accounts (Evidence::store()).
+		// A domestic or non-EU number was never sent, whatever checked_at says.
+		$consulted = in_array( $decision->status, array( 'valid', 'invalid', 'unverified' ), true );
+		$order->update_meta_data( self::REQUEST_DATE, $consulted && $decision->checked_at ? gmdate( 'c', $decision->checked_at ) : '' );
 		$order->update_meta_data( self::REGISTERED, $decision->registered_name );
 
 		if ( 'unverified' === $decision->status ) {

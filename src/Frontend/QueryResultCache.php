@@ -66,6 +66,29 @@ class QueryResultCache {
 		// Terms: only a product's. This fired for every post, order and menu
 		// item saved anywhere on the site, each one an options-table write.
 		add_action( 'set_object_terms', array( __CLASS__, 'bump_on_terms' ), 10, 4 );
+		add_action( 'deleted_term_relationships', array( __CLASS__, 'bump_on_terms' ) );
+
+		/*
+		 * A product leaving or entering the list without a WooCommerce save:
+		 * trashed or restored from the products screen (a simple product has
+		 * no variations to sync), deleted, or published/unpublished directly.
+		 */
+		foreach ( array( 'trashed_post', 'untrashed_post', 'delete_post' ) as $hook ) {
+			add_action( $hook, array( __CLASS__, 'bump_on_terms' ) );
+		}
+
+		add_action( 'transition_post_status', array( __CLASS__, 'bump_on_status' ), 10, 3 );
+	}
+
+	/**
+	 * @param string   $new
+	 * @param string   $old
+	 * @param \WP_Post $post
+	 */
+	public static function bump_on_status( $new, $old, $post ): void {
+		if ( $new !== $old && $post instanceof \WP_Post && in_array( $post->post_type, array( 'product', 'product_variation' ), true ) ) {
+			self::bump();
+		}
 	}
 
 	/** Whether this request changed something the rows show. */
@@ -95,7 +118,11 @@ class QueryResultCache {
 		}
 
 		self::$dirty = false;
-		update_option( self::VERSION_OPTION, (string) ( time() . wp_rand( 100, 999 ) ), false );
+
+		// Always a new value: time() plus a random suffix could repeat within a
+		// second, and an unchanged option drops nothing.
+		$current = (int) get_option( self::VERSION_OPTION, 0 );
+		update_option( self::VERSION_OPTION, (string) max( (int) round( microtime( true ) * 1000 ), $current + 1 ), false );
 	}
 
 	/**

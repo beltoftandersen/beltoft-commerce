@@ -34,6 +34,7 @@ class AdminUsers {
 		add_action( 'personal_options_update', array( __CLASS__, 'save_profile' ) );
 		add_action( 'edit_user_profile_update', array( __CLASS__, 'save_profile' ) );
 		add_filter( 'woocommerce_shop_manager_editable_roles', array( __CLASS__, 'shop_manager_roles' ) );
+		add_action( 'set_user_role', array( Status::class, 'sync_with_role' ), 10, 3 );
 	}
 
 	/**

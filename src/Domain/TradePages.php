@@ -24,6 +24,10 @@ class TradePages {
 		add_filter( 'rest_page_query', array( __CLASS__, 'exclude_from_query' ) );
 		add_filter( 'rest_request_after_callbacks', array( __CLASS__, 'hide_single' ), 10, 3 );
 		add_filter( 'oembed_request_post_id', array( __CLASS__, 'hide_oembed' ) );
+		// Search and the sitemaps list the same pages, slugs and all.
+		add_filter( 'rest_post_search_query', array( __CLASS__, 'exclude_from_query' ) );
+		add_filter( 'wp_sitemaps_posts_query_args', array( __CLASS__, 'exclude_from_sitemap_query' ) );
+		add_filter( 'slim_seo_sitemap_post_ignore', array( __CLASS__, 'ignore_in_sitemap' ), 10, 2 );
 		add_action( 'save_post_page', array( __CLASS__, 'forget' ) );
 		add_action( 'deleted_post', array( __CLASS__, 'forget' ) );
 	}
@@ -98,6 +102,32 @@ class TradePages {
 		}
 
 		return new \WP_Error( 'rest_post_invalid_id', __( 'Invalid post ID.' ), array( 'status' => 404 ) ); // phpcs:ignore WordPress.WP.I18n.MissingArgDomain -- core's own message.
+	}
+
+	/**
+	 * A sitemap is for crawlers whoever builds it; trade pages are never in it
+	 * (each listed URL redirected to the trade host's login page).
+	 *
+	 * @param mixed $args
+	 * @return mixed
+	 */
+	public static function exclude_from_sitemap_query( $args ) {
+		if ( ! is_array( $args ) || ! self::ids() ) {
+			return $args;
+		}
+
+		$args['post__not_in'] = array_merge( array_map( 'intval', (array) ( $args['post__not_in'] ?? array() ) ), self::ids() );
+
+		return $args;
+	}
+
+	/**
+	 * @param mixed $ignore
+	 * @param mixed $post
+	 * @return mixed
+	 */
+	public static function ignore_in_sitemap( $ignore, $post = null ) {
+		return $ignore || ( $post instanceof \WP_Post && in_array( (int) $post->ID, self::ids(), true ) );
 	}
 
 	/** @param mixed $post_id */

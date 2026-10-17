@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 class FeedGuard {
 
 	public static function register(): void {
-		add_filter( 'beltoft_commerce_feed_product_ids', array( __CLASS__, 'filter_ids' ) );
+		add_filter( 'beltoft_commerce_feed_product_ids', array( __CLASS__, 'filter_feed_ids' ) );
 
 		/*
 		 * Related products, upsells and cross-sells are built with
@@ -56,5 +56,22 @@ class FeedGuard {
 				return CatalogAudience::can_view( $user_id, (int) $id );
 			}
 		) );
+	}
+
+	/**
+	 * A product feed is public whoever builds it - an admin's "regenerate"
+	 * button or a WP-CLI command, both of which count as staff and saw the
+	 * whole catalogue through filter_ids(). The feed gets what a visitor to the
+	 * public shop sees.
+	 *
+	 * @param int[] $ids
+	 * @return int[]
+	 */
+	public static function filter_feed_ids( $ids ) {
+		if ( ! is_array( $ids ) ) {
+			return $ids;
+		}
+
+		return array_values( array_filter( $ids, static fn( $id ) => CatalogAudience::can_view( 0, (int) $id ) ) );
 	}
 }

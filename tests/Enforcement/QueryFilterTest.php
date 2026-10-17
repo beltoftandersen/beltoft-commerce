@@ -181,7 +181,8 @@ class QueryFilterTest extends WP_UnitTestCase {
 		wp_set_object_terms( $post, 'x', 'shared_label' );
 		wp_set_current_user( $this->b2b_user );
 
-		$this->assertContains( $post, $this->archive_ids( array( 'shared_label' => 'x', 'post_type' => 'any' ) ) );
+		// No post_type: an archive reaches pre_get_posts that way.
+		$this->assertContains( $post, $this->archive_ids( array( 'shared_label' => 'x' ) ) );
 
 		unregister_taxonomy( 'shared_label' );
 	}

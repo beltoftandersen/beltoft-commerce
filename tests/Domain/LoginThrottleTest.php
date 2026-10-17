@@ -105,13 +105,17 @@ class LoginThrottleTest extends WP_UnitTestCase {
 		 * CF-Connecting-IP, which nothing on this host overwrites - so a
 		 * client could send a new value per request and never be counted.
 		 */
-		$this->fail_times( 13, 'alvo@example.com' );
+		// Thirteen different accounts from one address: only the address
+		// counter can refuse the next one.
+		for ( $i = 0; $i < 13; $i++ ) {
+			$this->fail_times( 1, 'conta' . $i . '@example.com' );
+		}
 
 		$_SERVER['HTTP_CF_CONNECTING_IP'] = '1.2.3.4';
 
 		$this->assertInstanceOf(
 			WP_Error::class,
-			LoginThrottle::maybe_block( null, 'alvo@example.com', 'segredo' )
+			LoginThrottle::maybe_block( null, 'nova@example.com', 'segredo' )
 		);
 	}
 

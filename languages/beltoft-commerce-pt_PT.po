@@ -29,8 +29,8 @@ msgstr "Grupos de preços B2B/B2C, público do catálogo, encaminhamento por dom
 msgid "beltoft.net"
 msgstr ""
 
-#: src/Account/Reorder.php:105
-#: src/Account/Reorder.php:121
+#: src/Account/Reorder.php:125
+#: src/Account/Reorder.php:141
 msgid "Order again"
 msgstr "Encomendar novamente"
 
@@ -260,7 +260,7 @@ msgstr "\"%s\" já não está disponível na sua conta e foi removido."
 msgid "A product"
 msgstr "Um produto"
 
-#: src/Enforcement/StoreApiGuard.php:119
+#: src/Enforcement/StoreApiGuard.php:205
 msgid "Invalid product ID."
 msgstr "ID de produto inválido."
 
@@ -459,45 +459,45 @@ msgstr "Em stock"
 msgid "Out of stock"
 msgstr "Sem stock"
 
-#: src/Registration/AdminUsers.php:157
+#: src/Registration/AdminUsers.php:158
 msgid "B2B awaiting approval"
 msgstr "B2B por aprovar"
 
-#: src/Registration/AdminUsers.php:158
+#: src/Registration/AdminUsers.php:159
 msgid "B2B rejected"
 msgstr "B2B rejeitados"
 
-#: src/Registration/AdminUsers.php:209
-#: src/Registration/AdminUsers.php:355
+#: src/Registration/AdminUsers.php:210
+#: src/Registration/AdminUsers.php:356
 msgid "B2B application"
 msgstr "Registo B2B"
 
-#: src/Registration/AdminUsers.php:231
+#: src/Registration/AdminUsers.php:232
 msgid "Awaiting approval"
 msgstr "Por aprovar"
 
-#: src/Registration/AdminUsers.php:232
+#: src/Registration/AdminUsers.php:233
 msgid "Approved"
 msgstr "Aprovado"
 
-#: src/Registration/AdminUsers.php:233
+#: src/Registration/AdminUsers.php:234
 msgid "Rejected"
 msgstr "Rejeitado"
 
-#: src/Registration/AdminUsers.php:243
+#: src/Registration/AdminUsers.php:244
 msgid "NIF"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:254
+#: src/Registration/AdminUsers.php:255
 msgid "Approve B2B application"
 msgstr "Aprovar registo B2B"
 
-#: src/Registration/AdminUsers.php:255
+#: src/Registration/AdminUsers.php:256
 msgid "Reject B2B application"
 msgstr "Rejeitar registo B2B"
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:308
+#: src/Registration/AdminUsers.php:309
 #, php-format
 msgid "%d application approved."
 msgid_plural "%d applications approved."
@@ -505,24 +505,24 @@ msgstr[0] "%d registo aprovado."
 msgstr[1] "%d registos aprovados."
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:310
+#: src/Registration/AdminUsers.php:311
 #, php-format
 msgid "%d application rejected."
 msgid_plural "%d applications rejected."
 msgstr[0] "%d registo rejeitado."
 msgstr[1] "%d registos rejeitados."
 
-#: src/Registration/AdminUsers.php:358
+#: src/Registration/AdminUsers.php:359
 #: src/Registration/Fields.php:130
 msgid "Shop name"
 msgstr "Nome da loja"
 
-#: src/Registration/AdminUsers.php:363
+#: src/Registration/AdminUsers.php:364
 #: src/Registration/Fields.php:124
 msgid "Company information"
 msgstr "Informação da empresa"
 
-#: src/Registration/AdminUsers.php:369
+#: src/Registration/AdminUsers.php:370
 msgid "Status"
 msgstr "Estado"
 
@@ -853,17 +853,17 @@ msgid "The VAT number you entered could not be validated. Please correct it or l
 msgstr "O número de IVA introduzido não pôde ser validado. Corrija-o ou deixe o campo vazio."
 
 #. translators: %s: error detail from the VIES service
-#: src/Vat/OrderEvidence.php:118
+#: src/Vat/OrderEvidence.php:121
 #, php-format
 msgid "VAT number could not be verified: VIES was unreachable (%s). IVA has been charged and this order needs manual review."
 msgstr "Não foi possível verificar o número de IVA: o VIES está indisponível (%s). O IVA foi cobrado e esta encomenda necessita de revisão manual."
 
-#: src/Vat/OrderEvidence.php:119
+#: src/Vat/OrderEvidence.php:122
 msgid "no detail"
 msgstr "sem detalhe"
 
 #. translators: %s: tax rate percentage, e.g. "23".
-#: src/Vat/RateLabel.php:48
+#: src/Vat/RateLabel.php:69
 #, php-format
 msgid "VAT %s%%"
 msgstr "IVA %s%%"
@@ -915,7 +915,7 @@ msgid "none"
 msgstr "nenhuma"
 
 #. translators: 1: source file path, 2: target directory
-#: src/Support/MuPlugin.php:90
+#: src/Support/MuPlugin.php:105
 #, php-format
 msgid "Beltoft Commerce could not install its early host handler. Copy %1$s into %2$s."
 msgstr "O Beltoft Commerce não conseguiu instalar o seu tratamento antecipado de anfitriões. Copie %1$s para %2$s."

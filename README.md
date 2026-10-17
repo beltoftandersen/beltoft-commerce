@@ -59,16 +59,17 @@ define( 'BELTOFT_COMMERCE_CONFIG', array(
 | `header_template`, `footer_template` | `b2b-cabecalho`, `b2b-rodape` | Bricks template slugs for the trade host. |
 | `home_country` | `PT` | VAT numbers and deliveries here are domestic. |
 | `unload_on_trade` | mindthetrash's list | Plugin folders not loaded on trade page views. |
+| `extra_public_paths`, `extra_trade_only_paths` | `[]` | More paths open to logged-out trade visitors (prefixes), and more paths that belong to the trade host. |
 | `retail_robots` | mindthetrash's rules | Retail robots.txt lines, or `null` to leave robots.txt alone. |
 
-Trade-only paths and paths reachable logged out can also be extended with `beltoft_commerce_b2b_only_paths` and `beltoft_commerce_b2b_public_paths`; the trade plugin list with `beltoft_commerce_b2b_active_plugins`.
+More logged-out paths and more trade-only paths go in the `extra_public_paths` and `extra_trade_only_paths` settings, the trade plugin list in `unload_on_trade`. The matching filters (`beltoft_commerce_b2b_public_paths`, `beltoft_commerce_b2b_only_paths`, `beltoft_commerce_b2b_active_plugins`) run in the early handler, before plugins and themes load, so a callback has effect only from an mu-plugin that loads before `beltoft-commerce-host.php`.
 
 ## Hooks for other code
 
 - `pricing_groups` (filter) — the groups: `slug => array( 'label', 'roles' => [...], 'prices' => 'own'|'inherit', 'trade' => bool )`.
 - `beltoft_commerce_group_price_changed` (action, `$product_id, $parent_id`) — a group price or sale window changed.
 - `beltoft_commerce_b2b_applied` / `_approved` / `_rejected` (actions, `$user_id`).
-- `beltoft_commerce_feed_product_ids` (filter) — run a product feed's ids through it to apply the audience.
+- `beltoft_commerce_feed_product_ids` (filter) — run a product feed's ids through it; it keeps what the public (retail) shop shows, whoever builds the feed.
 - `beltoft_commerce_rows_cache` (filter, bool) — switch off the ordering-list result cache.
 - Bricks: dynamic tags `{beltoft_rrp}`, `{beltoft_ean}`, `{beltoft_summary}`, `{beltoft_buy}`, `{beltoft_cart_shipping}`, `{beltoft_cart_product_id}`; element condition **Host (retail / B2B)** (`beltoft_host`).
 - beltoft-scanner: registers the `b2b-loja` context and answers `beltoft_scanner_assess` / `beltoft_scanner_notify` (the latter only with beltoft-in-stock-notifier).
@@ -77,4 +78,4 @@ Staff (wp-admin, the management REST APIs, WP-CLI outside cron) see the whole ca
 
 ## Development
 
-No build step. Tests are `WP_UnitTestCase` under `tests/`, mirroring `src/`; the harness and its throwaway database are set up outside this repo (`WP_TESTS_DIR`, `BELTOFT_SITE_PLUGINS` in `tests/bootstrap.php`). `tests/Exposure/` is the contract that trade prices and trade-only products never reach a retail visitor. Strings are English with `pt_PT` and `es_ES` translations in `languages/`.
+No build step. Tests are `WP_UnitTestCase` under `tests/`, mirroring `src/`; the harness and its throwaway database are set up outside this repo (`WP_TESTS_DIR`, `BELTOFT_SITE_PLUGINS` in `tests/bootstrap.php`). `tests/Exposure/` is the contract that trade prices and trade-only products never reach a retail visitor. Strings are English with a complete `pt_PT` translation in `languages/` (an `es_ES` file exists but covers only a few strings).

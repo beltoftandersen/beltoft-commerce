@@ -23,7 +23,73 @@ defined( 'ABSPATH' ) || exit;
 class PriceQuery {
 
 	public static function register(): void {
+		add_action( 'pre_get_posts', array( __CLASS__, 'take_price_bounds' ), 30 );
 		add_filter( 'posts_clauses', array( __CLASS__, 'clauses' ), 20, 2 );
+		add_filter( 'woocommerce_enable_post_clause_filtering', array( __CLASS__, 'drop_retail_price_clause' ), 10, 2 );
+	}
+
+	private const MIN = 'beltoft_min_price';
+	private const MAX = 'beltoft_max_price';
+
+	/**
+	 * For a trade session, the price bounds become this class's, in euros.
+	 *
+	 * WooCommerce and the Store API each add their own clause on the RETAIL
+	 * lookup table for min_price/max_price, so a trade filter used to be
+	 * judged on retail prices as well - and the Store API sends the bounds in
+	 * cents (minor units), which this class read as euros. The bounds are
+	 * taken off the query here, converted, and applied to the group table
+	 * only.
+	 *
+	 * @param mixed $query
+	 */
+	public static function take_price_bounds( $query ): void {
+		if ( ! $query instanceof \WP_Query || Registry::inherits_prices( PricingContext::current() ) ) {
+			return;
+		}
+
+		$post_type = (array) $query->get( 'post_type' );
+
+		if ( ! in_array( 'product', $post_type, true ) && ! ( $query->is_main_query() && ( $query->is_post_type_archive( 'product' ) || $query->is_tax( get_object_taxonomies( 'product' ) ) ) ) ) {
+			return;
+		}
+
+		$store_api = function_exists( 'WC' ) && method_exists( WC(), 'is_store_api_request' ) && WC()->is_store_api_request();
+		$scale     = $store_api ? 10 ** wc_get_price_decimals() : 1;
+
+		foreach ( array( 'min_price' => self::MIN, 'max_price' => self::MAX ) as $var => $own ) {
+			$value = $query->get( $var );
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- a shop filter, read only.
+			if ( ( '' === $value || null === $value ) && $query->is_main_query() && isset( $_GET[ $var ] ) && is_scalar( $_GET[ $var ] ) ) {
+				$value = wp_unslash( $_GET[ $var ] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			}
+
+			if ( '' === $value || null === $value || false === $value || ! is_numeric( $value ) ) {
+				continue;
+			}
+
+			$query->set( $own, (float) $value / $scale );
+			$query->set( $var, '' );
+		}
+	}
+
+	/**
+	 * WooCommerce's own ?min_price= clause (classic shop) reads $_GET, not
+	 * the query: switched off for trade sessions, whose bounds are applied to
+	 * the group table instead.
+	 *
+	 * @param mixed     $enable
+	 * @param \WP_Query $query
+	 * @return mixed
+	 */
+	public static function drop_retail_price_clause( $enable, $query = null ) {
+		if ( ! $enable || Registry::inherits_prices( PricingContext::current() ) ) {
+			return $enable;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return isset( $_GET['min_price'] ) || isset( $_GET['max_price'] ) ? false : $enable;
 	}
 
 	public static function clauses( $clauses, $query ) {
@@ -58,8 +124,8 @@ class PriceQuery {
 			$clauses['orderby'] = "beltoft_price.min_price IS NULL ASC, beltoft_price.min_price {$order}, {$wpdb->posts}.ID {$order}";
 		}
 
-		$min = $query->get( 'min_price' );
-		$max = $query->get( 'max_price' );
+		$min = $query->get( self::MIN );
+		$max = $query->get( self::MAX );
 
 		if ( '' !== $min && null !== $min && false !== $min ) {
 			$clauses['where'] .= $wpdb->prepare( ' AND beltoft_price.max_price >= %f ', (float) $min );
@@ -89,8 +155,8 @@ class PriceQuery {
 		}
 
 		$needs_price = 'price' === $query->get( 'orderby' )
-			|| '' !== (string) $query->get( 'min_price' )
-			|| '' !== (string) $query->get( 'max_price' );
+			|| '' !== (string) $query->get( self::MIN )
+			|| '' !== (string) $query->get( self::MAX );
 
 		return $needs_price;
 	}

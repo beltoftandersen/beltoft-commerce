@@ -25,6 +25,92 @@ class StoreApiGuard {
 		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'guard' ), 10, 3 );
 		add_filter( 'rest_request_after_callbacks', array( __CLASS__, 'guard_resolved' ), 10, 3 );
 		add_filter( 'oembed_request_post_id', array( __CLASS__, 'guard_oembed' ) );
+
+		/*
+		 * Endpoints that take a product id without being product routes: the
+		 * cart's add-item, and WooCommerce's add_to_cart and get_variation
+		 * AJAX. Refused before WooCommerce answers, because its refusal names
+		 * the product ('"X" is not available for purchase'), and get_variation
+		 * returns the variation's SKU, price and image outright.
+		 */
+		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'guard_cart_add' ), 10, 3 );
+		add_action( 'wc_ajax_add_to_cart', array( __CLASS__, 'guard_ajax_product' ), 0 );
+		add_action( 'wc_ajax_get_variation', array( __CLASS__, 'guard_ajax_product' ), 0 );
+		add_action( 'wp_ajax_woocommerce_add_to_cart', array( __CLASS__, 'guard_ajax_product' ), 0 );
+		add_action( 'wp_ajax_nopriv_woocommerce_add_to_cart', array( __CLASS__, 'guard_ajax_product' ), 0 );
+		add_action( 'wp_ajax_woocommerce_get_variation', array( __CLASS__, 'guard_ajax_product' ), 0 );
+		add_action( 'wp_ajax_nopriv_woocommerce_get_variation', array( __CLASS__, 'guard_ajax_product' ), 0 );
+
+		// Reviews name, link and picture the product they are about.
+		add_filter( 'rest_request_after_callbacks', array( __CLASS__, 'guard_reviews' ), 10, 3 );
+	}
+
+	/**
+	 * @param mixed            $result
+	 * @param mixed            $server
+	 * @param \WP_REST_Request $request
+	 * @return mixed
+	 */
+	public static function guard_cart_add( $result, $server = null, $request = null ) {
+		if ( null !== $result || ! $request instanceof \WP_REST_Request || ! preg_match( '#^/wc/store(/v\d+)?/cart/add-item$#i', $request->get_route() ) ) {
+			return $result;
+		}
+
+		$id = (int) $request->get_param( 'id' );
+
+		return $id && ! self::may_view_product( $id ) ? self::not_found() : $result;
+	}
+
+	public static function guard_ajax_product(): void {
+		// phpcs:ignore WordPress.Security.NonceVerification -- refusing only; WooCommerce's handler does the rest.
+		$id = isset( $_REQUEST['product_id'] ) && is_scalar( $_REQUEST['product_id'] ) ? absint( $_REQUEST['product_id'] ) : 0;
+
+		if ( $id && ! self::may_view_product( $id ) ) {
+			wp_send_json( array( 'error' => true ), 404 );
+		}
+	}
+
+	/** A product or variation (judged by its parent) the visitor may see. */
+	private static function may_view_product( int $id ): bool {
+		$type = get_post_type( $id );
+
+		if ( ! in_array( $type, array( 'product', 'product_variation' ), true ) ) {
+			return true; // Not a product: WooCommerce answers that itself.
+		}
+
+		return CatalogAudience::can_view( get_current_user_id(), $id );
+	}
+
+	/**
+	 * /wc/store/v1/products/reviews: drop reviews of products outside the
+	 * visitor's audience.
+	 *
+	 * @param mixed            $response
+	 * @param array            $handler
+	 * @param \WP_REST_Request $request
+	 * @return mixed
+	 */
+	public static function guard_reviews( $response, $handler = array(), $request = null ) {
+		if ( ! $response instanceof \WP_REST_Response || ! $request instanceof \WP_REST_Request || ! preg_match( '#^/wc/store(/v\d+)?/products/reviews$#i', $request->get_route() ) ) {
+			return $response;
+		}
+
+		$data = $response->get_data();
+
+		if ( ! is_array( $data ) ) {
+			return $response;
+		}
+
+		$kept = array_values( array_filter( $data, static function ( $review ) {
+			$review = (array) $review;
+			$id     = (int) ( $review['product_id'] ?? 0 );
+
+			return ! $id || self::may_view_product( $id );
+		} ) );
+
+		$response->set_data( $kept );
+
+		return $response;
 	}
 
 	/**

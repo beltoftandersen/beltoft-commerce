@@ -32,21 +32,46 @@ class Status {
 
 	public static function get( int $user_id ): string {
 		$status = (string) get_user_meta( $user_id, self::META_STATUS, true );
-
-		if ( in_array( $status, array( self::PENDING, self::APPROVED, self::REJECTED ), true ) ) {
-			return $status;
-		}
+		$roles  = (array) ( get_userdata( $user_id )->roles ?? array() );
 
 		/*
-		 * No decision recorded. An account that already holds the wholesale
-		 * role was given it directly (the user editor, an import) and is a
-		 * partner: calling it pending labelled live partners "Awaiting
-		 * approval" and offered approve and reject as if it were an
-		 * application.
+		 * The role wins where the two disagree, because the role is what the
+		 * account can actually do. An account holding the wholesale role is a
+		 * partner - given it directly (the user editor, an import) or approved
+		 * - and an 'approved' account that no longer holds it has had its
+		 * access taken away, by hand in the user editor: shown as Approved it
+		 * sat on retail prices, in neither queue, and Approve refused it.
 		 */
-		$roles = (array) ( get_userdata( $user_id )->roles ?? array() );
+		if ( in_array( 'b2b_customer', $roles, true ) ) {
+			return self::APPROVED;
+		}
 
-		return in_array( 'b2b_customer', $roles, true ) ? self::APPROVED : self::PENDING;
+		if ( self::APPROVED === $status ) {
+			return self::REJECTED;
+		}
+
+		return in_array( $status, array( self::PENDING, self::REJECTED ), true ) ? $status : self::PENDING;
+	}
+
+	/**
+	 * Keep the recorded decision in step with a role changed by hand: given
+	 * the wholesale role, the account is approved; moved from it to
+	 * b2b_pending, rejected.
+	 *
+	 * @param int      $user_id
+	 * @param string   $role
+	 * @param string[] $old_roles
+	 */
+	public static function sync_with_role( $user_id, $role, $old_roles = array() ): void {
+		$user_id = (int) $user_id;
+
+		if ( 'b2b_customer' === $role && self::APPROVED !== (string) get_user_meta( $user_id, self::META_STATUS, true ) ) {
+			update_user_meta( $user_id, self::META_STATUS, self::APPROVED );
+			update_user_meta( $user_id, self::META_DECIDED, gmdate( 'c' ) );
+		} elseif ( 'b2b_pending' === $role && in_array( 'b2b_customer', (array) $old_roles, true ) ) {
+			update_user_meta( $user_id, self::META_STATUS, self::REJECTED );
+			update_user_meta( $user_id, self::META_DECIDED, gmdate( 'c' ) );
+		}
 	}
 
 	public static function is_pending_decision( int $user_id ): bool {
@@ -108,15 +133,21 @@ class Status {
 			return false;
 		}
 
-		$roles = (array) $user->roles;
+		$roles    = (array) $user->roles;
+		$override = (string) get_user_meta( $user_id, \BeltoftCommerce\Pricing\PricingContext::OVERRIDE_META, true );
 
-		if ( ! array_intersect( $roles, array( 'b2b_pending', 'b2b_customer' ) ) ) {
+		// A B2B account, or one holding trade terms through the per-user group.
+		if ( ! array_intersect( $roles, array( 'b2b_pending', 'b2b_customer' ) ) && '' === $override ) {
 			return false;
 		}
 
 		if ( array( 'b2b_pending' ) !== array_values( $roles ) ) {
 			$user->set_role( 'b2b_pending' );
 		}
+
+		// Revoking access takes the per-user group too: PricingContext reads it
+		// before the role, so it kept wholesale terms after the rejection.
+		delete_user_meta( $user_id, \BeltoftCommerce\Pricing\PricingContext::OVERRIDE_META );
 
 		update_user_meta( $user_id, self::META_STATUS, self::REJECTED );
 		update_user_meta( $user_id, self::META_DECIDED, gmdate( 'c' ) );

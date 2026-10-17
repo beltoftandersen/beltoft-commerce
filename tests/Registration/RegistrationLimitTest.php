@@ -86,12 +86,39 @@ class RegistrationLimitTest extends WP_UnitTestCase {
 		};
 	}
 
+	/** A complete, valid application: only the limit can refuse it. */
+	private function application( string $email ): array {
+		return array(
+			'email'        => $email,
+			'company'      => 'Loja Teste Lda',
+			'nif'          => 'PT501964843',
+			'first_name'   => 'Ana',
+			'last_name'    => 'Silva',
+			'address'      => 'Rua A 1',
+			'postcode'     => '1000-001',
+			'city'         => 'Lisboa',
+			'country'      => 'PT',
+			'state'        => 'LS',
+			'phone'        => '912345678',
+			'company_info' => 'Loja de produtos sustentáveis.',
+			'shop_name'    => 'Loja Teste',
+			'website'      => 'https://example.com',
+			'password'     => 'Uma-palavra-passe-forte-1',
+		);
+	}
+
 	public function test_the_form_refuses_once_the_limit_is_reached_without_creating_anyone() {
+		// The same application goes through while under the limit...
+		$control = $this->form( $this->application( 'controlo@example.com' ) );
+		FormAction::handle( $control );
+		$this->assertNotFalse( email_exists( 'controlo@example.com' ), 'fixture: a valid application' );
+
 		for ( $i = 0; $i < 10; $i++ ) {
 			RegistrationLimit::record_attempt();
 		}
 
-		$form = $this->form( array( 'email' => 'novo-parceiro@example.com' ) );
+		// ...and only the limit refuses it now.
+		$form = $this->form( $this->application( 'novo-parceiro@example.com' ) );
 		FormAction::handle( $form );
 
 		$this->assertSame( 'error', $form->result['type'] );

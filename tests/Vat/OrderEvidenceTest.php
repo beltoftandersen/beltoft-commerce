@@ -107,10 +107,16 @@ class OrderEvidenceTest extends WP_UnitTestCase {
 	 * VAT number sees ex-IVA prices and still pays Portuguese IVA.
 	 */
 	public function test_a_b2b_customer_without_a_vat_number_is_not_exempt() {
-		wp_set_current_user( $this->factory->user->create( array( 'role' => 'b2b_customer' ) ) );
+		$user = $this->factory->user->create( array( 'role' => 'b2b_customer' ) );
+		wp_set_current_user( $user );
+		$_SERVER['HTTP_HOST'] = BeltoftCommerce\Support\Hosts::b2b();
+		BeltoftCommerce\Vat\Exemption::reset();
 
-		$this->assertSame( 'excl', get_option( 'woocommerce_tax_display_shop' ) );
-		$this->assertFalse( Validator::decide( '', 'PT' )->exempt );
+		$this->assertSame( '', get_user_meta( $user, '_vat_number', true ) );
+		$this->assertFalse( BeltoftCommerce\Vat\Exemption::is_exempt() );
+
+		unset( $_SERVER['HTTP_HOST'] );
+		BeltoftCommerce\Vat\Exemption::reset();
 	}
 
 	/** An order placed with the checkout's VAT field, the way WooCommerce builds it. */

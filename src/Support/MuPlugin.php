@@ -37,7 +37,20 @@ class MuPlugin {
 		return is_readable( self::target() ) && md5_file( self::target() ) === md5_file( self::source() );
 	}
 
+	/** Option telling the early handler which folder the plugin lives in. */
+	public const BASENAME_OPTION = 'beltoft_commerce_basename';
+
+	private static function record_basename(): void {
+		$basename = plugin_basename( BELTOFT_COMMERCE_FILE );
+
+		if ( get_option( self::BASENAME_OPTION ) !== $basename ) {
+			update_option( self::BASENAME_OPTION, $basename, true );
+		}
+	}
+
 	public static function maybe_install(): void {
+		self::record_basename();
+
 		if ( self::is_current() ) {
 			return;
 		}
@@ -48,6 +61,8 @@ class MuPlugin {
 	}
 
 	public static function install(): bool {
+		self::record_basename();
+
 		if ( ! is_readable( self::source() ) ) {
 			return false;
 		}

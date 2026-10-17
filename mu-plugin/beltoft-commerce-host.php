@@ -22,15 +22,20 @@ defined( 'ABSPATH' ) || exit;
  * by path, so with the plugin deactivated it kept gating, redirecting and
  * unloading plugins on the trade host while pricing, catalogue rules and VAT
  * handling were gone - trade buyers shopping at retail prices, silently.
+ *
+ * The plugin's folder is whatever it was installed as (a zip from GitHub is
+ * beltoft-commerce-main): Support\MuPlugin records its basename.
  */
-if ( ! in_array( 'beltoft-commerce/beltoft-commerce.php', (array) get_option( 'active_plugins', array() ), true ) ) {
+$beltoft_basename = (string) get_option( 'beltoft_commerce_basename', 'beltoft-commerce/beltoft-commerce.php' );
+
+if ( ! in_array( $beltoft_basename, (array) get_option( 'active_plugins', array() ), true ) ) {
 	return;
 }
 
 $beltoft_plugins = defined( 'BELTOFT_SITE_PLUGINS' ) ? BELTOFT_SITE_PLUGINS : WP_PLUGIN_DIR;
 
 foreach ( array( 'Support/Config', 'Support/Hosts', 'Domain/UrlFilter', 'Domain/LoginGate', 'Domain/HostRoutes', 'Domain/PluginPolicy' ) as $beltoft_class ) {
-	$beltoft_file = $beltoft_plugins . '/beltoft-commerce/src/' . $beltoft_class . '.php';
+	$beltoft_file = $beltoft_plugins . '/' . dirname( $beltoft_basename ) . '/src/' . $beltoft_class . '.php';
 
 	if ( is_readable( $beltoft_file ) ) {
 		require_once $beltoft_file;
@@ -94,4 +99,4 @@ if ( class_exists( 'BeltoftCommerce\\Support\\Hosts' ) && BeltoftCommerce\Suppor
 	}
 }
 
-unset( $beltoft_plugins, $beltoft_class, $beltoft_file, $beltoft_cli );
+unset( $beltoft_basename, $beltoft_plugins, $beltoft_class, $beltoft_file, $beltoft_cli );

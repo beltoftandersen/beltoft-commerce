@@ -55,6 +55,26 @@ class Reorder {
 		add_action( 'admin_post_' . self::ACTION, array( __CLASS__, 'handle' ) );
 		add_action( 'woocommerce_my_account_my_orders_actions', array( __CLASS__, 'list_action' ), 10, 2 );
 		add_action( 'woocommerce_order_details_after_order_table', array( __CLASS__, 'single_button' ) );
+		add_action( 'wp_loaded', array( __CLASS__, 'retire_native_order_again' ), 0 );
+	}
+
+	/**
+	 * WooCommerce's own "Order again", on the trade host.
+	 *
+	 * statuses() widens the filter both versions read, which also switched the
+	 * native button on for processing and on-hold orders, next to this one -
+	 * and the native handler empties the cart and skips unavailable lines
+	 * without saying so, the behaviour this class exists to replace. Its
+	 * button is removed, and its trigger - ?order_again, read while the cart
+	 * is loaded from the session on wp_loaded 10 - dropped before that.
+	 */
+	public static function retire_native_order_again(): void {
+		if ( ! Hosts::is_b2b_host() ) {
+			return;
+		}
+
+		remove_action( 'woocommerce_order_details_after_order_table', 'woocommerce_order_again_button' );
+		unset( $_GET['order_again'], $_REQUEST['order_again'] );
 	}
 
 	/**

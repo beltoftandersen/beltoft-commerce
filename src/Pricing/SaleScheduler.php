@@ -32,10 +32,26 @@ class SaleScheduler {
 		add_action( self::BOUNDARY_HOOK, array( __CLASS__, 'run_boundary' ) );
 	}
 
+	/**
+	 * Hourly, on the hour. Group sale windows open at 00:00 and close after
+	 * 23:59:59 shop time, so the job that clears the cached price ranges runs
+	 * at the top of each hour; at whatever minute it was first scheduled, a
+	 * new sale showed the old range for up to an hour while the cart already
+	 * charged the sale price. A job scheduled off the hour is moved.
+	 */
 	public static function schedule(): void {
-		if ( ! wp_next_scheduled( self::BOUNDARY_HOOK ) ) {
-			wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', self::BOUNDARY_HOOK );
+		$next = wp_next_scheduled( self::BOUNDARY_HOOK );
+
+		if ( $next && $next % HOUR_IN_SECONDS < MINUTE_IN_SECONDS ) {
+			return;
 		}
+
+		if ( $next ) {
+			wp_unschedule_event( $next, self::BOUNDARY_HOOK );
+		}
+
+		// Just after the hour, so a window closing at :59:59 is in the past.
+		wp_schedule_event( (int) ( ceil( time() / HOUR_IN_SECONDS ) * HOUR_IN_SECONDS ) + 5, 'hourly', self::BOUNDARY_HOOK );
 	}
 
 	public static function unschedule(): void {

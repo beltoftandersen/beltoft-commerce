@@ -26,6 +26,27 @@ class RateLabel {
 
 	public static function register(): void {
 		add_filter( 'woocommerce_rate_label', array( __CLASS__, 'label' ), 10, 2 );
+		add_action( 'woocommerce_checkout_create_order_tax_item', array( __CLASS__, 'store_rate_name' ), 10, 2 );
+	}
+
+	/**
+	 * The order keeps the rate's own name. WooCommerce stores the label it
+	 * gets from get_rate_label() on the order's tax line, which ran through
+	 * label() at checkout: trade orders were saved with 'IVA 23%' in the
+	 * buyer's language instead of 'IVA23' like every other order. Display
+	 * keeps the reformatted label; the record does not.
+	 *
+	 * @param \WC_Order_Item_Tax $item
+	 * @param int|string        $rate_id
+	 */
+	public static function store_rate_name( $item, $rate_id = 0 ): void {
+		if ( ! $item instanceof \WC_Order_Item_Tax || ! Session::is_trade() ) {
+			return;
+		}
+
+		remove_filter( 'woocommerce_rate_label', array( __CLASS__, 'label' ), 10 );
+		$item->set_label( \WC_Tax::get_rate_label( (int) $rate_id ) );
+		add_filter( 'woocommerce_rate_label', array( __CLASS__, 'label' ), 10, 2 );
 	}
 
 	/**

@@ -52,6 +52,10 @@ class B2BMethods {
 
 		foreach ( $packages as $i => $package ) {
 			$packages[ $i ][ self::PACKAGE_KEY ] = PricingContext::current();
+
+			// Which rates are trade-only is part of the price too: changing
+			// the option left sessions on rates cached under the old rule.
+			$packages[ $i ][ self::PACKAGE_KEY . '_instances' ] = implode( ',', array_map( 'intval', (array) get_option( self::OPTION, array() ) ) );
 		}
 
 		return $packages;

@@ -20,14 +20,19 @@ class SingleProduct {
 		add_action( 'template_redirect', array( __CLASS__, 'maybe_404' ), 5 );
 	}
 
-	public static function maybe_404(): void {
+	/** Whether the product page being served is one this visitor may not see. */
+	public static function should_404(): bool {
 		if ( ! is_singular( 'product' ) ) {
-			return;
+			return false;
 		}
 
 		$product_id = get_queried_object_id();
 
-		if ( ! $product_id || CatalogAudience::can_view( get_current_user_id(), (int) $product_id ) ) {
+		return $product_id && ! CatalogAudience::can_view( get_current_user_id(), (int) $product_id );
+	}
+
+	public static function maybe_404(): void {
+		if ( ! self::should_404() ) {
 			return;
 		}
 

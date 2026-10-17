@@ -57,6 +57,18 @@ class CartGuardTest extends WP_UnitTestCase {
 		$this->assertFalse( WC()->cart->add_to_cart( $this->retail_only ) );
 	}
 
+	/**
+	 * The validation the form handler, wc-ajax and the Store API run -
+	 * add_to_cart() alone stops at is_purchasable() and never reaches it.
+	 */
+	public function test_the_add_to_cart_validation_refuses_out_of_audience() {
+		wp_set_current_user( $this->b2b_user );
+
+		$this->assertFalse( apply_filters( 'woocommerce_add_to_cart_validation', true, $this->retail_only, 1 ) );
+		$this->assertTrue( apply_filters( 'woocommerce_add_to_cart_validation', true, $this->both_priced, 1 ) );
+		wc_clear_notices();
+	}
+
 	public function test_a_b2b_customer_can_add_a_visible_product() {
 		wp_set_current_user( $this->b2b_user );
 

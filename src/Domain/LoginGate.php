@@ -254,7 +254,7 @@ class LoginGate {
 	 */
 	private static function allowlist(): array {
 		// The login and application pages are matched exactly, in allowlisted().
-		return (array) apply_filters( 'beltoft_commerce_b2b_public_paths', array(
+		return (array) apply_filters( 'beltoft_commerce_b2b_public_paths', array_merge( Config::paths( 'extra_public_paths' ), array(
 			/*
 			 * LoginGate runs before HostRoutes, so it must let wp-admin through
 			 * for HostRoutes to move interactive administration to the canonical
@@ -279,7 +279,7 @@ class LoginGate {
 			 * core's own routes would otherwise list this catalogue to anyone.
 			 */
 			'/wp-json/beltoft-scanner/v1/',
-		) );
+		) ) );
 	}
 
 	/**

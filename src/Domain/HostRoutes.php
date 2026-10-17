@@ -95,7 +95,7 @@ class HostRoutes {
 			// The trade account area.
 			Config::path( 'account_path' ),
 			Config::path( 'quick_order_path' ),
-		), Config::paths( 'checkout_legacy_paths' ), Config::paths( 'account_legacy_paths' ), array(
+		), Config::paths( 'checkout_legacy_paths' ), Config::paths( 'account_legacy_paths' ), Config::paths( 'extra_trade_only_paths' ), array(
 			/*
 			 * The trade posts' PHYSICAL slugs, matched as a prefix.
 			 *
@@ -140,7 +140,8 @@ class HostRoutes {
 		$path = strtolower( rawurldecode( $path ) );
 
 		foreach ( self::b2b_only_paths() as $b2b_path ) {
-			if ( 0 === strpos( $path, $b2b_path ) ) {
+			// An empty entry (trade_page_prefix set to '') would match every path.
+			if ( '' !== (string) $b2b_path && 0 === strpos( $path, (string) $b2b_path ) ) {
 				return true;
 			}
 		}
@@ -178,12 +179,29 @@ class HostRoutes {
 			return '';
 		}
 
+		// Pages only: a Bricks template or other post type with a b2b- slug is
+		// not a trade page, and its slug is no address on the trade host.
+		if ( 'page' !== $post->post_type ) {
+			return '';
+		}
+
 		$path = '/' . trim( (string) get_page_uri( $post ), '/' ) . '/';
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only compared, never stored.
 		$is_bricks_builder = isset( $_GET['bricks'] ) && 'run' === $_GET['bricks'];
 
-		return self::should_redirect( $path, $is_bricks_builder ) ? 'https://' . Hosts::b2b() . $path : '';
+		if ( ! self::should_redirect( $path, $is_bricks_builder ) ) {
+			return '';
+		}
+
+		/*
+		 * To where the trade host serves it: a page mapped by HostPages lives
+		 * at its root path (/loja/), and its physical slug (/b2b-loja/) is
+		 * never to be linked.
+		 */
+		$root = class_exists( '\\BeltoftCommerce\\Frontend\\HostPages' ) ? \BeltoftCommerce\Frontend\HostPages::slug_for( (int) $post->ID ) : '';
+
+		return 'https://' . Hosts::b2b() . ( '' !== $root ? '/' . trim( $root, '/' ) . '/' : $path );
 	}
 
 	/** Sends a trade page resolved on the retail host to the trade host. */

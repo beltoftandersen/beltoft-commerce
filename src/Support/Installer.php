@@ -43,6 +43,14 @@ class Installer {
 	}
 
 	public static function install(): void {
+		/*
+		 * The role names are stored translated, once. On activation the plugin
+		 * file is included after plugins_loaded, so Plugin::init() - and the
+		 * text domain - never ran in that request: the roles were stored with
+		 * their English names for good.
+		 */
+		load_plugin_textdomain( 'beltoft-commerce', false, dirname( plugin_basename( BELTOFT_COMMERCE_FILE ) ) . '/languages' );
+
 		MuPlugin::install();
 		Roles::install();
 		LookupIndex::install();
@@ -52,5 +60,23 @@ class Installer {
 		}
 
 		update_option( self::VERSION_OPTION, self::VERSION, false );
+	}
+
+	/**
+	 * Deactivation: the early handler goes, the scheduled jobs go, and the
+	 * account endpoints' "rewrite rules flushed" flags are cleared - with them
+	 * left set, a flush while the plugin was off dropped the endpoints and
+	 * reactivating never put them back (404 on saved carts and fiscal data).
+	 * Roles, tables and data stay.
+	 */
+	public static function deactivate(): void {
+		MuPlugin::remove();
+
+		foreach ( array( \BeltoftCommerce\Pricing\SaleScheduler::BOUNDARY_HOOK, self::BACKFILL_HOOK ) as $hook ) {
+			wp_clear_scheduled_hook( $hook );
+		}
+
+		delete_option( 'beltoft_saved_carts_endpoint_flushed' );
+		delete_option( 'beltoft_vat_account_endpoint_flushed' );
 	}
 }

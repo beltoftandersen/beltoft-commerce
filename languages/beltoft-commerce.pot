@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-17T15:05:10+00:00\n"
+"POT-Creation-Date: 2026-10-17T15:16:37+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: beltoft-commerce\n"
@@ -29,8 +29,8 @@ msgstr ""
 msgid "beltoft.net"
 msgstr ""
 
-#: src/Account/Reorder.php:105
-#: src/Account/Reorder.php:121
+#: src/Account/Reorder.php:125
+#: src/Account/Reorder.php:141
 msgid "Order again"
 msgstr ""
 
@@ -264,7 +264,7 @@ msgstr ""
 msgid "A product"
 msgstr ""
 
-#: src/Enforcement/StoreApiGuard.php:119
+#: src/Enforcement/StoreApiGuard.php:205
 msgid "Invalid product ID."
 msgstr ""
 
@@ -479,45 +479,45 @@ msgstr ""
 msgid "Out of stock"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:157
+#: src/Registration/AdminUsers.php:158
 msgid "B2B awaiting approval"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:158
+#: src/Registration/AdminUsers.php:159
 msgid "B2B rejected"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:209
-#: src/Registration/AdminUsers.php:355
+#: src/Registration/AdminUsers.php:210
+#: src/Registration/AdminUsers.php:356
 msgid "B2B application"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:231
+#: src/Registration/AdminUsers.php:232
 msgid "Awaiting approval"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:232
+#: src/Registration/AdminUsers.php:233
 msgid "Approved"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:233
+#: src/Registration/AdminUsers.php:234
 msgid "Rejected"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:243
+#: src/Registration/AdminUsers.php:244
 msgid "NIF"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:254
+#: src/Registration/AdminUsers.php:255
 msgid "Approve B2B application"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:255
+#: src/Registration/AdminUsers.php:256
 msgid "Reject B2B application"
 msgstr ""
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:308
+#: src/Registration/AdminUsers.php:309
 #, php-format
 msgid "%d application approved."
 msgid_plural "%d applications approved."
@@ -525,24 +525,24 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:310
+#: src/Registration/AdminUsers.php:311
 #, php-format
 msgid "%d application rejected."
 msgid_plural "%d applications rejected."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Registration/AdminUsers.php:358
+#: src/Registration/AdminUsers.php:359
 #: src/Registration/Fields.php:130
 msgid "Shop name"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:363
+#: src/Registration/AdminUsers.php:364
 #: src/Registration/Fields.php:124
 msgid "Company information"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:369
+#: src/Registration/AdminUsers.php:370
 msgid "Status"
 msgstr ""
 
@@ -763,7 +763,7 @@ msgid "The back-in-stock alert could not be saved. Please try again."
 msgstr ""
 
 #. translators: 1: source file path, 2: target directory
-#: src/Support/MuPlugin.php:90
+#: src/Support/MuPlugin.php:105
 #, php-format
 msgid "Beltoft Commerce could not install its early host handler. Copy %1$s into %2$s."
 msgstr ""
@@ -893,17 +893,17 @@ msgid "none"
 msgstr ""
 
 #. translators: %s: error detail from the VIES service
-#: src/Vat/OrderEvidence.php:118
+#: src/Vat/OrderEvidence.php:121
 #, php-format
 msgid "VAT number could not be verified: VIES was unreachable (%s). IVA has been charged and this order needs manual review."
 msgstr ""
 
-#: src/Vat/OrderEvidence.php:119
+#: src/Vat/OrderEvidence.php:122
 msgid "no detail"
 msgstr ""
 
 #. translators: %s: tax rate percentage, e.g. "23".
-#: src/Vat/RateLabel.php:48
+#: src/Vat/RateLabel.php:69
 #, php-format
 msgid "VAT %s%%"
 msgstr ""
