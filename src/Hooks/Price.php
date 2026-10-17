@@ -193,11 +193,48 @@ class Price {
 			$customer = $order instanceof \WC_Order ? (int) $order->get_customer_id() : 0;
 		}
 
-		if ( $customer && get_userdata( $customer ) ) {
-			PricingContext::act_for( $customer );
+		if ( ! $customer || ! get_userdata( $customer ) ) {
+			return $result;
 		}
 
-		return $result;
+		PricingContext::act_for( $customer );
+
+		return self::refuse_unpriced_rest_lines( $request ) ?? $result;
+	}
+
+	/**
+	 * A line sent without its own total, for a product the customer has no
+	 * price for, is refused - as in wp-admin - rather than written as a free
+	 * line (the price fails closed to ''). Lines that carry a total or
+	 * subtotal are the integration's own price and are left alone.
+	 */
+	private static function refuse_unpriced_rest_lines( \WP_REST_Request $request ): ?\WP_Error {
+		$group = PricingContext::current();
+		$lines = $request->get_param( 'line_items' );
+
+		if ( Registry::inherits_prices( $group ) || ! is_array( $lines ) ) {
+			return null;
+		}
+
+		foreach ( $lines as $line ) {
+			if ( ! is_array( $line ) || isset( $line['total'] ) || isset( $line['subtotal'] ) ) {
+				continue;
+			}
+
+			$id      = absint( $line['variation_id'] ?? 0 ) ?: absint( $line['product_id'] ?? 0 );
+			$product = $id ? wc_get_product( $id ) : null;
+
+			if ( $product instanceof \WC_Product && null === PriceResolver::resolve( $product, $group ) ) {
+				return new \WP_Error(
+					'beltoft_commerce_no_group_price',
+					/* translators: %s: product name */
+					sprintf( __( '%s has no price for this customer.', 'beltoft-commerce' ), $product->get_name() ),
+					array( 'status' => 400 )
+				);
+			}
+		}
+
+		return null;
 	}
 
 	/**

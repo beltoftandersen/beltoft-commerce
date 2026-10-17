@@ -348,4 +348,28 @@ class ReviewLowFixesTest extends WP_UnitTestCase {
 		$this->assertSame( 'b2b_standard', PricingContext::current() );
 		PricingContext::stop_acting();
 	}
+
+	/** A REST line without a total, for a product the customer has no price for, is refused. */
+	public function test_rest_orders_refuse_unpriced_lines() {
+		$partner = self::factory()->user->create( array( 'role' => 'b2b_customer' ) );
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'shop_manager' ) ) );
+
+		$unpriced = $this->product( Taxonomy::BOTH );
+		$priced   = $this->product( Taxonomy::BOTH );
+		update_post_meta( $priced, '_price_group_b2b_standard', '6' );
+
+		$request = new WP_REST_Request( 'POST', '/wc/v3/orders' );
+		$request->set_param( 'customer_id', $partner );
+
+		$request->set_param( 'line_items', array( array( 'product_id' => $priced, 'quantity' => 1 ), array( 'product_id' => $unpriced, 'quantity' => 1 ) ) );
+		$this->assertWPError( BeltoftCommerce\Hooks\Price::price_rest_order_for_customer( null, null, $request ) );
+
+		// The integration's own total is its price, and goes through.
+		$request->set_param( 'line_items', array( array( 'product_id' => $unpriced, 'quantity' => 1, 'total' => '5.00' ) ) );
+		$this->assertNull( BeltoftCommerce\Hooks\Price::price_rest_order_for_customer( null, null, $request ) );
+
+		$request->set_param( 'line_items', array( array( 'product_id' => $priced, 'quantity' => 1 ) ) );
+		$this->assertNull( BeltoftCommerce\Hooks\Price::price_rest_order_for_customer( null, null, $request ) );
+		PricingContext::stop_acting();
+	}
 }
