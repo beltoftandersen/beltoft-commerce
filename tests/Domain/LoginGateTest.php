@@ -207,4 +207,20 @@ class LoginGateTest extends WP_UnitTestCase {
 
 		$this->assertTrue( LoginGate::should_gate( '/entrar/', array( 'add-to-cart' => '12' ) ) );
 	}
+
+	/** Logged out on the trade host, admin-ajax answers the login and application forms only. */
+	public function test_logged_out_admin_ajax_allows_only_the_forms() {
+		$ajax = '/wp-admin/admin-ajax.php';
+
+		$this->assertTrue( LoginGate::admin_endpoint_allowed( $ajax, 'bricks_form_submit', array() ) );
+		$this->assertTrue( LoginGate::admin_endpoint_allowed( $ajax, 'bricks_regenerate_form_nonce', array() ) );
+		$this->assertFalse( LoginGate::admin_endpoint_allowed( $ajax, 'woocommerce_checkout', array() ) );
+		$this->assertFalse( LoginGate::admin_endpoint_allowed( $ajax, 'woocommerce_add_to_cart', array() ) );
+		$this->assertFalse( LoginGate::admin_endpoint_allowed( $ajax, 'bricks_form_submit', array( 'add-to-cart' => '12' ) ) );
+		$this->assertFalse( LoginGate::admin_endpoint_allowed( '/wp-admin/admin-post.php', 'bricks_form_submit', array() ) );
+	}
+
+	public function test_the_admin_endpoint_check_runs_before_woocommerces_form_handler() {
+		$this->assertSame( 0, has_action( 'wp_loaded', array( LoginGate::class, 'maybe_redirect_loaded' ) ) );
+	}
 }

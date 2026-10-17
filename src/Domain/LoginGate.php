@@ -335,11 +335,69 @@ class LoginGate {
 
 		$path = self::effective_path( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ) );
 
+		if ( in_array( $path, array( '/wp-admin/admin-ajax.php', '/wp-admin/admin-post.php' ), true ) ) {
+			self::guard_admin_endpoints( $path );
+
+			return;
+		}
+
 		if ( 0 === strpos( $path, '/wp-json/' ) || 0 === strpos( $path, '/wp-admin/' ) ) {
 			return;
 		}
 
 		self::maybe_redirect();
+	}
+
+	/**
+	 * admin-ajax.php and admin-post.php, for logged-out visitors on the trade
+	 * host: only what the login and application pages use.
+	 *
+	 * Both sit under /wp-admin/, which the gate lets through so HostRoutes can
+	 * move administration to the retail host, and both stay on this host for
+	 * the front end. That let a visitor with no login use WooCommerce's guest
+	 * AJAX actions there - add to cart, checkout (guest checkout is on) - and
+	 * its wp_loaded form handlers (?add-to-cart= on either URL). Running here,
+	 * on wp_loaded 0, this comes before all of those.
+	 */
+	private static function guard_admin_endpoints( string $path ): void {
+		if ( ! Hosts::is_b2b_host() || is_user_logged_in() ) {
+			return;
+		}
+
+		$vars = self::request_vars( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ) );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only compared against a fixed list.
+		$action = isset( $_REQUEST['action'] ) && is_string( $_REQUEST['action'] ) ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : '';
+
+		if ( self::admin_endpoint_allowed( $path, $action, $vars ) ) {
+			return;
+		}
+
+		status_header( 403 );
+		nocache_headers();
+		exit;
+	}
+
+	/** Whether a logged-out request to admin-ajax/admin-post on the trade host may proceed. */
+	public static function admin_endpoint_allowed( string $path, string $action, array $vars ): bool {
+		return '/wp-admin/admin-ajax.php' === $path
+			&& in_array( $action, self::public_ajax_actions(), true )
+			&& ! self::selects_other_content( $vars );
+	}
+
+	/**
+	 * The admin-ajax actions a logged-out visitor on the trade host may call:
+	 * Bricks' form submission (login and application forms) and its nonce
+	 * refreshes. Filterable for a site whose public pages need more.
+	 *
+	 * @return string[]
+	 */
+	public static function public_ajax_actions(): array {
+		return (array) apply_filters( 'beltoft_commerce_b2b_public_ajax_actions', array(
+			'bricks_form_submit',
+			'bricks_regenerate_form_nonce',
+			'bricks_regenerate_query_nonce',
+		) );
 	}
 
 	public static function maybe_redirect(): void {

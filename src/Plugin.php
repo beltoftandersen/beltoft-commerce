@@ -90,6 +90,7 @@ class Plugin {
 		Enforcement\Purchasable::register();
 		Enforcement\CartGuard::register();
 		Enforcement\StoreApiGuard::register();
+		Enforcement\BricksGuard::register();
 		Enforcement\SearchIndex::register();
 		Enforcement\FeedGuard::register();
 		Enforcement\NavCounts::register();
