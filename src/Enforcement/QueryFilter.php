@@ -311,6 +311,21 @@ class QueryFilter {
 	 * caught here for the same reason - it mixes post types - and goes
 	 * through SearchIndex instead.
 	 */
+	/**
+	 * Whether a query var holds a value. WP_Query takes a list as well as a
+	 * string in a taxonomy query var (?product_cat[]=x); casting the list to a
+	 * string logged "Array to string conversion" on every such request.
+	 */
+	private static function is_set( $value ): bool {
+		if ( is_array( $value ) ) {
+			return array() !== array_filter( $value, static function ( $item ) {
+				return is_scalar( $item ) && '' !== (string) $item;
+			} );
+		}
+
+		return is_scalar( $value ) && '' !== (string) $value;
+	}
+
 	private static function is_product_taxonomy_query( \WP_Query $query ): bool {
 		$product_only = array();
 
@@ -321,12 +336,14 @@ class QueryFilter {
 		}
 
 		foreach ( $product_only as $name => $query_var ) {
-			if ( $query_var && '' !== (string) $query->get( $query_var ) ) {
+			if ( $query_var && self::is_set( $query->get( $query_var ) ) ) {
 				return true;
 			}
 		}
 
-		if ( isset( $product_only[ (string) $query->get( 'taxonomy' ) ] ) ) {
+		$taxonomy = $query->get( 'taxonomy' );
+
+		if ( is_string( $taxonomy ) && isset( $product_only[ $taxonomy ] ) ) {
 			return true;
 		}
 

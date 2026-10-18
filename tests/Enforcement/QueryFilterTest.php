@@ -172,6 +172,20 @@ class QueryFilterTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * WP_Query takes a list in a taxonomy query var (?product_cat[]=x): still a
+	 * product archive, filtered, and no "Array to string conversion" warning.
+	 */
+	public function test_a_category_archive_asked_for_with_a_list_is_filtered_without_a_warning() {
+		$this->in_category( 'cosmeticos' );
+		wp_set_current_user( 0 );
+
+		$ids = $this->archive_ids( array( 'product_cat' => array( 'cosmeticos' ) ) );
+
+		$this->assertContains( $this->retail_only, $ids );
+		$this->assertNotContains( $this->b2b_only, $ids );
+	}
+
+	/**
 	 * A taxonomy shared with other post types is not a product archive:
 	 * adding the audience clause there would hide every non-product.
 	 */
