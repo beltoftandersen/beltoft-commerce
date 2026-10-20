@@ -4,11 +4,15 @@ namespace BeltoftCommerce\Domain;
 
 use BeltoftCommerce\Support\Config;
 use BeltoftCommerce\Support\Hosts;
+use BeltoftCommerce\Support\Language;
+use BeltoftCommerce\Support\TradePath;
 
 defined( 'ABSPATH' ) || exit;
 
 // Loaded early by path (mu-plugin); see Support/Hosts.php for why Config is required here.
 require_once dirname( __DIR__ ) . '/Support/Config.php';
+require_once dirname( __DIR__ ) . '/Support/Hosts.php';
+require_once dirname( __DIR__ ) . '/Support/TradePath.php';
 
 /**
  * The B2B-only pages exist on the B2B host and nowhere else.
@@ -78,24 +82,25 @@ class HostRoutes {
 	}
 
 	/**
-	 * Paths that belong to the B2B host.
+	 * Paths that belong to the B2B host, in a language (Config 'trade_paths')
+	 * when a code is given.
 	 *
 	 * Derived from LoginGate where it already owns the value, so the gate's
 	 * allowlist and this list cannot drift apart and start disagreeing about
 	 * which host a page lives on.
 	 */
-	public static function b2b_only_paths(): array {
+	public static function b2b_only_paths( string $code = '' ): array {
 		/*
 		 * From Config, not from the page classes: this list is read by the
 		 * mu-plugin before any plugin class exists.
 		 */
 		return (array) apply_filters( 'beltoft_commerce_b2b_only_paths', array_merge( array(
-			LoginGate::login_path(),
-			LoginGate::register_path(),
+			LoginGate::login_path( $code ),
+			LoginGate::register_path( $code ),
 			// The trade account area.
-			Config::path( 'account_path' ),
-			Config::path( 'quick_order_path' ),
-		), Config::paths( 'checkout_legacy_paths' ), Config::paths( 'account_legacy_paths' ), Config::paths( 'extra_trade_only_paths' ), array(
+			Config::path( 'account_path', $code ),
+			Config::path( 'quick_order_path', $code ),
+		), Config::paths( 'checkout_legacy_paths', $code ), Config::paths( 'account_legacy_paths', $code ), Config::paths( 'extra_trade_only_paths', $code ), array(
 			/*
 			 * The trade posts' PHYSICAL slugs, matched as a prefix.
 			 *
@@ -107,11 +112,11 @@ class HostRoutes {
 			 * to anyone on the consumer site who guessed it.
 			 */
 			strtolower( (string) Config::get( 'trade_page_prefix' ) ),
-		) ) );
+		) ), $code );
 	}
 
-	public static function should_redirect( string $path, bool $is_bricks_builder = false ): bool {
-		return self::may_redirect( $is_bricks_builder ) && self::is_b2b_only_path( $path );
+	public static function should_redirect( string $path, bool $is_bricks_builder = false, string $code = '' ): bool {
+		return self::may_redirect( $is_bricks_builder ) && self::is_b2b_only_path( $path, $code );
 	}
 
 	/** Whether this request may be sent to the trade host at all, whatever it asked for. */
@@ -131,8 +136,8 @@ class HostRoutes {
 		return ! $is_bricks_builder;
 	}
 
-	/** Whether a path belongs to the trade host, whichever host is asking. */
-	public static function is_b2b_only_path( string $path ): bool {
+	/** Whether a path (without its language prefix) belongs to the trade host, whichever host is asking. */
+	public static function is_b2b_only_path( string $path, string $code = '' ): bool {
 		/*
 		 * WordPress resolves pages case-insensitively and after URL-decoding,
 		 * so /B2B-loja/ and /%62%32b-loja/ rendered the trade page here - and,
@@ -140,7 +145,7 @@ class HostRoutes {
 		 */
 		$path = strtolower( rawurldecode( $path ) );
 
-		foreach ( self::b2b_only_paths() as $b2b_path ) {
+		foreach ( self::b2b_only_paths( $code ) as $b2b_path ) {
 			// An empty entry (trade_page_prefix set to '') would match every path.
 			if ( '' !== (string) $b2b_path && 0 === strpos( $path, (string) $b2b_path ) ) {
 				return true;
@@ -205,27 +210,29 @@ class HostRoutes {
 		}
 
 		/*
-		 * To where the trade host serves it: a page mapped by HostPages lives
-		 * at its root path (/loja/), and its physical slug (/b2b-loja/) is
-		 * never to be linked.
+		 * To the trade host of the page's language (a language without one:
+		 * the fallback's), where the trade host serves it: a page mapped by
+		 * HostPages - or a translated copy of one - lives at its root path
+		 * (/loja/, /es/tienda/), and its physical slug (/b2b-loja/) is never
+		 * to be linked.
 		 */
-		$root = class_exists( '\\BeltoftCommerce\\Frontend\\HostPages' ) ? \BeltoftCommerce\Frontend\HostPages::slug_for( (int) $post->ID ) : '';
+		$code = Language::of_post( (int) $post->ID );
+		$host = Hosts::b2b_for( $code );
+		$root = class_exists( '\\BeltoftCommerce\\Frontend\\HostPages' ) ? \BeltoftCommerce\Frontend\HostPages::root_for( (int) $post->ID ) : '';
 
 		if ( '' !== $root ) {
-			return 'https://' . Hosts::b2b() . '/' . trim( $root, '/' ) . '/';
+			return 'https://' . $host . TradePath::prefix( $code ) . '/' . trim( $root, '/' ) . '/';
 		}
 
 		/*
 		 * Otherwise at its own address, language prefix and all: in path mode
-		 * the Spanish copy is /es/b2b-tienda/, and sending it to /b2b-tienda/
+		 * the Spanish copy is /es/acceder/, and sending it to /acceder/
 		 * dropped the language. The permalink is the address the language
-		 * plugin gives it. HostPages maps only default-language pages to root
-		 * paths so far, so a translated copy keeps its physical slug until
-		 * per-language roots exist.
+		 * plugin gives it.
 		 */
 		$link = wp_parse_url( (string) get_permalink( $post ), PHP_URL_PATH );
 
-		return 'https://' . Hosts::b2b() . ( is_string( $link ) && '' !== trim( $link, '/' ) ? '/' . trim( $link, '/' ) . '/' : $path );
+		return 'https://' . $host . ( is_string( $link ) && '' !== trim( $link, '/' ) ? '/' . trim( $link, '/' ) . '/' : $path );
 	}
 
 	/** Sends a trade page resolved on the retail host to the trade host. */
@@ -240,12 +247,11 @@ class HostRoutes {
 		wp_redirect( $target, 302 );
 		exit;
 	}
-
 	/**
 	 * Called from the mu-plugin, before WordPress has loaded a plugin.
 	 */
 	public static function maybe_redirect_early(): void {
-		$request_uri = $_SERVER['REQUEST_URI'] ?? '/';
+		$request_uri  = (string) ( $_SERVER['REQUEST_URI'] ?? '/' );
 		$admin_target = self::admin_redirect_target( $request_uri, $_SERVER['REQUEST_METHOD'] ?? 'GET' );
 
 		if ( '' !== $admin_target ) {
@@ -254,22 +260,143 @@ class HostRoutes {
 			exit;
 		}
 
-		$path = wp_parse_url( $request_uri, PHP_URL_PATH ) ?: '/';
-		$is_bricks_builder = isset( $_GET['bricks'] ) && is_string( $_GET['bricks'] ) && 'run' === wp_unslash( $_GET['bricks'] );
+		$target = self::early_target( $request_uri, null, self::is_bricks_builder() );
 
-		if ( ! self::should_redirect( $path, $is_bricks_builder ) ) {
+		if ( '' === $target ) {
 			return;
 		}
 
-		/*
-		 * The query string goes along: /entrar/?redirect_to= and the account
-		 * links that carry a key lost theirs here and landed on the bare page.
-		 */
-		$query = wp_parse_url( $request_uri, PHP_URL_QUERY );
-
 		// wp_safe_redirect() is pluggable and not loaded this early, and the
 		// target is a different host, which it would reject in any case.
-		header( 'Location: https://' . Hosts::b2b() . $path . ( is_string( $query ) && '' !== $query ? '?' . $query : '' ), true, 302 );
+		header( 'Location: ' . $target, true, 302 );
 		exit;
+	}
+
+	/**
+	 * Where the early handler sends a trade-only path asked for on a retail
+	 * host, or ''. Pure, for tests.
+	 *
+	 * Once trade hosts are per language, only on the site address: there the
+	 * language is the default one (or a configured path prefix's), and its
+	 * trade host is known before any plugin loads. A language domain's
+	 * language is not known until the language plugin has run, so those
+	 * requests wait for maybe_redirect_on_language() at plugins_loaded:2.
+	 *
+	 * The query string goes along: /entrar/?redirect_to= and the account
+	 * links that carry a key lost theirs here and landed on the bare page.
+	 */
+	public static function early_target( string $request_uri, ?string $host = null, bool $is_bricks_builder = false ): string {
+		$host = Hosts::normalise( (string) ( $host ?? ( $_SERVER['HTTP_HOST'] ?? '' ) ) );
+
+		if ( Hosts::is_b2b_host( $host ) || ! self::may_redirect( $is_bricks_builder ) ) {
+			return '';
+		}
+
+		if ( Hosts::b2b_hosts() && ! Hosts::is_retail_host( $host ) ) {
+			return '';
+		}
+
+		$path = (string) ( wp_parse_url( $request_uri, PHP_URL_PATH ) ?: '/' );
+
+		list( $code, $rest ) = TradePath::split( $path, $host );
+
+		if ( ! self::is_b2b_only_path( $rest, $code ) ) {
+			return '';
+		}
+
+		return 'https://' . Hosts::b2b_for( $code ) . $path . self::query_of( $request_uri );
+	}
+
+	/**
+	 * Trade-only paths on a retail host, once the language plugin has decided
+	 * the request's language (Zerolang: plugins_loaded:1 in a path mode,
+	 * while its file loads under separate domains). Registered by the early
+	 * handler at plugins_loaded:2, not under WP-CLI.
+	 *
+	 * Acts on what the early handler leaves alone: every retail host but the
+	 * site address once trade hosts are per language, and language-prefixed
+	 * paths, whose prefix the early handler may not know. Cheap: a header
+	 * and an exit, before WordPress queries or renders anything.
+	 */
+	public static function maybe_redirect_on_language(): void {
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			return;
+		}
+
+		$request_uri = (string) ( $_SERVER['REQUEST_URI'] ?? '/' );
+		$host        = Hosts::normalise( (string) ( $_SERVER['HTTP_HOST'] ?? '' ) );
+
+		if ( '' === $host || Hosts::is_b2b_host( $host ) ) {
+			return;
+		}
+
+		$path = (string) ( wp_parse_url( $request_uri, PHP_URL_PATH ) ?: '/' );
+
+		// Single trade host and no language prefix: the early handler has answered already.
+		if ( ! Hosts::b2b_hosts() && TradePath::split( $path, $host )[1] === $path ) {
+			return;
+		}
+
+		$code   = class_exists( '\\BeltoftCommerce\\Support\\Language' ) ? Language::current() : '';
+		$target = self::language_target( $request_uri, $host, $code, self::is_bricks_builder() );
+
+		if ( '' === $target ) {
+			return;
+		}
+
+		header( 'Location: ' . $target, true, 302 );
+		header( 'Cache-Control: no-store, private' );
+		exit;
+	}
+
+	/**
+	 * Where a trade-only path asked for on a retail host in a language goes:
+	 * that language's trade host (a language without one: the fallback's),
+	 * path and query unchanged, or ''. Pure, for tests.
+	 *
+	 * A path prefix names the language when there is one; otherwise the
+	 * language plugin's answer for the request. The paths of the target
+	 * trade host's own language count too, so /sign-in/ on the German
+	 * domain reaches the English portal it belongs to - and so do the
+	 * default language's, so a link to /entrar/ in a retail header works on
+	 * every language domain (the trade host's gate then shows its own login).
+	 */
+	public static function language_target( string $request_uri, string $host, string $code, bool $is_bricks_builder = false ): string {
+		if ( Hosts::is_b2b_host( $host ) || ! self::may_redirect( $is_bricks_builder ) ) {
+			return '';
+		}
+
+		$path = (string) ( wp_parse_url( $request_uri, PHP_URL_PATH ) ?: '/' );
+
+		list( $split_code, $rest ) = TradePath::split( $path, $host );
+
+		if ( $rest !== $path || '' === $code ) {
+			$code = $split_code;
+		}
+
+		$target = Hosts::b2b_for( $code );
+
+		$matches = false;
+
+		foreach ( array_unique( array( $code, Hosts::b2b_language( $target ), '' ) ) as $paths_of ) {
+			$matches = $matches || self::is_b2b_only_path( $rest, $paths_of );
+		}
+
+		if ( ! $matches ) {
+			return '';
+		}
+
+		return 'https://' . $target . $path . self::query_of( $request_uri );
+	}
+
+	private static function query_of( string $request_uri ): string {
+		$query = wp_parse_url( $request_uri, PHP_URL_QUERY );
+
+		return is_string( $query ) && '' !== $query ? '?' . $query : '';
+	}
+
+	private static function is_bricks_builder(): bool {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only compared, never stored.
+		return isset( $_GET['bricks'] ) && is_string( $_GET['bricks'] ) && 'run' === wp_unslash( $_GET['bricks'] );
 	}
 }

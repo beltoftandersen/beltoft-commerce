@@ -201,7 +201,8 @@ class Actions {
 		}
 
 		if ( class_exists( '\BeltoftCommerce\Support\Hosts' ) ) {
-			$hosts[] = \BeltoftCommerce\Support\Hosts::b2b();
+			// Every trade host: one per language.
+			$hosts = array_merge( $hosts, \BeltoftCommerce\Support\Hosts::all_b2b_hosts() );
 		}
 
 		return array_values( array_unique( array_filter( $hosts ) ) );

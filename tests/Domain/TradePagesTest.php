@@ -6,6 +6,8 @@ use BeltoftCommerce\Support\Hosts;
 
 class TradePagesTest extends WP_UnitTestCase {
 
+	use TradeHosts;
+
 	private int $trade;
 	private int $retail;
 
@@ -20,6 +22,7 @@ class TradePagesTest extends WP_UnitTestCase {
 	public function tearDown(): void {
 		unset( $_SERVER['HTTP_HOST'] );
 		remove_all_filters( 'beltoft_commerce_default_language_post' );
+		$this->forget_trade_hosts();
 		delete_option( HostPages::OPTION );
 		TradePages::forget();
 		wp_set_current_user( 0 );
@@ -99,7 +102,7 @@ class TradePagesTest extends WP_UnitTestCase {
 	}
 
 	/** D1: a language plugin narrows get_posts() to the request's language unless the query asks for every language (Zerolang §9a). */
-	public function test_the_trade_page_list_asks_for_every_language() {
+	public function test_the_query_asks_for_every_language() {
 		$marked = null;
 		$watch  = static function ( $query ) use ( &$marked ) {
 			if ( 'page' === $query->get( 'post_type' ) && 'ids' === $query->get( 'fields' ) ) {
@@ -116,12 +119,43 @@ class TradePagesTest extends WP_UnitTestCase {
 	}
 
 	/** The retail sitemaps leave a translated trade page out. */
-	public function test_a_translated_trade_page_is_kept_out_of_the_sitemaps() {
+	public function test_a_translated_trade_page_is_not_in_the_sitemap() {
 		$login = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'entrar' ) );
 		$copy  = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'acceder' ) );
 		$this->translate( $copy, $login );
 
 		$this->assertTrue( TradePages::ignore_in_sitemap( false, get_post( $copy ) ) );
 		$this->assertContains( $copy, TradePages::exclude_from_sitemap_query( array() )['post__not_in'] );
+	}
+
+	public function test_ids_include_every_languages_copy() {
+		$login = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'entrar' ) );
+		$es    = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'acceder' ) );
+		$en    = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'sign-in' ) );
+		$this->translation( $login, $es, 'es' );
+		$this->translation( $login, $en, 'en' );
+		TradePages::forget();
+
+		$ids = TradePages::ids();
+
+		$this->assertContains( $login, $ids );
+		$this->assertContains( $es, $ids );
+		$this->assertContains( $en, $ids );
+		$this->assertNotContains( $this->retail, $ids );
+	}
+
+	/** Hreflang names other languages' pages, which on a trade host are other trade hosts' or retail's. */
+	public function test_no_hreflang_on_a_trade_host() {
+		$this->use_trade_hosts();
+		$links = array( 'pt' => 'https://x/', 'en' => 'https://y/' );
+
+		foreach ( Hosts::all_b2b_hosts() as $host ) {
+			$_SERVER['HTTP_HOST'] = $host;
+			$this->assertSame( array(), TradePages::hreflang_links( $links ), $host );
+		}
+
+		$_SERVER['HTTP_HOST'] = Hosts::retail();
+		$this->assertSame( $links, TradePages::hreflang_links( $links ) );
+		$this->assertSame( 10, has_filter( 'zerolang_hreflang_links', array( TradePages::class, 'hreflang_links' ) ) );
 	}
 }

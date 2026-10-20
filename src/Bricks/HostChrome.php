@@ -96,9 +96,13 @@ class HostChrome {
 			return false;
 		}
 
+		// In the request's language: /es/acceder/ is the Spanish login page, /sign-in/ the English trade host's.
+		list( $code ) = \BeltoftCommerce\Support\TradePath::split( (string) wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH ) );
+		$code         = '' !== $code ? $code : \BeltoftCommerce\Support\Language::current();
+
 		$slugs = array_filter( array(
-			trim( LoginGate::login_path(), '/' ),
-			trim( LoginGate::register_path(), '/' ),
+			trim( LoginGate::login_path( $code ), '/' ),
+			trim( LoginGate::register_path( $code ), '/' ),
 		) );
 
 		return ! empty( $slugs ) && is_page( $slugs );

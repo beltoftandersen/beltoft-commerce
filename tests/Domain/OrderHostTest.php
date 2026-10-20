@@ -5,8 +5,11 @@ use BeltoftCommerce\Support\Hosts;
 
 class OrderHostTest extends WP_UnitTestCase {
 
+	use TradeHosts;
+
 	public function tearDown(): void {
 		unset( $_SERVER['HTTP_HOST'] );
+		$this->forget_trade_hosts();
 		parent::tearDown();
 	}
 
@@ -148,5 +151,75 @@ class OrderHostTest extends WP_UnitTestCase {
 
 		$this->assertSame( Hosts::retail(), wp_parse_url( $inner, PHP_URL_HOST ) );
 		$this->assertSame( Hosts::b2b(), wp_parse_url( $outer, PHP_URL_HOST ) );
+	}
+
+	/* One trade host per language (spec 2026-10-20, §6.1). */
+
+	public function test_an_order_records_the_trade_host_it_was_placed_on() {
+		$this->use_trade_hosts();
+		$_SERVER['HTTP_HOST'] = strtoupper( self::$en_trade ) . ':443';
+
+		$order = new WC_Order();
+		$order->save();
+		OrderHost::record( $order->get_id() );
+
+		$this->assertSame( self::$en_trade, OrderHost::for_order( wc_get_order( $order->get_id() ) ) );
+
+		$_SERVER['HTTP_HOST'] = self::$en_retail;
+		$retail = new WC_Order();
+		$retail->save();
+		OrderHost::record( $retail->get_id() );
+
+		$this->assertSame( Hosts::retail(), OrderHost::for_order( wc_get_order( $retail->get_id() ) ) );
+	}
+
+	/** An order with no host (older, or made by staff in wp-admin) for a partner: the partner's own trade host. */
+	public function test_a_trade_customers_order_without_a_host_uses_their_trade_host() {
+		$this->use_trade_hosts();
+		\BeltoftCommerce\Pricing\Roles::install();
+		$partner = self::factory()->user->create( array( 'role' => 'b2b_customer' ) );
+		$order   = new WC_Order();
+		$order->set_customer_id( $partner );
+		$order->save();
+
+		$this->assertSame( Hosts::b2b(), OrderHost::for_order( $order ) );
+
+		update_user_meta( $partner, \BeltoftCommerce\Registration\TradeHost::META_KEY, self::$en_trade );
+		$this->assertSame( self::$en_trade, OrderHost::for_order( $order ) );
+
+		// A recorded host that is no trade host any more is not used.
+		update_user_meta( $partner, \BeltoftCommerce\Registration\TradeHost::META_KEY, 'gone.example' );
+		$this->assertSame( Hosts::b2b(), OrderHost::for_order( $order ) );
+
+		$retail_customer = new WC_Order();
+		$retail_customer->set_customer_id( self::factory()->user->create( array( 'role' => 'customer' ) ) );
+		$retail_customer->save();
+		$this->assertSame( Hosts::retail(), OrderHost::for_order( $retail_customer ) );
+	}
+
+	/**
+	 * THE CONTRACT WITH ZEROLANG (spec R4): while an order email is written,
+	 * HTTP_HOST is the order's host, and Zerolang's active host set follows
+	 * HTTP_HOST - so a trade order's links stay on its trade host, in its
+	 * language, from cron, wp-admin or the checkout alike.
+	 */
+	public function test_the_email_push_sets_http_host_to_the_order_host() {
+		$this->use_trade_hosts();
+		unset( $_SERVER['HTTP_HOST'] );
+
+		$order = new WC_Order();
+		$order->update_meta_data( '_beltoft_origin_host', self::$en_trade );
+		$order->save();
+
+		$email         = new stdClass();
+		$email->object = $order;
+
+		OrderHost::push_from_email( '', $email );
+		$this->assertSame( self::$en_trade, $_SERVER['HTTP_HOST'] );
+		$this->assertSame( self::$en_trade, wp_parse_url( home_url( '/' ), PHP_URL_HOST ) );
+		$this->assertTrue( Hosts::is_b2b_host() );
+
+		OrderHost::pop_host();
+		$this->assertArrayNotHasKey( 'HTTP_HOST', $_SERVER );
 	}
 }

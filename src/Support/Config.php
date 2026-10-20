@@ -66,6 +66,36 @@ class Config {
 			'header_template'       => 'b2b-cabecalho',
 			'footer_template'       => 'b2b-rodape',
 
+			/*
+			 * One trade host per language (BELTOFT_B2B_HOSTS, Support\Hosts).
+			 *
+			 * A language with no trade host of its own (de, es today) sends
+			 * its partners to this language's - the single portal for every
+			 * partner who is not served in the default language.
+			 */
+			'trade_fallback_language' => 'en',
+
+			/*
+			 * The trade paths per language, by language code; a key missing
+			 * here is the base value above:
+			 *
+			 *     'trade_paths' => array(
+			 *         'en' => array( 'login_path' => '/sign-in/', 'register_path' => '/apply/' ),
+			 *     ),
+			 *
+			 * Declared here and not read from the pages because the early
+			 * gate runs before any language plugin. They must match the
+			 * translated pages' slugs; Site Health compares them.
+			 */
+			'trade_paths'           => array(),
+
+			/*
+			 * A path-mode language plugin's URL segments (staging: /en/, /de/,
+			 * /es/), as segment => language code, for the early gate. Empty
+			 * under separate domains, where the host names the language.
+			 */
+			'path_language_prefixes' => array(),
+
 			// The shop's own country: a VAT number from here is a domestic sale.
 			'home_country'          => 'PT',
 
@@ -140,16 +170,34 @@ class Config {
 		return $config[ $key ] ?? null;
 	}
 
-	/** A path setting, always with leading and trailing slash. */
-	public static function path( string $key ): string {
-		return '/' . trim( (string) self::get( $key ), '/' ) . '/';
+	/**
+	 * One setting in a language: trade_paths[ $code ][ $key ] when it is set,
+	 * else the base setting. An empty code is the base setting.
+	 *
+	 * @return mixed
+	 */
+	public static function in_language( string $key, string $code = '' ) {
+		if ( '' !== $code ) {
+			$per_language = self::get( 'trade_paths' );
+
+			if ( is_array( $per_language ) && isset( $per_language[ $code ] ) && is_array( $per_language[ $code ] ) && array_key_exists( $key, $per_language[ $code ] ) ) {
+				return $per_language[ $code ][ $key ];
+			}
+		}
+
+		return self::get( $key );
 	}
 
-	/** @return string[] A list-of-paths setting, each with leading and trailing slash. */
-	public static function paths( string $key ): array {
+	/** A path setting, always with leading and trailing slash; in a language when a code is given. */
+	public static function path( string $key, string $code = '' ): string {
+		return '/' . trim( (string) self::in_language( $key, $code ), '/' ) . '/';
+	}
+
+	/** @return string[] A list-of-paths setting, each with leading and trailing slash; in a language when a code is given. */
+	public static function paths( string $key, string $code = '' ): array {
 		return array_values( array_map(
 			static fn( $path ) => '/' . trim( (string) $path, '/' ) . '/',
-			(array) self::get( $key )
+			(array) self::in_language( $key, $code )
 		) );
 	}
 }

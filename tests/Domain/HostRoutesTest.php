@@ -5,6 +5,8 @@ use BeltoftCommerce\Support\Hosts;
 
 class HostRoutesTest extends WP_UnitTestCase {
 
+	use TradeHosts;
+
 	/** @var callable[] page_link filters added by spanish_copy(). */
 	private array $links = array();
 
@@ -16,6 +18,8 @@ class HostRoutesTest extends WP_UnitTestCase {
 	public function tearDown(): void {
 		unset( $_SERVER['HTTP_HOST'] );
 		remove_all_filters( 'beltoft_commerce_default_language_post' );
+		$this->forget_trade_hosts();
+		delete_option( \BeltoftCommerce\Frontend\HostPages::OPTION );
 		foreach ( $this->links as $link ) {
 			remove_filter( 'page_link', $link, 10 );
 		}
@@ -123,14 +127,16 @@ class HostRoutesTest extends WP_UnitTestCase {
 		$this->assertSame( 'https://' . Hosts::b2b() . '/es/acceder/', HostRoutes::resolved_redirect_target() );
 	}
 
-	/** D3: the language prefix survives the move to the trade host. */
+	/** D3: the language prefix survives the move to the trade host, to the copy's own root (spec §5). */
 	public function test_a_translated_trade_copy_keeps_its_language_on_the_trade_host() {
 		$shop = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'b2b-loja', 'post_status' => 'publish' ) );
 		update_option( \BeltoftCommerce\Frontend\HostPages::OPTION, array( 'loja' => $shop ) );
 		$copy = $this->spanish_copy( $shop, 'b2b-tienda' );
+		$this->use_path_mode();
+		$this->translation( $shop, $copy, 'es' );
 
 		$this->go_to( home_url( '/?page_id=' . $copy ) );
-		$this->assertSame( 'https://' . Hosts::b2b() . '/es/b2b-tienda/', HostRoutes::resolved_redirect_target() );
+		$this->assertSame( 'https://' . Hosts::b2b() . '/es/tienda/', HostRoutes::resolved_redirect_target() );
 
 		// The default-language page still goes to its root path.
 		$this->go_to( home_url( '/?page_id=' . $shop ) );
@@ -146,5 +152,105 @@ class HostRoutesTest extends WP_UnitTestCase {
 		$this->go_to( home_url( '/?page_id=' . $copy ) );
 
 		$this->assertSame( '', HostRoutes::resolved_redirect_target() );
+	}
+
+	/* One trade host per language (spec 2026-10-20, §4). */
+
+	public function test_a_trade_path_on_the_site_address_goes_to_the_default_trade_host() {
+		$this->assertSame( 'https://' . Hosts::b2b() . '/entrar/?redirect_to=%2Fconta%2F', HostRoutes::early_target( '/entrar/?redirect_to=%2Fconta%2F', Hosts::retail() ) );
+
+		$this->use_trade_hosts();
+		$this->assertSame( 'https://' . Hosts::b2b() . '/entrar/', HostRoutes::early_target( '/entrar/', Hosts::retail() ) );
+		$this->assertSame( 'https://' . Hosts::b2b() . '/b2b-loja/', HostRoutes::early_target( '/b2b-loja/', Hosts::retail() ) );
+		$this->assertSame( '', HostRoutes::early_target( '/loja/', Hosts::retail() ) );
+	}
+
+	public function test_a_trade_path_on_a_language_domain_goes_to_that_languages_trade_host() {
+		$this->use_trade_hosts();
+
+		// The early handler cannot know a language domain's language: it leaves it to plugins_loaded:2.
+		$this->assertSame( '', HostRoutes::early_target( '/sign-in/', self::$en_retail ) );
+
+		$this->assertSame( 'https://' . self::$en_trade . '/sign-in/?redirect_to=x', HostRoutes::language_target( '/sign-in/?redirect_to=x', self::$en_retail, 'en' ) );
+		$this->assertSame( 'https://' . self::$en_trade . '/b2b-shop/', HostRoutes::language_target( '/b2b-shop/', self::$en_retail, 'en' ) );
+		$this->assertSame( 'https://' . self::$en_trade . '/quick-order/', HostRoutes::language_target( '/quick-order/', self::$en_retail, 'en' ) );
+		$this->assertSame( '', HostRoutes::language_target( '/shop/', self::$en_retail, 'en' ) );
+
+		// The retail header's /entrar/ link works on every language domain.
+		$this->assertSame( 'https://' . self::$en_trade . '/entrar/', HostRoutes::language_target( '/entrar/', self::$en_retail, 'en' ) );
+	}
+
+	public function test_a_language_without_a_trade_host_goes_to_the_portal() {
+		$this->use_trade_hosts();
+
+		$this->assertSame( 'https://' . self::$en_trade . '/entrar/', HostRoutes::language_target( '/entrar/', self::$de_retail, 'de' ) );
+		$this->assertSame( 'https://' . self::$en_trade . '/sign-in/', HostRoutes::language_target( '/sign-in/', self::$de_retail, 'de' ) );
+	}
+
+	/** Path mode (staging): a prefixed trade path goes to the trade host with its prefix. */
+	public function test_a_prefixed_trade_path_on_retail_keeps_its_prefix() {
+		$this->use_path_mode();
+
+		$this->assertSame( 'https://' . Hosts::b2b() . '/es/acceder/', HostRoutes::early_target( '/es/acceder/', Hosts::retail() ) );
+		$this->assertSame( 'https://' . Hosts::b2b() . '/es/acceder/', HostRoutes::language_target( '/es/acceder/', Hosts::retail(), 'es' ) );
+		$this->assertSame( 'https://' . Hosts::b2b() . '/es/b2b-tienda/', HostRoutes::language_target( '/es/b2b-tienda/', Hosts::retail(), 'es' ) );
+		$this->assertSame( '', HostRoutes::language_target( '/es/tienda/', Hosts::retail(), 'es' ) );
+	}
+
+	public function test_a_translated_trade_page_on_retail_goes_to_its_language_root() {
+		$this->use_trade_hosts();
+		$shop = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'b2b-loja', 'post_status' => 'publish' ) );
+		$copy = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'b2b-shop', 'post_status' => 'publish' ) );
+		update_option( \BeltoftCommerce\Frontend\HostPages::OPTION, array( 'loja' => $shop ) );
+		$this->translation( $shop, $copy, 'en' );
+		\BeltoftCommerce\Domain\TradePages::forget();
+
+		$this->go_to( home_url( '/?page_id=' . $copy ) );
+		$this->assertSame( 'https://' . self::$en_trade . '/shop/', HostRoutes::resolved_redirect_target() );
+
+		$this->go_to( home_url( '/?page_id=' . $shop ) );
+		$this->assertSame( 'https://' . Hosts::b2b() . '/loja/', HostRoutes::resolved_redirect_target() );
+	}
+
+	/** D2: a copy whose slug carries no b2b- prefix and no trade path is a trade page by identity. */
+	public function test_an_unprefixed_translated_copy_is_still_a_trade_page() {
+		$this->use_trade_hosts();
+		$checkout = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'b2b-finalizar', 'post_status' => 'publish' ) );
+		$copy     = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'finalizar-compra-socios', 'post_status' => 'publish' ) );
+		update_option( \BeltoftCommerce\Checkout\B2BCheckoutPage::OPTION, $checkout );
+		$this->translation( $checkout, $copy, 'en' );
+		\BeltoftCommerce\Domain\TradePages::forget();
+
+		$this->go_to( home_url( '/?page_id=' . $copy ) );
+		$target = HostRoutes::resolved_redirect_target();
+
+		$this->assertStringStartsWith( 'https://' . self::$en_trade . '/', $target );
+		$this->assertStringContainsString( 'finalizar-compra-socios', $target );
+
+		delete_option( \BeltoftCommerce\Checkout\B2BCheckoutPage::OPTION );
+	}
+
+	public function test_trade_hosts_never_redirect_to_each_other() {
+		$this->use_trade_hosts();
+		$login = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'entrar', 'post_status' => 'publish' ) );
+
+		foreach ( Hosts::all_b2b_hosts() as $host ) {
+			$_SERVER['HTTP_HOST'] = $host;
+
+			$this->assertSame( '', HostRoutes::early_target( '/entrar/', $host ), $host );
+			$this->assertSame( '', HostRoutes::early_target( '/sign-in/', $host ), $host );
+			$this->assertSame( '', HostRoutes::language_target( '/entrar/', $host, 'pt' ), $host );
+			$this->assertSame( '', HostRoutes::language_target( '/sign-in/', $host, 'en' ), $host );
+			$this->assertFalse( HostRoutes::should_redirect( '/b2b-loja/' ), $host );
+
+			$this->go_to( 'http://' . $host . '/?page_id=' . $login );
+			$_SERVER['HTTP_HOST'] = $host;
+			$this->assertSame( '', HostRoutes::resolved_redirect_target(), $host );
+		}
+	}
+
+	/** The early handler registers the language-aware redirect just after the language plugin has decided. */
+	public function test_the_language_redirect_runs_after_the_language_plugin() {
+		$this->assertSame( 2, has_action( 'plugins_loaded', array( HostRoutes::class, 'maybe_redirect_on_language' ) ) );
 	}
 }

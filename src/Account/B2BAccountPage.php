@@ -4,6 +4,7 @@ namespace BeltoftCommerce\Account;
 
 use BeltoftCommerce\Support\Config;
 use BeltoftCommerce\Support\Hosts;
+use BeltoftCommerce\Support\TradePath;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -37,9 +38,13 @@ class B2BAccountPage {
 	/** Option holding the B2B account page id, so the id is not hard-coded. */
 	public const OPTION = 'beltoft_commerce_b2b_account_page_id';
 
-	/** Config 'account_path'. Its lost-password endpoint is in Config 'lost_password_paths' too. */
-	public static function path(): string {
-		return Config::path( 'account_path' );
+	/**
+	 * Config 'account_path', in a language when a code is given (Config
+	 * 'trade_paths'). Its lost-password endpoint is in Config
+	 * 'lost_password_paths' too.
+	 */
+	public static function path( string $code = '' ): string {
+		return Config::path( 'account_path', $code );
 	}
 
 	/**
@@ -49,12 +54,13 @@ class B2BAccountPage {
 	 * bookmarks. The move left no _wp_old_slug behind - WordPress records one
 	 * for a slug change, not a re-parent - so the forwarding is done here.
 	 */
-	public static function legacy_paths(): array {
-		return Config::paths( 'account_legacy_paths' );
+	public static function legacy_paths( string $code = '' ): array {
+		return Config::paths( 'account_legacy_paths', $code );
 	}
 
 	public static function register(): void {
-		add_filter( 'woocommerce_get_myaccount_page_id', array( __CLASS__, 'page_id' ) );
+		// Priority 5, before a language plugin translates the id (see B2BCheckoutPage::register()).
+		add_filter( 'woocommerce_get_myaccount_page_id', array( __CLASS__, 'page_id' ), 5 );
 		add_action( 'template_redirect', array( __CLASS__, 'forward_legacy_path' ), 1 );
 	}
 
@@ -66,24 +72,34 @@ class B2BAccountPage {
 	 * ?key= and ?login= still works, which is the whole point.
 	 */
 	public static function forward_legacy_path(): void {
-		$path = (string) wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH );
+		$target = self::legacy_target( (string) ( $_SERVER['REQUEST_URI'] ?? '' ) );
 
-		foreach ( self::legacy_paths() as $legacy ) {
+		if ( null !== $target ) {
+			wp_safe_redirect( $target, 301 );
+			exit;
+		}
+	}
+
+	/**
+	 * Where an old account URI goes, or null if it is not one. Pure, for
+	 * tests. In the request's language, its path prefix kept.
+	 */
+	public static function legacy_target( string $request_uri ): ?string {
+		list( $code, $path ) = TradePath::split( (string) wp_parse_url( $request_uri, PHP_URL_PATH ) );
+
+		foreach ( self::legacy_paths( $code ) as $legacy ) {
 			if ( '' === $path || 0 !== strpos( $path, $legacy ) ) {
 				continue;
 			}
 
 			// Whatever followed the old base - an endpoint, an order id, nothing.
-			$target = home_url( self::path() . substr( $path, strlen( $legacy ) ) );
-			$query  = (string) wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY );
+			$target = home_url( TradePath::prefix( $code ) . self::path( $code ) . substr( $path, strlen( $legacy ) ) );
+			$query  = (string) wp_parse_url( $request_uri, PHP_URL_QUERY );
 
-			if ( '' !== $query ) {
-				$target .= '?' . $query;
-			}
-
-			wp_safe_redirect( $target, 301 );
-			exit;
+			return '' !== $query ? $target . '?' . $query : $target;
 		}
+
+		return null;
 	}
 
 	public static function page_id( $id ) {

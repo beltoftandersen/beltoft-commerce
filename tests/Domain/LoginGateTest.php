@@ -5,8 +5,11 @@ use BeltoftCommerce\Support\Hosts;
 
 class LoginGateTest extends WP_UnitTestCase {
 
+	use TradeHosts;
+
 	public function tearDown(): void {
 		unset( $_SERVER['HTTP_HOST'] );
+		$this->forget_trade_hosts();
 		wp_set_current_user( 0 );
 		parent::tearDown();
 	}
@@ -246,5 +249,113 @@ class LoginGateTest extends WP_UnitTestCase {
 		$this->assertTrue( LoginGate::should_gate( '/favicon.ico/../loja/' ) );
 		$this->assertFalse( LoginGate::should_gate( '/conta/recuperar-palavra-passe/', array( 'key' => 'k', 'login' => 'x' ) ) );
 		$this->assertTrue( LoginGate::should_gate( '/conta/recuperar-palavra-passe/qualquer/' ) );
+	}
+
+	/* One trade host per language (spec 2026-10-20, §4). */
+
+	private function host_named( string $name ): string {
+		return 'en' === $name ? self::$en_trade : Hosts::b2b();
+	}
+
+	/** Both gates, as a logged-out request for a URI on a host would meet them. */
+	private function gated( string $host, string $uri ): bool {
+		$_SERVER['HTTP_HOST'] = $host;
+		$query = array();
+		parse_str( (string) wp_parse_url( $uri, PHP_URL_QUERY ), $query );
+		$path  = LoginGate::effective_path( $uri );
+
+		$early = LoginGate::should_gate_early( $path, false, $query );
+		$late  = LoginGate::should_gate( $path, $query );
+		$this->assertSame( $early, $late, "The early and late gates disagree about {$uri} on {$host}" );
+
+		return $late;
+	}
+
+	public static function hosts_and_catalogue_paths(): array {
+		$cases = array();
+
+		foreach ( array( 'pt', 'en' ) as $host ) {
+			foreach ( array( '/loja/', '/?s=x', '/?rest_route=/wc/store/v1/products', '/entrar/?pagename=b2b-loja', '/sign-in/?pagename=b2b-loja' ) as $uri ) {
+				$cases[ $host . ' ' . $uri ] = array( $host, $uri );
+			}
+		}
+
+		return $cases;
+	}
+
+	/** @dataProvider hosts_and_catalogue_paths */
+	public function test_each_trade_host_gates_the_catalogue_logged_out( string $host, string $uri ) {
+		$this->use_trade_hosts();
+
+		$this->assertTrue( $this->gated( $this->host_named( $host ), $uri ), "{$uri} on the {$host} trade host must be gated" );
+	}
+
+	public function test_each_hosts_own_login_path_is_public() {
+		$this->use_trade_hosts();
+
+		foreach ( array( '/entrar/', '/registo/', '/conta/recuperar-palavra-passe/', '/robots.txt', '/wp-login.php' ) as $path ) {
+			$this->assertFalse( $this->gated( Hosts::b2b(), $path ), $path . ' on the Portuguese trade host' );
+		}
+
+		foreach ( array( '/sign-in/', '/apply/', '/account/lost-password/', '/sign-in', '/robots.txt', '/favicon.ico', '/wp-login.php' ) as $path ) {
+			$this->assertFalse( $this->gated( self::$en_trade, $path ), $path . ' on the English trade host' );
+		}
+	}
+
+	public function test_another_languages_login_path_is_not_public() {
+		$this->use_trade_hosts();
+
+		$this->assertTrue( $this->gated( self::$en_trade, '/entrar/' ) );
+		$this->assertTrue( $this->gated( self::$en_trade, '/registo/' ) );
+		$this->assertTrue( $this->gated( Hosts::b2b(), '/sign-in/' ) );
+		$this->assertTrue( $this->gated( Hosts::b2b(), '/apply/' ) );
+	}
+
+	public function test_the_early_redirect_names_the_requesting_trade_host_and_its_login() {
+		$this->use_trade_hosts();
+
+		$_SERVER['HTTP_HOST'] = self::$en_trade;
+		$this->assertSame( 'https://' . self::$en_trade . '/sign-in/', LoginGate::login_location( '/loja/' ) );
+
+		$_SERVER['HTTP_HOST'] = Hosts::b2b() . ':443';
+		$this->assertSame( 'https://' . Hosts::b2b() . '/entrar/', LoginGate::login_location( '/loja/' ) );
+	}
+
+	/** Single host, as today: the one trade host and the base login path. */
+	public function test_the_early_redirect_is_unchanged_without_a_map() {
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$this->assertSame( 'https://' . Hosts::b2b() . '/entrar/', LoginGate::login_location( '/loja/' ) );
+		$this->assertSame( 'https://' . Hosts::b2b() . '/entrar/', LoginGate::login_location( '/es/loja/' ) );
+	}
+
+	public function test_a_prefixed_login_is_public_in_path_mode() {
+		$this->use_path_mode();
+
+		$this->assertFalse( $this->gated( Hosts::b2b(), '/es/acceder/' ) );
+		$this->assertFalse( $this->gated( Hosts::b2b(), '/es/registro-de-socio/' ) );
+		$this->assertFalse( $this->gated( Hosts::b2b(), '/entrar/' ) );
+		$this->assertTrue( $this->gated( Hosts::b2b(), '/es/entrar/' ) );
+		$this->assertTrue( $this->gated( Hosts::b2b(), '/es/loja/' ) );
+
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+		$this->assertSame( 'https://' . Hosts::b2b() . '/es/acceder/', LoginGate::login_location( '/es/loja/' ) );
+		$this->assertSame( 'https://' . Hosts::b2b() . '/en/entrar/', LoginGate::login_location( '/en/loja/' ) );
+	}
+
+	public function test_rest_refuses_a_guest_on_every_trade_host() {
+		$this->use_trade_hosts();
+		wp_set_current_user( 0 );
+
+		foreach ( Hosts::all_b2b_hosts() as $host ) {
+			$_SERVER['HTTP_HOST'] = $host;
+			$result = LoginGate::guard_rest( null, null, new WP_REST_Request( 'GET', '/wc/store/v1/products' ) );
+
+			$this->assertWPError( $result, $host );
+			$this->assertSame( 401, $result->get_error_data()['status'], $host );
+		}
+
+		$_SERVER['HTTP_HOST'] = self::$en_retail;
+		$this->assertNull( LoginGate::guard_rest( null, null, new WP_REST_Request( 'GET', '/wc/store/v1/products' ) ) );
 	}
 }

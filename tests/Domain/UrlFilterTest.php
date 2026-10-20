@@ -5,11 +5,14 @@ use BeltoftCommerce\Support\Hosts;
 
 class UrlFilterTest extends WP_UnitTestCase {
 
+	use TradeHosts;
+
 	public function tearDown(): void {
 		// A leaked suspension would silently disarm the filter for every test
 		// that ran after it.
 		UrlFilter::resume();
 		unset( $_SERVER['HTTP_HOST'] );
+		$this->forget_trade_hosts();
 		parent::tearDown();
 	}
 
@@ -106,5 +109,35 @@ class UrlFilterTest extends WP_UnitTestCase {
 		// ...and reading it did not cancel the suspension it was called under.
 		$this->assertNotSame( Hosts::b2b(), wp_parse_url( home_url( '/' ), PHP_URL_HOST ) );
 		UrlFilter::resume();
+	}
+
+	/* One trade host per language (spec 2026-10-20, §6.1). */
+
+	public function test_home_follows_each_trade_host() {
+		$this->use_trade_hosts();
+
+		foreach ( Hosts::all_b2b_hosts() as $host ) {
+			$_SERVER['HTTP_HOST'] = strtoupper( $host ) . ':443';
+
+			$this->assertSame( $host, wp_parse_url( home_url( '/loja/' ), PHP_URL_HOST ), 'home on ' . $host );
+			$this->assertSame( $host, wp_parse_url( site_url( '/wp-login.php' ), PHP_URL_HOST ), 'siteurl on ' . $host );
+			$this->assertSame( $host, wp_parse_url( admin_url( 'admin-ajax.php' ), PHP_URL_HOST ), 'admin-ajax on ' . $host );
+		}
+
+		// A retail language domain is not a trade host: its home is not rewritten here.
+		$_SERVER['HTTP_HOST'] = self::$en_retail;
+		$this->assertNotSame( self::$en_retail, wp_parse_url( home_url( '/' ), PHP_URL_HOST ) );
+	}
+
+	public function test_admin_links_on_any_trade_host_go_to_the_site_address() {
+		$this->use_trade_hosts();
+
+		foreach ( Hosts::all_b2b_hosts() as $host ) {
+			$_SERVER['HTTP_HOST'] = $host;
+
+			$this->assertSame( Hosts::retail(), wp_parse_url( admin_url( 'edit.php' ), PHP_URL_HOST ), 'admin on ' . $host );
+			$this->assertSame( Hosts::retail(), wp_parse_url( wp_login_url(), PHP_URL_HOST ), 'login on ' . $host );
+			$this->assertSame( $host, wp_parse_url( wp_logout_url(), PHP_URL_HOST ), 'logout on ' . $host );
+		}
 	}
 }

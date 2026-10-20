@@ -6,6 +6,8 @@ use BeltoftCommerce\Support\Hosts;
 
 class HostPagesTest extends WP_UnitTestCase {
 
+	use TradeHosts;
+
 	private int $loja   = 0;
 	private int $termos = 0;
 
@@ -23,6 +25,7 @@ class HostPagesTest extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		delete_option( HostPages::OPTION );
+		$this->forget_trade_hosts();
 		unset( $_SERVER['HTTP_HOST'] );
 
 		if ( null === $this->request_uri ) {
@@ -167,5 +170,145 @@ class HostPagesTest extends WP_UnitTestCase {
 		$this->assertSame( $this->termos, $out['page_id'] );
 		$this->assertSame( '123', $out['order-received'] );
 		$this->assertArrayNotHasKey( 'pagename', $out );
+	}
+
+	/* Translated trade pages, per trade host (spec 2026-10-20, §5). */
+
+	private function copy_of( int $anchor, string $slug, string $code ): int {
+		$copy = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => $slug ) );
+		$this->translation( $anchor, $copy, $code );
+
+		return $copy;
+	}
+
+	/** A path-mode language plugin's url_in(): the prefix after the host. */
+	private function prefixing_urls(): void {
+		$this->seam( 'beltoft_commerce_language_url_in', static function ( $out, $url, $code ) {
+			return 'pt' === $code ? $url : preg_replace( '#^(https?://[^/]+)/#', '$1/' . $code . '/', $url );
+		}, 3 );
+	}
+
+	public function test_a_root_path_resolves_to_the_requests_language_copy() {
+		$this->use_trade_hosts();
+		$shop = $this->copy_of( $this->loja, 'b2b-shop', 'en' );
+		$_SERVER['HTTP_HOST'] = self::$en_trade;
+		$this->in_language( 'en' );
+
+		$_SERVER['REQUEST_URI'] = '/shop/';
+		$this->assertSame( array( 'page_id' => $shop ), HostPages::resolve( array( 'pagename' => 'shop' ) ) );
+
+		$_SERVER['REQUEST_URI'] = '/shop/page/2/';
+		$this->assertEqualsCanonicalizing( array( 'page_id' => $shop, 'paged' => 2 ), HostPages::resolve( array( 'pagename' => 'shop', 'paged' => 2 ) ) );
+
+		// No Portuguese fallback: a root with no English copy is not found (Zerolang §5).
+		$_SERVER['REQUEST_URI'] = '/termos-condicoes/';
+		$this->assertSame( array( 'error' => '404' ), HostPages::resolve( array( 'pagename' => 'termos-condicoes' ) ) );
+		// /loja/ has an English copy: it is redirected (test_a_default_root_in_another_language_goes_to_that_languages_copy).
+
+		// The Portuguese trade host is unchanged.
+		$this->forget_trade_hosts();
+		$this->use_trade_hosts();
+		$this->translation( $this->loja, $shop, 'en' );
+		$_SERVER['HTTP_HOST']   = Hosts::b2b();
+		$_SERVER['REQUEST_URI'] = '/loja/';
+		$this->assertSame( array( 'page_id' => $this->loja ), HostPages::resolve( array( 'post_type' => 'product' ) ) );
+	}
+
+	public function test_a_prefixed_root_resolves_in_path_mode() {
+		$this->use_path_mode();
+		$tienda = $this->copy_of( $this->loja, 'b2b-tienda', 'es' );
+
+		$_SERVER['REQUEST_URI'] = '/es/tienda/';
+		$this->assertSame( array( 'page_id' => $tienda ), HostPages::resolve( array( 'pagename' => 'tienda' ) ) );
+
+		$_SERVER['REQUEST_URI'] = '/es/tienda/page/3/';
+		$this->assertEqualsCanonicalizing( array( 'page_id' => $tienda, 'paged' => 3 ), HostPages::resolve( array( 'pagename' => 'tienda', 'paged' => 3 ) ) );
+
+		// The Portuguese root under the Spanish prefix with no Spanish copy is not the Portuguese page.
+		$_SERVER['REQUEST_URI'] = '/es/termos-condicoes/';
+		$this->assertSame( array( 'error' => '404' ), HostPages::resolve( array( 'pagename' => 'termos-condicoes' ) ) );
+
+		$_SERVER['REQUEST_URI'] = '/loja/';
+		$this->assertSame( array( 'page_id' => $this->loja ), HostPages::resolve( array( 'post_type' => 'product' ) ) );
+	}
+
+	public function test_a_copys_permalink_is_its_root_in_its_language() {
+		$this->use_path_mode();
+		$this->prefixing_urls();
+		$tienda = $this->copy_of( $this->loja, 'b2b-tienda', 'es' );
+
+		$this->assertSame( 'tienda', HostPages::root_for( $tienda ) );
+		$this->assertSame( 'loja', HostPages::root_for( $this->loja ) );
+		$this->assertSame( home_url( '/es/tienda/' ), HostPages::permalink( 'http://x/es/b2b-tienda/', $tienda ) );
+		$this->assertSame( home_url( '/loja/' ), HostPages::permalink( 'http://x/b2b-loja/', $this->loja ) );
+		$this->assertSame( array( 'tienda' => $tienda ), HostPages::map_in( 'es' ) );
+	}
+
+	public function test_a_copy_without_the_prefix_is_not_served_at_root() {
+		$this->use_path_mode();
+		$copy = $this->copy_of( $this->termos, 'terminos-socios', 'es' );
+
+		$this->assertSame( '', HostPages::root_for( $copy ) );
+		$this->assertSame( array(), HostPages::map_in( 'es' ) );
+		$this->assertSame( 'http://x/es/terminos-socios/', HostPages::permalink( 'http://x/es/terminos-socios/', $copy ) );
+
+		$_SERVER['REQUEST_URI'] = '/es/terminos-socios/';
+		$this->assertSame( array( 'pagename' => 'terminos-socios' ), HostPages::resolve( array( 'pagename' => 'terminos-socios' ) ) );
+	}
+
+	public function test_the_ordering_page_is_recognised_in_every_language() {
+		$this->use_trade_hosts();
+		$shop = $this->copy_of( $this->loja, 'b2b-shop', 'en' );
+
+		$this->assertSame( $this->loja, OrderingPage::id() );
+		$this->assertSame( '/loja/', OrderingPage::path() );
+
+		$this->in_language( 'en' );
+		$this->assertSame( $shop, OrderingPage::id() );
+		$this->assertSame( '/shop/', OrderingPage::path() );
+
+		$this->go_to( home_url( '/?page_id=' . $shop ) );
+		$this->assertTrue( OrderingPage::is_ordering_page() );
+
+		// A language without a copy has no ordering page.
+		$this->forget_trade_hosts();
+		$this->use_trade_hosts();
+		$this->in_language( 'de' );
+		$this->assertSame( 0, OrderingPage::id() );
+	}
+
+	/** A default-language root asked for in another language goes to that language's copy, when there is one. */
+	public function test_a_default_root_in_another_language_goes_to_that_languages_copy() {
+		$this->use_path_mode();
+		$tienda = $this->copy_of( $this->loja, 'b2b-tienda', 'es' );
+
+		$this->assertSame( home_url( '/es/tienda/' ), HostPages::language_root_target( '/es/loja/' ) );
+		$this->assertSame( home_url( '/es/tienda/page/2/' ) . '?orderby=price', HostPages::language_root_target( '/es/loja/page/2/?orderby=price' ) );
+		// No Spanish copy: no target, and resolve() answers 404.
+		$this->assertSame( '', HostPages::language_root_target( '/es/termos-condicoes/' ) );
+		// The default language, and the copy's own root, are not redirected.
+		$this->assertSame( '', HostPages::language_root_target( '/loja/' ) );
+		$this->assertSame( '', HostPages::language_root_target( '/es/tienda/' ) );
+
+		$this->forget_trade_hosts();
+		$this->use_trade_hosts();
+		$shop = $this->copy_of( $this->loja, 'b2b-shop', 'en' );
+		$_SERVER['HTTP_HOST'] = self::$en_trade;
+		$this->assertSame( 'http://' . self::$en_trade . '/shop/', HostPages::language_root_target( '/loja/' ) );
+		$this->assertSame( '', HostPages::language_root_target( '/termos-condicoes/' ) );
+	}
+
+	/** Only pagination and endpoint tails move with the root; any other tail (a product under /loja/) is the language plugin's. */
+	public function test_a_default_root_with_another_tail_is_not_redirected() {
+		$this->use_trade_hosts();
+		$this->copy_of( $this->loja, 'b2b-shop', 'en' );
+		$_SERVER['HTTP_HOST'] = self::$en_trade;
+
+		$this->assertSame( '', HostPages::language_root_target( '/loja/vaso-algodao-1/' ) );
+		$this->assertSame( 'http://' . self::$en_trade . '/shop/page/2/', HostPages::language_root_target( '/loja/page/2/' ) );
+
+		$_SERVER['REQUEST_URI'] = '/loja/vaso-algodao-1/';
+		$vars = array( 'product' => 'vaso-algodao-1' );
+		$this->assertSame( $vars, HostPages::resolve( $vars ) );
 	}
 }

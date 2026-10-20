@@ -103,7 +103,8 @@ class UrlFilter {
 			return $value;
 		}
 
-		return str_replace( '://' . $parts['host'], '://' . Hosts::b2b(), $value );
+		// The trade host this request is on: each language has its own.
+		return str_replace( '://' . $parts['host'], '://' . Hosts::current_b2b(), $value );
 	}
 
 	/**

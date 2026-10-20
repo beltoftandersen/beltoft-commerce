@@ -121,20 +121,36 @@ class OrderHost {
 			return;
 		}
 
-		$host = Hosts::is_b2b_host() ? Hosts::b2b() : Hosts::retail();
+		// The trade host it was placed on - one of several, one per language.
+		$host = '' !== Hosts::current_b2b() ? Hosts::current_b2b() : Hosts::retail();
 
 		$order->update_meta_data( self::META_KEY, $host );
 		$order->save();
 	}
 
 	/**
-	 * Orders placed before this feature existed have no recorded host.
-	 * Retail is the correct fallback — it is where they were placed.
+	 * The host an order's links are built on.
+	 *
+	 * Orders placed before this feature existed, and orders staff made in
+	 * wp-admin, have no recorded host. For a customer whose account trades,
+	 * that is their own trade host (Registration\TradeHost: where they
+	 * applied or last signed in, else the default trade host); for anyone
+	 * else retail, where they were placed.
 	 */
 	public static function for_order( \WC_Order $order ): string {
 		$host = $order->get_meta( self::META_KEY );
 
-		return $host ? (string) $host : Hosts::retail();
+		if ( $host ) {
+			return (string) $host;
+		}
+
+		$customer = (int) $order->get_customer_id();
+
+		if ( $customer && Hosts::is_b2b_configured() && \BeltoftCommerce\Pricing\Registry::is_trade( \BeltoftCommerce\Pricing\PricingContext::for_user( $customer ) ) ) {
+			return \BeltoftCommerce\Registration\TradeHost::for_user( $customer );
+		}
+
+		return Hosts::retail();
 	}
 
 	/**
@@ -166,6 +182,15 @@ class OrderHost {
 	 * Emails can be rendered mid-request during checkout, so the previous
 	 * value is stacked and restored rather than unset — clobbering the live
 	 * host would corrupt the rest of that request.
+	 *
+	 * SETTING HTTP_HOST IS A CONTRACT WITH ZEROLANG (spec 2026-10-20, R4).
+	 * Zerolang picks its active host set - the trade hosts, one per language -
+	 * from HTTP_HOST, so a trade order's email, written from cron, wp-admin or
+	 * the checkout, keeps every link on the order's own trade host and moves
+	 * a link to another language to that language's trade host, never to a
+	 * retail domain. Both suites pin it
+	 * (OrderHostTest::test_the_email_push_sets_http_host_to_the_order_host and
+	 * Zerolang's HostSetsTest::test_an_order_email_follows_the_pushed_host).
 	 */
 	public static function push_host( $order ): void {
 		self::$host_stack[] = $_SERVER['HTTP_HOST'] ?? null;

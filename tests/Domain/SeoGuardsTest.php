@@ -5,8 +5,11 @@ use BeltoftCommerce\Support\Hosts;
 
 class SeoGuardsTest extends WP_UnitTestCase {
 
+	use TradeHosts;
+
 	public function tearDown(): void {
 		unset( $_SERVER['HTTP_HOST'] );
+		$this->forget_trade_hosts();
 		parent::tearDown();
 	}
 
@@ -81,5 +84,37 @@ class SeoGuardsTest extends WP_UnitTestCase {
 
 		$this->assertStringEndsWith( "User-agent: Amazonbot\nDisallow: /\n", $rules );
 		$this->assertStringNotContainsString( 'Sitemap:', $rules, 'Slim SEO adds it' );
+	}
+
+	/* One trade host per language (spec 2026-10-20, §4). */
+
+	public function test_noindex_and_no_sitemaps_on_every_trade_host() {
+		$this->use_trade_hosts();
+
+		foreach ( Hosts::all_b2b_hosts() as $host ) {
+			$_SERVER['HTTP_HOST'] = $host;
+
+			ob_start();
+			SeoGuards::print_noindex();
+			$this->assertStringContainsString( 'noindex, nofollow', ob_get_clean(), $host );
+			$this->assertFalse( SeoGuards::disable_sitemaps_on_b2b( true ), $host );
+		}
+
+		$_SERVER['HTTP_HOST'] = self::$en_retail;
+		ob_start();
+		SeoGuards::print_noindex();
+		$this->assertSame( '', ob_get_clean() );
+		$this->assertTrue( SeoGuards::disable_sitemaps_on_b2b( true ) );
+	}
+
+	public function test_the_canonical_goes_to_the_same_languages_retail_host() {
+		$this->use_trade_hosts();
+
+		$_SERVER['HTTP_HOST'] = self::$en_trade;
+		$this->assertSame( 'https://' . self::$en_retail . '/product/abc/', SeoGuards::filter_canonical( 'https://' . self::$en_trade . '/product/abc/' ) );
+		$this->assertSame( 'https://' . self::$en_retail . '/product/abc/', apply_filters( 'slim_seo_canonical_url', 'https://' . self::$en_trade . '/product/abc/' ) );
+
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+		$this->assertSame( 'https://' . Hosts::retail() . '/produto/abc/', SeoGuards::filter_canonical( 'https://' . Hosts::b2b() . '/produto/abc/' ) );
 	}
 }

@@ -60,4 +60,30 @@ class ConfigTest extends WP_UnitTestCase {
 
 		$this->assertSame( "untouched\n", SeoGuards::replace_default_robots( "untouched\n", true ) );
 	}
+
+	/* Per-language trade paths (spec 2026-10-20, §1.1). */
+
+	public function test_the_new_keys_have_defaults() {
+		$this->assertSame( 'en', Config::get( 'trade_fallback_language' ) );
+		$this->assertSame( array(), Config::get( 'trade_paths' ) );
+		$this->assertSame( array(), Config::get( 'path_language_prefixes' ) );
+	}
+
+	public function test_a_language_path_falls_back_to_the_default() {
+		$this->set( array( 'trade_paths' => array( 'en' => array( 'login_path' => '/sign-in/' ) ) ) );
+
+		$this->assertSame( '/registo/', Config::path( 'register_path', 'en' ) );
+		$this->assertSame( '/entrar/', Config::path( 'login_path', 'de' ) );
+		$this->assertSame( '/entrar/', Config::path( 'login_path' ) );
+		$this->assertSame( Config::paths( 'lost_password_paths' ), Config::paths( 'lost_password_paths', 'en' ) );
+	}
+
+	public function test_a_language_override_wins() {
+		$this->set( array( 'trade_paths' => array( 'en' => array( 'login_path' => 'sign-in', 'lost_password_paths' => array( '/account/lost-password' ) ) ) ) );
+
+		$this->assertSame( '/sign-in/', Config::path( 'login_path', 'en' ) );
+		$this->assertSame( '/sign-in/', LoginGate::login_path( 'en' ) );
+		$this->assertSame( array( '/account/lost-password/' ), Config::paths( 'lost_password_paths', 'en' ) );
+		$this->assertSame( '/entrar/', LoginGate::login_path( 'pt' ) );
+	}
 }

@@ -53,6 +53,9 @@ class Plugin {
 		Scanner\ScannerContext::register();
 		Scanner\BackInStockLink::register();
 		Registration\FormAction::register();
+		// Each partner's own trade host (one per language), for what is sent to them later.
+		Registration\TradeHost::register();
+		add_filter( 'zerolang_email_language', array( Email\B2BApplicationEmail::class, 'email_language' ), 10, 3 );
 		Registration\AdminUsers::register();
 
 		// The three application emails are WooCommerce emails, so they are
@@ -132,27 +135,45 @@ class Plugin {
 		 */
 		add_action( 'init', array( Pricing\SaleScheduler::class, 'schedule' ) );
 
+		// The trade hosts in Site Health: configuration, pages, and whether each host answers.
+		Support\HostHealth::register();
+
 		if ( is_admin() ) {
 			Admin\PriceFields::register();
-
-			if ( ! Support\Hosts::is_b2b_configured() ) {
-				add_action( 'admin_notices', array( __CLASS__, 'needs_b2b_host' ) );
-			}
+			add_action( 'admin_notices', array( __CLASS__, 'host_notices' ) );
 		}
 	}
 
-	/** The trade host is set in wp-config.php; without it there is no trade site. */
-	public static function needs_b2b_host(): void {
+	/**
+	 * The trade hosts are set in wp-config.php: without BELTOFT_B2B_HOST there
+	 * is no trade site, and what is wrong with BELTOFT_B2B_HOSTS is listed
+	 * (Support\Hosts::problems(); Site Health has the page checks too).
+	 */
+	public static function host_notices(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
+		if ( ! Support\Hosts::is_b2b_configured() ) {
+			printf(
+				'<div class="notice notice-warning"><p>%s</p></div>',
+				wp_kses(
+					__( 'Beltoft Commerce has no trade site: set its hostname with <code>define( \'BELTOFT_B2B_HOST\', \'b2b.example.com\' );</code> in wp-config.php.', 'beltoft-commerce' ),
+					array( 'code' => array() )
+				)
+			);
+		}
+
+		$problems = Support\Hosts::problems();
+
+		if ( ! $problems ) {
+			return;
+		}
+
 		printf(
-			'<div class="notice notice-warning"><p>%s</p></div>',
-			wp_kses(
-				__( 'Beltoft Commerce has no trade site: set its hostname with <code>define( \'BELTOFT_B2B_HOST\', \'b2b.example.com\' );</code> in wp-config.php.', 'beltoft-commerce' ),
-				array( 'code' => array() )
-			)
+			'<div class="notice notice-error"><p>%s</p><ul>%s</ul></div>',
+			esc_html__( 'Beltoft Commerce: the trade hosts are not configured correctly.', 'beltoft-commerce' ),
+			implode( '', array_map( static fn( $problem ) => '<li>' . esc_html( $problem ) . '</li>', $problems ) )
 		);
 	}
 

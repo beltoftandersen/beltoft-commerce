@@ -4,7 +4,7 @@ One WooCommerce install, two shops: a public **retail** site and a **trade** (B2
 
 ## What it does
 
-- **Two hosts.** Logged-out visitors to the trade host get the login and application pages only. Trade pages redirect off the retail host, generated URLs stay on the host that was asked, and the trade host is never page-cached or indexed.
+- **Retail hosts and trade hosts.** Logged-out visitors to a trade host get the login and application pages only. Trade pages redirect off the retail hosts, generated URLs stay on the host that was asked, and no trade host is ever page-cached or indexed. Optionally one trade host per language, each serving its language's trade pages at its own paths (see *One trade host per language*).
 - **Pricing groups.** Each trade group has stored prices per product (`_price_group_<group>`, sale price and dates alongside). A product with no price for the visitor's group is not purchasable — never priced at retail. Groups come from the `pricing_groups` filter; today `b2b_standard`. Group prices are quoted on the trade host only: a signed-in partner on any other host is priced, shown the catalogue and charged as a retail shopper, with a cart of its own. Staff acting for a customer in wp-admin or the REST API, cron and WP-CLI still price for the customer's group.
 - **Catalogue audience.** Products are retail-only (no term), trade-only or both (`product_audience` taxonomy). Listings, search, related products, upsells, the Store API, REST, oEmbed and feeds all follow it.
 - **Partner applications.** Application form → `b2b_pending`; staff approve (→ `b2b_customer`) or reject from the Users screen; three WooCommerce emails.
@@ -34,6 +34,34 @@ PHP 8.3+, WooCommerce (required, declared in the plugin header). Built for Brick
    The root-pages map serves a trade copy of a page at the same path on the trade host (`/loja/` → the page whose slug is `b2b-loja`). Plus the login and application pages at `login_path` / `register_path`, and Bricks templates named by `header_template` / `footer_template`.
 4. Optional options: `beltoft_commerce_b2b_shipping_instances` (shipping instance ids offered to trade), `beltoft_commerce_b2b_email_logo` (attachment id), `beltoft_commerce_own_vat_number`.
 
+### One trade host per language (optional)
+
+With a language plugin (Zerolang) the trade site can have one host per language. Without `BELTOFT_B2B_HOSTS` there is one trade host and nothing below applies.
+
+```php
+define( 'BELTOFT_B2B_HOST', 'b2b.example.pt' );          // the default language's trade host
+define( 'BELTOFT_B2B_HOSTS', array(
+	'pt' => 'b2b.example.pt',                            // must equal BELTOFT_B2B_HOST
+	'en' => 'b2b.example.com',
+) );
+define( 'BELTOFT_COMMERCE_CONFIG', array(
+	'trade_fallback_language' => 'en',                   // languages without a trade host use this one's
+	'trade_paths' => array(
+		'en' => array( 'login_path' => '/sign-in/', 'register_path' => '/apply/', 'account_path' => '/account/',
+		               'quick_order_path' => '/quick-order/', 'checkout_path' => '/checkout/',
+		               'lost_password_paths' => array( '/account/lost-password/' ) ),
+	),
+) );
+```
+
+- Every host in the map is a trade host in everything: gated, never cached or indexed, priced for the partner's group, its own cart, its orders trade orders. A logged-out visitor is sent to that host's own login path; another language's login path is not public there.
+- Each language needs its own copies of the trade pages (Zerolang translations). A copy of a root page is served at its slug without `b2b-` (`b2b-shop` at `/shop/`); a language without a copy gets a 404 there, never the default language's page. The checkout and account page ids are filtered at priority 5, so the language plugin translates them.
+- The early host handler passes the map to Zerolang as its `trade` host set (`zerolang_host_sets`), so links to another language on a trade host go to that language's trade host. `COOKIE_DOMAIN` must stay undefined.
+- Trade-only paths asked on the site address go to the default trade host; on a language domain (or under a language prefix) to that language's trade host, at `plugins_loaded:2`.
+- A partner's own trade host is recorded at application and at sign-in on a trade host (user meta `_beltoft_trade_host`); application emails are sent in that host's language, and back-in-stock links and orders with no recorded host use it.
+- Tools > Site Health checks the configuration, the pages behind `trade_paths` and the root pages' copies, and fetches each host's `robots.txt` and `/`; administrators see configuration problems as a notice. Removing `BELTOFT_B2B_HOSTS` returns to one trade host.
+- In a path-mode language setup (`/en/`, `/es/`), `path_language_prefixes` (segment => code) tells the early gate the prefixes; later code reads them from the language plugin.
+
 ## Configuration
 
 Site-specific settings live in `src/Support/Config.php`. The defaults are mindthetrash's; override what differs with a constant (read before plugins load) or, for code that runs later, the `beltoft_commerce_config` filter:
@@ -50,6 +78,9 @@ define( 'BELTOFT_COMMERCE_CONFIG', array(
 | Key | Default | Meaning |
 |---|---|---|
 | `login_path`, `register_path` | `/entrar/`, `/registo/` | The trade host's public pages. |
+| `trade_paths` | `[]` | Per language code, any path key above for that language's trade host (`'en' => array( 'login_path' => '/sign-in/' )`); a missing key is the base value. |
+| `trade_fallback_language` | `en` | The trade host of a language that has none of its own. |
+| `path_language_prefixes` | `[]` | Path mode only: URL segment => language code, for the early gate. |
 | `lost_password_paths` | WooCommerce's endpoint under `/a-minha-conta/`, `/conta/`, `/conta-b2b/` | Reachable logged out. Change with `woocommerce_myaccount_lost_password_endpoint`. |
 | `account_path`, `account_legacy_paths` | `/conta/`, `['/conta-b2b/']` | Trade account area, and old addresses forwarded to it. |
 | `quick_order_path` | `/encomenda-rapida/` | Quick order page. |
@@ -71,6 +102,8 @@ More logged-out paths and more trade-only paths go in the `extra_public_paths` a
 - `beltoft_commerce_b2b_applied` / `_approved` / `_rejected` (actions, `$user_id`).
 - `beltoft_commerce_feed_product_ids` (filter) — run a product feed's ids through it; it keeps what the public (retail) shop shows, whoever builds the feed.
 - `beltoft_commerce_rows_cache` (filter, bool) — switch off the ordering-list result cache.
+- `beltoft_commerce_b2b_hosts` (filter) — the trade host map, code => host (after `BELTOFT_B2B_HOSTS`).
+- `beltoft_commerce_language_*` (filters: `current`, `default`, `codes`, `of_post`, `siblings`, `url_in`, `retail_host`, `is_domain`, `separate_domains`, `path_prefixes`, `of_order`) and `beltoft_commerce_default_language_post` — what `Support\Language` asks the language plugin, for another language plugin or for tests.
 - Bricks: dynamic tags `{beltoft_rrp}`, `{beltoft_ean}`, `{beltoft_summary}`, `{beltoft_buy}`, `{beltoft_cart_shipping}`, `{beltoft_cart_product_id}`; element condition **Host (retail / B2B)** (`beltoft_host`).
 - beltoft-scanner: registers the `b2b-loja` context and answers `beltoft_scanner_assess` / `beltoft_scanner_notify` (the latter only with beltoft-in-stock-notifier).
 

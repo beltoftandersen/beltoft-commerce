@@ -4,6 +4,7 @@ namespace BeltoftCommerce\Domain;
 
 use BeltoftCommerce\Support\Config;
 use BeltoftCommerce\Support\Hosts;
+use BeltoftCommerce\Support\Language;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -23,6 +24,7 @@ class SeoGuards {
 	public static function register(): void {
 		add_filter( 'robots_txt', array( __CLASS__, 'replace_default_robots' ), 9, 2 );
 		add_filter( 'get_canonical_url', array( __CLASS__, 'filter_canonical' ) );
+		add_filter( 'slim_seo_canonical_url', array( __CLASS__, 'filter_canonical' ) );
 		add_action( 'wp_head', array( __CLASS__, 'print_noindex' ), 1 );
 		add_action( 'send_headers', array( __CLASS__, 'send_noindex_header' ) );
 		add_filter( 'wp_sitemaps_enabled', array( __CLASS__, 'disable_sitemaps_on_b2b' ) );
@@ -60,12 +62,25 @@ class SeoGuards {
 		return self::retail_robots_rules();
 	}
 
+	/**
+	 * On a trade host, the canonical is the same address on the retail host
+	 * of the same language (b2b.example.com to example.com), falling back to
+	 * the site address - on WordPress's canonical and Slim SEO's.
+	 *
+	 * @param mixed $url
+	 * @return mixed
+	 */
 	public static function filter_canonical( $url ) {
-		if ( ! Hosts::is_b2b_host() || ! is_string( $url ) ) {
+		$host = Hosts::current_b2b();
+
+		if ( '' === $host || ! is_string( $url ) ) {
 			return $url;
 		}
 
-		return str_replace( '://' . Hosts::b2b(), '://' . Hosts::retail(), $url );
+		$code   = Hosts::b2b_language( $host );
+		$retail = '' !== $code ? Language::retail_host_for( $code ) : Hosts::retail();
+
+		return str_replace( '://' . $host, '://' . ( '' !== $retail ? $retail : Hosts::retail() ), $url );
 	}
 
 	public static function print_noindex(): void {

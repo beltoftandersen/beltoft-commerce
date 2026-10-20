@@ -61,3 +61,6 @@ require $_tests_dir . '/includes/bootstrap.php';
 // than each test class installing it and the rest emitting database errors
 // from the price-invalidation chain.
 \BeltoftCommerce\Pricing\LookupIndex::install();
+
+// Several trade hosts and a language plugin, through filters (tests/TradeHosts.php).
+require_once __DIR__ . '/TradeHosts.php';

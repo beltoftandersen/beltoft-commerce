@@ -5,8 +5,11 @@ use BeltoftCommerce\Support\Hosts;
 
 class PasswordResetTest extends WP_UnitTestCase {
 
+	use TradeHosts;
+
 	public function tearDown(): void {
 		unset( $_SERVER['HTTP_HOST'] );
+		$this->forget_trade_hosts();
 		parent::tearDown();
 	}
 
@@ -52,5 +55,20 @@ class PasswordResetTest extends WP_UnitTestCase {
 		);
 
 		$this->assertStringContainsString( Hosts::b2b(), $message );
+	}
+
+	public function test_a_reset_returns_to_the_trade_host_it_was_asked_on() {
+		$this->use_trade_hosts();
+		$_SERVER['HTTP_HOST'] = self::$en_trade;
+		$user                 = get_userdata( $this->factory->user->create() );
+
+		PasswordReset::remember_host( $user->user_login );
+		unset( $_SERVER['HTTP_HOST'] );
+
+		$this->assertSame( self::$en_trade, PasswordReset::host_for_user( $user->ID ) );
+		$this->assertStringContainsString( '://' . self::$en_trade . '/', PasswordReset::filter_message( 'https://' . Hosts::retail() . '/x', 'k', $user->user_login, (array) $user ) );
+
+		$_SERVER['HTTP_HOST'] = self::$en_trade;
+		$this->assertSame( 'https://' . self::$en_trade . '/account/', PasswordReset::filter_redirect( 'https://' . Hosts::retail() . '/account/' ) );
 	}
 }

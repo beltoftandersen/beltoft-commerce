@@ -4,11 +4,14 @@ namespace BeltoftCommerce\Domain;
 
 use BeltoftCommerce\Support\Config;
 use BeltoftCommerce\Support\Hosts;
+use BeltoftCommerce\Support\TradePath;
 
 defined( 'ABSPATH' ) || exit;
 
 // Loaded early by path (mu-plugin); see Support/Hosts.php for why Config is required here.
 require_once dirname( __DIR__ ) . '/Support/Config.php';
+require_once dirname( __DIR__ ) . '/Support/Hosts.php';
+require_once dirname( __DIR__ ) . '/Support/TradePath.php';
 
 /**
  * Logged-out visitors to the B2B host get the login page and nothing else.
@@ -29,10 +32,12 @@ class LoginGate {
 	 * every authenticate filter - including the administrator-location block
 	 * in beltoft-hardening - still applies.
 	 *
-	 * Config 'login_path'.
+	 * Config 'login_path', in a language when a code is given (Config
+	 * 'trade_paths'): each trade host has its own, and another language's is
+	 * not public there.
 	 */
-	public static function login_path(): string {
-		return Config::path( 'login_path' );
+	public static function login_path( string $code = '' ): string {
+		return Config::path( 'login_path', $code );
 	}
 
 	/**
@@ -43,10 +48,10 @@ class LoginGate {
 	 * 360px login card, so registration is its own page - both reachable,
 	 * nothing else is, which is what the rule is protecting.
 	 *
-	 * Config 'register_path'.
+	 * Config 'register_path', in a language when a code is given.
 	 */
-	public static function register_path(): string {
-		return Config::path( 'register_path' );
+	public static function register_path( string $code = '' ): string {
+		return Config::path( 'register_path', $code );
 	}
 
 	/**
@@ -189,18 +194,31 @@ class LoginGate {
 		}
 
 		/*
+		 * In the request's language: the host's under separate domains, the
+		 * prefix's in a path mode (/es/acceder/). Only that language's login,
+		 * application and recovery paths are public here.
+		 */
+		list( $code, $rest ) = TradePath::split( $path );
+
+		/*
 		 * The login and application pages themselves, not what lies under
 		 * them: as prefixes they let /entrar/anything/ (and /entrar/../loja/
 		 * sent unnormalised) render a trade 404 with the trade header to a
 		 * logged-out visitor.
 		 */
-		if ( in_array( untrailingslashit( $path ) . '/', array( self::login_path(), self::register_path() ), true ) ) {
+		if ( in_array( untrailingslashit( $rest ) . '/', array( self::login_path( $code ), self::register_path( $code ) ), true ) ) {
 			return true;
 		}
 
 		// Exact paths: as prefixes, /robots.txt/<anything> reached WordPress's
 		// rewrite rules and rendered pages in trade chrome to a logged-out visitor.
-		if ( in_array( $path, self::exact_public_paths(), true ) || in_array( untrailingslashit( $path ) . '/', self::exact_public_paths(), true ) ) {
+		if ( in_array( $path, self::fixed_public_paths(), true ) ) {
+			return true;
+		}
+
+		$recovery = Config::paths( 'lost_password_paths', $code );
+
+		if ( in_array( $rest, $recovery, true ) || in_array( untrailingslashit( $rest ) . '/', $recovery, true ) ) {
 			return true;
 		}
 
@@ -290,8 +308,9 @@ class LoginGate {
 
 	/**
 	 * Public paths matched exactly (a trailing slash either way): the login
-	 * screen, robots.txt, the favicon, and WooCommerce's lost-password
-	 * endpoint (Config 'lost_password_paths') - on the retail account page, on
+	 * screen, robots.txt and the favicon here, in every language; and, in
+	 * allowlisted(), WooCommerce's lost-password endpoint in the request's
+	 * language (Config 'lost_password_paths') - on the retail account page, on
 	 * the trade one, and on the trade account's old address where reset links
 	 * already mailed point. The reset link carries ?key= and ?login= on the
 	 * same path.
@@ -303,8 +322,21 @@ class LoginGate {
 	 *
 	 * @return string[]
 	 */
-	private static function exact_public_paths(): array {
-		return array_merge( array( '/wp-login.php', '/robots.txt', '/favicon.ico' ), Config::paths( 'lost_password_paths' ) );
+	private static function fixed_public_paths(): array {
+		return array( '/wp-login.php', '/robots.txt', '/favicon.ico' );
+	}
+
+	/**
+	 * Where a logged-out visitor asking for a path on this trade host is sent:
+	 * the login page of the request's language, on this very host - never
+	 * another trade host, where a partner's host-only cookie does not exist.
+	 */
+	public static function login_location( string $path ): string {
+		list( $code ) = TradePath::split( $path );
+
+		$host = Hosts::current_b2b();
+
+		return 'https://' . ( '' !== $host ? $host : Hosts::b2b() ) . TradePath::prefix( $code ) . self::login_path( $code );
 	}
 
 	public static function should_gate( string $path, array $query = array() ): bool {
@@ -364,7 +396,7 @@ class LoginGate {
 		}
 
 		// wp_safe_redirect() is pluggable and not available this early.
-		header( 'Location: https://' . Hosts::b2b() . self::login_path(), true, 302 );
+		header( 'Location: ' . self::login_location( $path ), true, 302 );
 		header( 'Cache-Control: no-store, private' );
 		exit;
 	}
@@ -460,7 +492,7 @@ class LoginGate {
 			return;
 		}
 
-		wp_safe_redirect( home_url( self::login_path() ), 302 );
+		wp_safe_redirect( self::login_location( self::effective_path( $request_uri ) ), 302 );
 		exit;
 	}
 }

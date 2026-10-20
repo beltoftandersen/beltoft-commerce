@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-17T15:56:29+00:00\n"
+"POT-Creation-Date: 2026-10-20T06:11:06+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: beltoft-commerce\n"
@@ -132,7 +132,7 @@ msgstr ""
 msgid "Retail and B2B"
 msgstr ""
 
-#: src/Checkout/B2BCheckoutPage.php:73
+#: src/Checkout/B2BCheckoutPage.php:79
 msgid "Please place trade orders from the checkout page."
 msgstr ""
 
@@ -176,7 +176,7 @@ msgstr ""
 msgid "If your company uses an internal reference, enter it here. It appears on the confirmation and on the order."
 msgstr ""
 
-#: src/Domain/LoginGate.php:252
+#: src/Domain/LoginGate.php:270
 msgid "Sign in to continue."
 msgstr ""
 
@@ -317,7 +317,9 @@ msgid "Free"
 msgstr ""
 
 #. translators: %s: product name
-#: src/Hooks/Price.php:163
+#: src/Hooks/Price.php:164
+#: src/Hooks/Price.php:231
+#: src/Hooks/Price.php:262
 #, php-format
 msgid "%s has no price for this customer."
 msgstr ""
@@ -330,8 +332,12 @@ msgstr ""
 msgid "Needs review"
 msgstr ""
 
-#: src/Plugin.php:151
+#: src/Plugin.php:161
 msgid "Beltoft Commerce has no trade site: set its hostname with <code>define( 'BELTOFT_B2B_HOST', 'b2b.example.com' );</code> in wp-config.php."
+msgstr ""
+
+#: src/Plugin.php:175
+msgid "Beltoft Commerce: the trade hosts are not configured correctly."
 msgstr ""
 
 #: src/Pricing/Registry.php:27
@@ -347,102 +353,102 @@ msgid "B2B Customer"
 msgstr ""
 
 #. translators: %s: maximum upload size, e.g. "64 MB".
-#: src/QuickOrder/Page.php:160
+#: src/QuickOrder/Page.php:162
 #, php-format
 msgid "The upload exceeds the server limit (%s). Make the file smaller and try again."
 msgstr ""
 
-#: src/QuickOrder/Page.php:196
+#: src/QuickOrder/Page.php:198
 msgid "First choose the .xlsx file you want to import."
 msgstr ""
 
 #. translators: %s: maximum upload size, e.g. "64 MB".
-#: src/QuickOrder/Page.php:213
+#: src/QuickOrder/Page.php:215
 #, php-format
 msgid "The file exceeds the upload limit (%s)."
 msgstr ""
 
-#: src/QuickOrder/Page.php:229
+#: src/QuickOrder/Page.php:231
 msgid "The uploaded file could not be read."
 msgstr ""
 
-#: src/QuickOrder/Page.php:238
+#: src/QuickOrder/Page.php:240
 msgid "This format is not supported. Save the sheet as .xlsx in Excel (File → Save as) and upload it again."
 msgstr ""
 
-#: src/QuickOrder/Page.php:264
+#: src/QuickOrder/Page.php:266
 msgid "The sheet had no quantities. Fill in the Quantity column and upload it again."
 msgstr ""
 
-#: src/QuickOrder/Page.php:269
+#: src/QuickOrder/Page.php:271
 msgid "No lines were found. Write one reference and one quantity per line."
 msgstr ""
 
-#: src/QuickOrder/Page.php:273
+#: src/QuickOrder/Page.php:275
 msgid "No lines to order were found. Check the references and quantities."
 msgstr ""
 
 #. translators: %d: number of lines added to the cart.
-#: src/QuickOrder/Page.php:447
+#: src/QuickOrder/Page.php:465
 #, php-format
 msgid "%d line added to the cart."
 msgid_plural "%d lines added to the cart."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/QuickOrder/Page.php:612
+#: src/QuickOrder/Page.php:630
 msgid "Paste references"
 msgstr ""
 
-#: src/QuickOrder/Page.php:614
+#: src/QuickOrder/Page.php:632
 msgid "One reference and quantity per line"
 msgstr ""
 
-#: src/QuickOrder/Page.php:620
+#: src/QuickOrder/Page.php:638
 msgid "Accepts SKU or barcode. Separate with a tab, comma, semicolon or space."
 msgstr ""
 
-#: src/QuickOrder/Page.php:625
+#: src/QuickOrder/Page.php:643
 msgid "Add to cart"
 msgstr ""
 
-#: src/QuickOrder/Page.php:631
+#: src/QuickOrder/Page.php:649
 msgid "Spreadsheet"
 msgstr ""
 
-#: src/QuickOrder/Page.php:636
+#: src/QuickOrder/Page.php:654
 msgid "Download your sheet"
 msgstr ""
 
-#: src/QuickOrder/Page.php:638
+#: src/QuickOrder/Page.php:656
 msgid "With your prices and references already in it."
 msgstr ""
 
-#: src/QuickOrder/Page.php:640
+#: src/QuickOrder/Page.php:658
 msgid "Fill in the Quantity column."
 msgstr ""
 
-#: src/QuickOrder/Page.php:642
+#: src/QuickOrder/Page.php:660
 msgid "Bring the sheet back here."
 msgstr ""
 
-#: src/QuickOrder/Page.php:645
+#: src/QuickOrder/Page.php:663
 msgid "Drag the sheet here"
 msgstr ""
 
-#: src/QuickOrder/Page.php:646
+#: src/QuickOrder/Page.php:664
 msgid "or click to choose it on your computer (.xlsx)"
 msgstr ""
 
-#: src/QuickOrder/Page.php:647
+#: src/QuickOrder/Page.php:665
 msgid "Tap to choose the sheet (.xlsx)"
 msgstr ""
 
-#: src/QuickOrder/Page.php:657
+#: src/QuickOrder/Page.php:675
 msgid "Remove"
 msgstr ""
 
-#: src/QuickOrder/Page.php:669
+#: src/QuickOrder/Page.php:687
 msgid "Import and add to cart"
 msgstr ""
 
@@ -494,7 +500,7 @@ msgid "B2B rejected"
 msgstr ""
 
 #: src/Registration/AdminUsers.php:211
-#: src/Registration/AdminUsers.php:413
+#: src/Registration/AdminUsers.php:419
 msgid "B2B application"
 msgstr ""
 
@@ -523,7 +529,7 @@ msgid "Reject B2B application"
 msgstr ""
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:366
+#: src/Registration/AdminUsers.php:372
 #, php-format
 msgid "%d application approved."
 msgid_plural "%d applications approved."
@@ -531,24 +537,24 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:368
+#: src/Registration/AdminUsers.php:374
 #, php-format
 msgid "%d application rejected."
 msgid_plural "%d applications rejected."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/Registration/AdminUsers.php:416
+#: src/Registration/AdminUsers.php:422
 #: src/Registration/Fields.php:130
 msgid "Shop name"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:421
+#: src/Registration/AdminUsers.php:427
 #: src/Registration/Fields.php:124
 msgid "Company information"
 msgstr ""
 
-#: src/Registration/AdminUsers.php:427
+#: src/Registration/AdminUsers.php:433
 msgid "Status"
 msgstr ""
 
@@ -766,6 +772,136 @@ msgstr ""
 
 #: src/Scanner/ScannerContext.php:106
 msgid "The back-in-stock alert could not be saved. Please try again."
+msgstr ""
+
+#: src/Support/HostHealth.php:45
+msgid "Trade hosts"
+msgstr ""
+
+#: src/Support/HostHealth.php:51
+msgid "Trade hosts answer"
+msgstr ""
+
+#: src/Support/HostHealth.php:77
+msgid "The trade hosts are configured correctly"
+msgstr ""
+
+#: src/Support/HostHealth.php:78
+msgid "Every trade host is a host of its own, in a language the site has, with its pages in place."
+msgstr ""
+
+#: src/Support/HostHealth.php:85
+msgid "The trade hosts need attention"
+msgstr ""
+
+#. translators: 1: a path, 2: language code
+#: src/Support/HostHealth.php:116
+#, php-format
+msgid "No published page at %1$s in \"%2$s\" (trade_paths)."
+msgstr ""
+
+#. translators: 1: a path, 2: language code, 3: the default language's path
+#: src/Support/HostHealth.php:124
+#, php-format
+msgid "The page at %1$s in \"%2$s\" is not the translation of %3$s."
+msgstr ""
+
+#. translators: 1: a root page's key, 2: language code, 3: the slug prefix, e.g. b2b-
+#: src/Support/HostHealth.php:139
+#, php-format
+msgid "The trade page \"%1$s\" has no published \"%2$s\" copy whose slug starts with %3$s."
+msgstr ""
+
+#. translators: %s: host
+#: src/Support/HostHealth.php:189
+#, php-format
+msgid "%s/robots.txt does not answer 200 with an X-Robots-Tag: noindex header."
+msgstr ""
+
+#. translators: 1: host, 2: a URL
+#: src/Support/HostHealth.php:196
+#, php-format
+msgid "%1$s does not send a logged-out visitor to %2$s."
+msgstr ""
+
+#: src/Support/HostHealth.php:201
+msgid "Every trade host answers"
+msgstr ""
+
+#: src/Support/HostHealth.php:201
+msgid "Each trade host keeps itself out of search engines and sends logged-out visitors to its own login page."
+msgstr ""
+
+#: src/Support/HostHealth.php:204
+msgid "A trade host does not answer as it should"
+msgstr ""
+
+#: src/Support/HostHealth.php:233
+msgid "Beltoft Commerce trade hosts"
+msgstr ""
+
+#: src/Support/HostHealth.php:250
+msgid "Trade"
+msgstr ""
+
+#. translators: %s: the COOKIE_DOMAIN value
+#: src/Support/Hosts.php:245
+#, php-format
+msgid "COOKIE_DOMAIN is set (%s). Every trade host must keep host-only cookies: remove it from wp-config.php."
+msgstr ""
+
+#: src/Support/Hosts.php:255
+msgid "BELTOFT_B2B_HOSTS is set but BELTOFT_B2B_HOST is not. Set BELTOFT_B2B_HOST to the default language's trade host."
+msgstr ""
+
+#. translators: 1: language code, 2: host
+#: src/Support/Hosts.php:272
+#, php-format
+msgid "The trade host for \"%1$s\" (%2$s) is not a hostname: no IP address, port or underscore."
+msgstr ""
+
+#. translators: %s: host
+#: src/Support/Hosts.php:278
+#, php-format
+msgid "The trade host %s is listed twice in BELTOFT_B2B_HOSTS."
+msgstr ""
+
+#. translators: %s: host
+#: src/Support/Hosts.php:285
+#, php-format
+msgid "The trade host %s is also a retail host. A trade host needs a hostname of its own."
+msgstr ""
+
+#. translators: %s: language code
+#: src/Support/Hosts.php:290
+#, php-format
+msgid "BELTOFT_B2B_HOSTS names the language \"%s\", which the language plugin does not have."
+msgstr ""
+
+#. translators: 1: language code, 2: the default language's code
+#: src/Support/Hosts.php:295
+#, php-format
+msgid "BELTOFT_B2B_HOST is mapped to \"%1$s\", but it must be the trade host of the default language (%2$s)."
+msgstr ""
+
+#. translators: %s: host
+#: src/Support/Hosts.php:301
+#, php-format
+msgid "BELTOFT_B2B_HOSTS does not list BELTOFT_B2B_HOST (%s) as the default language's trade host."
+msgstr ""
+
+#. translators: %s: language code
+#: src/Support/Hosts.php:308
+#, php-format
+msgid "trade_fallback_language is \"%s\", which has no trade host in BELTOFT_B2B_HOSTS."
+msgstr ""
+
+#: src/Support/Hosts.php:312
+msgid "There are several trade hosts but the language plugin uses path prefixes: every trade host serves every language under its prefix."
+msgstr ""
+
+#: src/Support/Hosts.php:322
+msgid "path_language_prefixes does not match the language plugin's URL prefixes."
 msgstr ""
 
 #. translators: 1: source file path, 2: target directory

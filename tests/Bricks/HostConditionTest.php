@@ -5,8 +5,11 @@ use BeltoftCommerce\Support\Hosts;
 
 class HostConditionTest extends WP_UnitTestCase {
 
+	use TradeHosts;
+
 	public function tearDown(): void {
 		unset( $_SERVER['HTTP_HOST'] );
+		$this->forget_trade_hosts();
 		parent::tearDown();
 	}
 
@@ -61,5 +64,22 @@ class HostConditionTest extends WP_UnitTestCase {
 
 		$this->assertFalse( HostCondition::evaluate( array( 'value' => 'retail' ) ) );
 		$this->assertFalse( HostCondition::evaluate( array( 'value' => 'b2b' ) ) );
+	}
+
+	/** "Retail" is every retail host - the site address and each language domain - and no trade host. */
+	public function test_the_retail_condition_matches_every_retail_language_domain() {
+		$this->use_trade_hosts();
+
+		foreach ( array( Hosts::retail(), self::$en_retail, self::$de_retail ) as $host ) {
+			$_SERVER['HTTP_HOST'] = $host;
+			$this->assertTrue( HostCondition::evaluate( array( 'value' => 'retail' ) ), $host );
+			$this->assertFalse( HostCondition::evaluate( array( 'value' => 'b2b' ) ), $host );
+		}
+
+		foreach ( Hosts::all_b2b_hosts() as $host ) {
+			$_SERVER['HTTP_HOST'] = $host;
+			$this->assertFalse( HostCondition::evaluate( array( 'value' => 'retail' ) ), $host );
+			$this->assertTrue( HostCondition::evaluate( array( 'value' => 'b2b' ) ), $host );
+		}
 	}
 }

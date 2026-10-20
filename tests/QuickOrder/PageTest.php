@@ -2,8 +2,17 @@
 
 use BeltoftCommerce\Domain\HostRoutes;
 use BeltoftCommerce\QuickOrder\Page;
+use BeltoftCommerce\Support\Hosts;
 
 class PageTest extends WP_UnitTestCase {
+
+	use TradeHosts;
+
+	public function tearDown(): void {
+		unset( $_SERVER['HTTP_HOST'] );
+		$this->forget_trade_hosts();
+		parent::tearDown();
+	}
 
 	/**
 	 * The page is B2B-only like every other B2B surface, and HostRoutes is
@@ -185,5 +194,22 @@ class PageTest extends WP_UnitTestCase {
 		wp_set_current_user( self::factory()->user->create() );
 
 		$this->assertStringContainsString( 'accept=".xlsx"', Page::shortcode() );
+	}
+
+	public function test_the_quick_order_page_is_recognised_under_a_language() {
+		$this->use_path_mode();
+		$_SERVER['HTTP_HOST'] = Hosts::b2b();
+
+		$this->assertTrue( Page::is_quick_order_request( '/es/pedido-rapido/' ) );
+		$this->assertTrue( Page::is_quick_order_request( '/encomenda-rapida/' ) );
+		$this->assertFalse( Page::is_quick_order_request( '/es/encomenda-rapida/' ) );
+		$this->assertFalse( Page::is_quick_order_request( '/pedido-rapido/' ) );
+
+		$this->forget_trade_hosts();
+		$this->use_trade_hosts();
+		$_SERVER['HTTP_HOST'] = self::$en_trade;
+		$this->assertTrue( Page::is_quick_order_request( '/quick-order/' ) );
+		$this->assertFalse( Page::is_quick_order_request( '/encomenda-rapida/' ) );
+		$this->assertContains( '/quick-order/', \BeltoftCommerce\Domain\HostRoutes::b2b_only_paths( 'en' ) );
 	}
 }

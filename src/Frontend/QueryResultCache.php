@@ -281,6 +281,8 @@ class QueryResultCache {
 			'body'     => $body,
 			'language' => class_exists( '\Zerolang\Request' ) ? (string) \Zerolang\Request::current() : '',
 			'locale'   => determine_locale(),
+			// And the trade host: one per language, and the rows' links are on it.
+			'host'     => \BeltoftCommerce\Support\Hosts::current_b2b(),
 		);
 
 		return 'blt_rows_' . self::version() . '_' . md5( (string) wp_json_encode( $vary ) );

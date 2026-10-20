@@ -19,12 +19,20 @@ class OrderingPage {
 		return trim( (string) Config::get( 'ordering_page' ), '/' );
 	}
 
-	/** Where the ordering page lives on the trade host. */
+	/**
+	 * Where the ordering page lives on the trade host, in the request's
+	 * language: its copy's root (/shop/ for b2b-shop), else the map key.
+	 * Without a language prefix: callers build URLs on home_url(), which the
+	 * language plugin prefixes.
+	 */
 	public static function path(): string {
-		return '/' . self::slug() . '/';
+		$id   = self::id();
+		$root = $id ? HostPages::root_for( $id ) : '';
+
+		return '/' . ( '' !== $root ? $root : self::slug() ) . '/';
 	}
 
-	/** The configured page, or 0 if it is missing or not published. */
+	/** The configured page in the request's language, or 0 if it is missing, not published or not translated. */
 	public static function id(): int {
 		return HostPages::id( self::slug() );
 	}

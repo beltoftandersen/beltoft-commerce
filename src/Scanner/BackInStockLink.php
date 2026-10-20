@@ -60,6 +60,9 @@ class BackInStockLink {
 
 		$host = wp_parse_url( $url, PHP_URL_HOST );
 
-		return is_string( $host ) ? (string) preg_replace( '#^(https?://)' . preg_quote( $host, '#' ) . '#i', '${1}' . Hosts::b2b(), $url, 1 ) : $url;
+		// The partner's own trade host (one per language): where they are signed in.
+		$trade = \BeltoftCommerce\Registration\TradeHost::for_user( (int) $user->ID );
+
+		return is_string( $host ) ? (string) preg_replace( '#^(https?://)' . preg_quote( $host, '#' ) . '#i', '${1}' . $trade, $url, 1 ) : $url;
 	}
 }

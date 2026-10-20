@@ -4,6 +4,8 @@ namespace BeltoftCommerce\Checkout;
 
 use BeltoftCommerce\Support\Config;
 use BeltoftCommerce\Support\Hosts;
+use BeltoftCommerce\Support\Language;
+use BeltoftCommerce\Support\TradePath;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -30,9 +32,13 @@ class B2BCheckoutPage {
 	/** Option holding the B2B checkout page id, so the id is not hard-coded. */
 	public const OPTION = 'beltoft_commerce_b2b_checkout_page_id';
 
-	/** Where the trade checkout lives on the trade host - Frontend\HostPages serves it there. */
-	public static function path(): string {
-		return Config::path( 'checkout_path' );
+	/**
+	 * Where the trade checkout lives on the trade host - Frontend\HostPages
+	 * serves it there - in a language when a code is given (Config
+	 * 'trade_paths'), without the language's path prefix.
+	 */
+	public static function path( string $code = '' ): string {
+		return Config::path( 'checkout_path', $code );
 	}
 
 	/*
@@ -40,8 +46,8 @@ class B2BCheckoutPage {
 	 * pay links on this path, so it forwards rather than 404s - endpoint tail
 	 * and ?key= included, or the link in the e-mail would open to nothing.
 	 */
-	public static function legacy_paths(): array {
-		return Config::paths( 'checkout_legacy_paths' );
+	public static function legacy_paths( string $code = '' ): array {
+		return Config::paths( 'checkout_legacy_paths', $code );
 	}
 
 	/**
@@ -77,7 +83,13 @@ class B2BCheckoutPage {
 
 	public static function register(): void {
 		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'refuse_store_api_checkout' ), 10, 3 );
-		add_filter( 'woocommerce_get_checkout_page_id', array( __CLASS__, 'page_id' ) );
+		/*
+		 * Priority 5: a language plugin (Zerolang's Woo::page_id, at 10)
+		 * translates whatever id it is handed, so the trade id has to be in
+		 * place before it runs - at the same priority Zerolang ran first and
+		 * this overwrote its answer with the Portuguese page.
+		 */
+		add_filter( 'woocommerce_get_checkout_page_id', array( __CLASS__, 'page_id' ), 5 );
 		add_action( 'template_redirect', array( __CLASS__, 'forward_legacy' ), 1 );
 		add_action( 'template_redirect', array( __CLASS__, 'forward_trade_order_pay' ), 1 );
 	}
@@ -110,11 +122,19 @@ class B2BCheckoutPage {
 		}
 	}
 
-	/** The trade host's pay page for an order placed there, or '' when it is paid where it is. */
+	/**
+	 * The pay page of an order placed on a trade host, on that very trade
+	 * host (the partner's session is there and nowhere else) in its language,
+	 * or '' when it is paid where it is.
+	 */
 	public static function pay_target( \WC_Order $order ): string {
 		if ( Hosts::is_b2b_host() || ! Hosts::is_b2b_configured() || ! \BeltoftCommerce\Domain\OrderHost::placed_on_trade_host( $order ) ) {
 			return '';
 		}
+
+		$host = \BeltoftCommerce\Domain\OrderHost::for_order( $order );
+		$code = Hosts::b2b_language( $host );
+		$code = '' !== $code ? $code : Language::of_order( $order );
 
 		$slug = function_exists( 'WC' ) && isset( WC()->query ) ? (string) ( WC()->query->get_query_vars()['order-pay'] ?? '' ) : '';
 
@@ -122,7 +142,7 @@ class B2BCheckoutPage {
 			return '';
 		}
 
-		return 'https://' . Hosts::b2b() . self::path() . $slug . '/' . $order->get_id() . '/?pay_for_order=true&key=' . rawurlencode( $order->get_order_key() );
+		return 'https://' . $host . TradePath::prefix( $code ) . self::path( $code ) . $slug . '/' . $order->get_id() . '/?pay_for_order=true&key=' . rawurlencode( $order->get_order_key() );
 	}
 
 	/** The old checkout path forwards to the new one, endpoint and query intact. */
@@ -139,16 +159,20 @@ class B2BCheckoutPage {
 		}
 	}
 
-	/** Where a legacy URI should go, or null if it is not one. Pure, for tests. */
+	/**
+	 * Where a legacy URI should go, or null if it is not one. Pure, for tests.
+	 * In the request's language, prefix kept: /es/finalizar-b2b/ goes to
+	 * /es/<the Spanish checkout path>/.
+	 */
 	public static function legacy_target( string $request_uri ): ?string {
-		$path = (string) wp_parse_url( $request_uri, PHP_URL_PATH );
+		list( $code, $path ) = TradePath::split( (string) wp_parse_url( $request_uri, PHP_URL_PATH ) );
 
-		foreach ( self::legacy_paths() as $legacy ) {
+		foreach ( self::legacy_paths( $code ) as $legacy ) {
 			if ( '' === $path || 0 !== strpos( $path, $legacy ) ) {
 				continue;
 			}
 
-			$target = home_url( self::path() . substr( $path, strlen( $legacy ) ) );
+			$target = home_url( TradePath::prefix( $code ) . self::path( $code ) . substr( $path, strlen( $legacy ) ) );
 			$query  = (string) wp_parse_url( $request_uri, PHP_URL_QUERY );
 
 			return '' !== $query ? $target . '?' . $query : $target;

@@ -7,9 +7,12 @@
  */
 class QueryResultCacheTest extends WP_UnitTestCase {
 
+	use TradeHosts;
+
 	/** The tests below put the request on the trade host; it must not outlive them. */
 	public function tearDown(): void {
 		unset( $_SERVER['HTTP_HOST'] );
+		$this->forget_trade_hosts();
 		wp_set_current_user( 0 );
 		parent::tearDown();
 	}
@@ -182,5 +185,21 @@ class QueryResultCacheTest extends WP_UnitTestCase {
 		add_filter( 'determine_locale', static fn() => 'en_GB' );
 
 		$this->assertNotSame( $base, $this->key( $this->body() ) );
+	}
+
+	/** The same rows on two trade hosts carry each host's links: two entries. */
+	public function test_the_key_varies_by_trade_host() {
+		$this->use_trade_hosts();
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'b2b_customer' ) ) );
+
+		$_SERVER['HTTP_HOST'] = BeltoftCommerce\Support\Hosts::b2b();
+		$pt = $this->key( $this->body() );
+
+		$_SERVER['HTTP_HOST'] = self::$en_trade;
+		$en = $this->key( $this->body() );
+
+		$this->assertNotSame( '', $pt );
+		$this->assertNotSame( '', $en );
+		$this->assertNotSame( $pt, $en );
 	}
 }

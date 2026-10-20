@@ -6,6 +6,8 @@ use BeltoftCommerce\Support\Config;
 use BeltoftCommerce\QuickOrder\Sheet\Reader;
 use BeltoftCommerce\QuickOrder\Sheet\Writer;
 use BeltoftCommerce\Support\Hosts;
+use BeltoftCommerce\Support\Language;
+use BeltoftCommerce\Support\TradePath;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -18,9 +20,9 @@ defined( 'ABSPATH' ) || exit;
  */
 class Page {
 
-	/** Config 'quick_order_path', which HostRoutes also reads. */
-	public static function path(): string {
-		return Config::path( 'quick_order_path' );
+	/** Config 'quick_order_path', which HostRoutes also reads; in a language when a code is given. */
+	public static function path( string $code = '' ): string {
+		return Config::path( 'quick_order_path', $code );
 	}
 
 	public const SHORTCODE = 'beltoft_quick_order';
@@ -295,7 +297,7 @@ class Page {
 	 * @return array<int, string>
 	 */
 	public static function paths(): array {
-		return array( self::path() );
+		return array( self::path( self::request_language() ) );
 	}
 
 	/**
@@ -310,23 +312,39 @@ class Page {
 		$id  = function_exists( 'get_queried_object_id' ) ? (int) get_queried_object_id() : 0;
 		$url = $id ? get_permalink( $id ) : '';
 
-		return is_string( $url ) && '' !== $url ? $url : home_url( self::path() );
+		if ( is_string( $url ) && '' !== $url ) {
+			return $url;
+		}
+
+		$code = self::request_language();
+
+		return home_url( TradePath::prefix( $code ) . self::path( $code ) );
 	}
 
-	private static function is_quick_order_request(): bool {
-		$path = wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH );
+	/**
+	 * Whether a request (this one by default) is for the quick order page, in
+	 * its language: /es/pedido-rapido/ in a path mode, the trade host's own
+	 * path under separate domains.
+	 */
+	public static function is_quick_order_request( ?string $request_uri = null ): bool {
+		$path = wp_parse_url( $request_uri ?? ( $_SERVER['REQUEST_URI'] ?? '' ), PHP_URL_PATH );
 
 		if ( ! is_string( $path ) ) {
 			return false;
 		}
 
-		foreach ( self::paths() as $known ) {
-			if ( 0 === strpos( $path, $known ) ) {
-				return true;
-			}
-		}
+		list( $code, $rest ) = TradePath::split( $path );
 
-		return false;
+		$code = '' !== $code ? $code : Language::current();
+
+		return 0 === strpos( $rest, self::path( $code ) );
+	}
+
+	/** The request's language: its path prefix or trade host, else the language plugin's answer. */
+	private static function request_language(): string {
+		list( $code ) = TradePath::split( (string) wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH ) );
+
+		return '' !== $code ? $code : Language::current();
 	}
 
 	/**

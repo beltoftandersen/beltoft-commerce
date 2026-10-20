@@ -30,7 +30,8 @@ class PasswordReset {
 			return;
 		}
 
-		$host = Hosts::is_b2b_host() ? Hosts::b2b() : Hosts::retail();
+		// The trade host it was asked on - each language has its own.
+		$host = '' !== Hosts::current_b2b() ? Hosts::current_b2b() : Hosts::retail();
 
 		update_user_meta( $user->ID, self::META_KEY, $host );
 	}
@@ -62,6 +63,6 @@ class PasswordReset {
 			return $redirect;
 		}
 
-		return str_replace( '://' . Hosts::retail(), '://' . Hosts::b2b(), $redirect );
+		return str_replace( '://' . Hosts::retail(), '://' . Hosts::current_b2b(), $redirect );
 	}
 }

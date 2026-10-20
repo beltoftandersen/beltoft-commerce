@@ -172,7 +172,7 @@ msgstr "Número da nota de encomenda"
 msgid "If your company uses an internal reference, enter it here. It appears on the confirmation and on the order."
 msgstr "Se a sua empresa usa uma referência interna, indique-a aqui. Aparece na confirmação e na encomenda."
 
-#: src/Domain/LoginGate.php:252
+#: src/Domain/LoginGate.php:270
 msgid "Sign in to continue."
 msgstr "Inicie sessão para continuar."
 
@@ -316,102 +316,102 @@ msgid "B2B Customer"
 msgstr "Cliente B2B"
 
 #. translators: %s: maximum upload size, e.g. "64 MB".
-#: src/QuickOrder/Page.php:160
+#: src/QuickOrder/Page.php:162
 #, php-format
 msgid "The upload exceeds the server limit (%s). Make the file smaller and try again."
 msgstr "O envio excede o limite do servidor (%s). Reduza o ficheiro e tente novamente."
 
-#: src/QuickOrder/Page.php:196
+#: src/QuickOrder/Page.php:198
 msgid "First choose the .xlsx file you want to import."
 msgstr "Escolha primeiro o ficheiro .xlsx que quer importar."
 
 #. translators: %s: maximum upload size, e.g. "64 MB".
-#: src/QuickOrder/Page.php:213
+#: src/QuickOrder/Page.php:215
 #, php-format
 msgid "The file exceeds the upload limit (%s)."
 msgstr "O ficheiro excede o limite de envio (%s)."
 
-#: src/QuickOrder/Page.php:229
+#: src/QuickOrder/Page.php:231
 msgid "The uploaded file could not be read."
 msgstr "Não foi possível ler o ficheiro enviado."
 
-#: src/QuickOrder/Page.php:238
+#: src/QuickOrder/Page.php:240
 msgid "This format is not supported. Save the sheet as .xlsx in Excel (File → Save as) and upload it again."
 msgstr "Este formato não é suportado. Guarde a folha como .xlsx no Excel (Ficheiro → Guardar como) e envie novamente."
 
-#: src/QuickOrder/Page.php:264
+#: src/QuickOrder/Page.php:266
 msgid "The sheet had no quantities. Fill in the Quantity column and upload it again."
 msgstr "A folha não trazia quantidades. Preencha a coluna Quantidade e envie outra vez."
 
-#: src/QuickOrder/Page.php:269
+#: src/QuickOrder/Page.php:271
 msgid "No lines were found. Write one reference and one quantity per line."
 msgstr "Não foram encontradas linhas. Escreva uma referência e uma quantidade por linha."
 
-#: src/QuickOrder/Page.php:273
+#: src/QuickOrder/Page.php:275
 msgid "No lines to order were found. Check the references and quantities."
 msgstr "Não foram encontradas linhas para encomendar. Verifique as referências e quantidades."
 
 #. translators: %d: number of lines added to the cart.
-#: src/QuickOrder/Page.php:447
+#: src/QuickOrder/Page.php:465
 #, php-format
 msgid "%d line added to the cart."
 msgid_plural "%d lines added to the cart."
 msgstr[0] "%d linha adicionada ao carrinho."
 msgstr[1] "%d linhas adicionadas ao carrinho."
 
-#: src/QuickOrder/Page.php:612
+#: src/QuickOrder/Page.php:630
 msgid "Paste references"
 msgstr "Colar referências"
 
-#: src/QuickOrder/Page.php:614
+#: src/QuickOrder/Page.php:632
 msgid "One reference and quantity per line"
 msgstr "Uma referência e quantidade por linha"
 
-#: src/QuickOrder/Page.php:620
+#: src/QuickOrder/Page.php:638
 msgid "Accepts SKU or barcode. Separate with a tab, comma, semicolon or space."
 msgstr "Aceita SKU ou código de barras. Separe com tab, vírgula, ponto e vírgula ou espaço."
 
-#: src/QuickOrder/Page.php:625
+#: src/QuickOrder/Page.php:643
 msgid "Add to cart"
 msgstr "Adicionar ao carrinho"
 
-#: src/QuickOrder/Page.php:631
+#: src/QuickOrder/Page.php:649
 msgid "Spreadsheet"
 msgstr "Folha de cálculo"
 
-#: src/QuickOrder/Page.php:636
+#: src/QuickOrder/Page.php:654
 msgid "Download your sheet"
 msgstr "Descarregar a sua folha"
 
-#: src/QuickOrder/Page.php:638
+#: src/QuickOrder/Page.php:656
 msgid "With your prices and references already in it."
 msgstr "Já com os seus preços e referências."
 
-#: src/QuickOrder/Page.php:640
+#: src/QuickOrder/Page.php:658
 msgid "Fill in the Quantity column."
 msgstr "Preencha a coluna Quantidade."
 
-#: src/QuickOrder/Page.php:642
+#: src/QuickOrder/Page.php:660
 msgid "Bring the sheet back here."
 msgstr "Traga a folha de volta para aqui."
 
-#: src/QuickOrder/Page.php:645
+#: src/QuickOrder/Page.php:663
 msgid "Drag the sheet here"
 msgstr "Arraste a folha para aqui"
 
-#: src/QuickOrder/Page.php:646
+#: src/QuickOrder/Page.php:664
 msgid "or click to choose it on your computer (.xlsx)"
 msgstr "ou clique para escolher no computador (.xlsx)"
 
-#: src/QuickOrder/Page.php:647
+#: src/QuickOrder/Page.php:665
 msgid "Tap to choose the sheet (.xlsx)"
 msgstr "Toque para escolher a folha (.xlsx)"
 
-#: src/QuickOrder/Page.php:657
+#: src/QuickOrder/Page.php:675
 msgid "Remove"
 msgstr "Remover"
 
-#: src/QuickOrder/Page.php:669
+#: src/QuickOrder/Page.php:687
 msgid "Import and add to cart"
 msgstr "Importar e adicionar ao carrinho"
 
@@ -468,7 +468,7 @@ msgid "B2B rejected"
 msgstr "B2B rejeitados"
 
 #: src/Registration/AdminUsers.php:211
-#: src/Registration/AdminUsers.php:413
+#: src/Registration/AdminUsers.php:419
 msgid "B2B application"
 msgstr "Registo B2B"
 
@@ -497,7 +497,7 @@ msgid "Reject B2B application"
 msgstr "Rejeitar registo B2B"
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:366
+#: src/Registration/AdminUsers.php:372
 #, php-format
 msgid "%d application approved."
 msgid_plural "%d applications approved."
@@ -505,24 +505,24 @@ msgstr[0] "%d registo aprovado."
 msgstr[1] "%d registos aprovados."
 
 #. translators: %d: number of accounts.
-#: src/Registration/AdminUsers.php:368
+#: src/Registration/AdminUsers.php:374
 #, php-format
 msgid "%d application rejected."
 msgid_plural "%d applications rejected."
 msgstr[0] "%d registo rejeitado."
 msgstr[1] "%d registos rejeitados."
 
-#: src/Registration/AdminUsers.php:416
+#: src/Registration/AdminUsers.php:422
 #: src/Registration/Fields.php:130
 msgid "Shop name"
 msgstr "Nome da loja"
 
-#: src/Registration/AdminUsers.php:421
+#: src/Registration/AdminUsers.php:427
 #: src/Registration/Fields.php:124
 msgid "Company information"
 msgstr "Informação da empresa"
 
-#: src/Registration/AdminUsers.php:427
+#: src/Registration/AdminUsers.php:433
 msgid "Status"
 msgstr "Estado"
 
@@ -896,7 +896,7 @@ msgstr "Apenas %d em stock."
 msgid "Could not add. Only %d in stock."
 msgstr "Não foi possível adicionar. Apenas %d em stock."
 
-#: src/Plugin.php:151
+#: src/Plugin.php:161
 msgid "Beltoft Commerce has no trade site: set its hostname with <code>define( 'BELTOFT_B2B_HOST', 'b2b.example.com' );</code> in wp-config.php."
 msgstr "O Beltoft Commerce não tem site de revenda: defina o nome do anfitrião com <code>define( 'BELTOFT_B2B_HOST', 'b2b.example.com' );</code> no wp-config.php."
 
@@ -920,12 +920,14 @@ msgstr "nenhuma"
 msgid "Beltoft Commerce could not install its early host handler. Copy %1$s into %2$s."
 msgstr "O Beltoft Commerce não conseguiu instalar o seu tratamento antecipado de anfitriões. Copie %1$s para %2$s."
 
-#: src/Checkout/B2BCheckoutPage.php:73
+#: src/Checkout/B2BCheckoutPage.php:79
 msgid "Please place trade orders from the checkout page."
 msgstr "Faça as encomendas de revenda a partir da página de finalização da compra."
 
 #. translators: %s: product name
-#: src/Hooks/Price.php:163
+#: src/Hooks/Price.php:164
+#: src/Hooks/Price.php:231
+#: src/Hooks/Price.php:262
 #, php-format
 msgid "%s has no price for this customer."
 msgstr "%s não tem preço para este cliente."
@@ -933,3 +935,137 @@ msgstr "%s não tem preço para este cliente."
 #: src/Vat/OrderEvidence.php:134
 msgid "no answer during checkout"
 msgstr "sem resposta durante a finalização da compra"
+
+#: src/Plugin.php:175
+msgid "Beltoft Commerce: the trade hosts are not configured correctly."
+msgstr "Beltoft Commerce: os domínios de revenda não estão bem configurados."
+
+#: src/Support/HostHealth.php:45
+msgid "Trade hosts"
+msgstr "Domínios de revenda"
+
+#: src/Support/HostHealth.php:51
+msgid "Trade hosts answer"
+msgstr "Os domínios de revenda respondem"
+
+#: src/Support/HostHealth.php:77
+msgid "The trade hosts are configured correctly"
+msgstr "Os domínios de revenda estão bem configurados"
+
+#: src/Support/HostHealth.php:78
+msgid "Every trade host is a host of its own, in a language the site has, with its pages in place."
+msgstr "Cada domínio de revenda é um domínio próprio, num idioma do site, com as suas páginas."
+
+#: src/Support/HostHealth.php:85
+msgid "The trade hosts need attention"
+msgstr "Os domínios de revenda precisam de atenção"
+
+#. translators: 1: a path, 2: language code
+#: src/Support/HostHealth.php:116
+#, php-format
+msgid "No published page at %1$s in \"%2$s\" (trade_paths)."
+msgstr "Não há página publicada em %1$s em \"%2$s\" (trade_paths)."
+
+#. translators: 1: a path, 2: language code, 3: the default language's path
+#: src/Support/HostHealth.php:124
+#, php-format
+msgid "The page at %1$s in \"%2$s\" is not the translation of %3$s."
+msgstr "A página em %1$s em \"%2$s\" não é a tradução de %3$s."
+
+#. translators: 1: a root page's key, 2: language code, 3: the slug prefix, e.g. b2b-
+#: src/Support/HostHealth.php:139
+#, php-format
+msgid "The trade page \"%1$s\" has no published \"%2$s\" copy whose slug starts with %3$s."
+msgstr "A página de revenda \"%1$s\" não tem uma cópia publicada em \"%2$s\" cujo slug comece por %3$s."
+
+#. translators: %s: host
+#: src/Support/HostHealth.php:189
+#, php-format
+msgid "%s/robots.txt does not answer 200 with an X-Robots-Tag: noindex header."
+msgstr "%s/robots.txt não responde 200 com o cabeçalho X-Robots-Tag: noindex."
+
+#. translators: 1: host, 2: a URL
+#: src/Support/HostHealth.php:196
+#, php-format
+msgid "%1$s does not send a logged-out visitor to %2$s."
+msgstr "%1$s não envia um visitante sem sessão para %2$s."
+
+#: src/Support/HostHealth.php:201
+msgid "Every trade host answers"
+msgstr "Todos os domínios de revenda respondem"
+
+#: src/Support/HostHealth.php:201
+msgid "Each trade host keeps itself out of search engines and sends logged-out visitors to its own login page."
+msgstr "Cada domínio de revenda fica fora dos motores de pesquisa e envia os visitantes sem sessão para a sua própria página de entrada."
+
+#: src/Support/HostHealth.php:204
+msgid "A trade host does not answer as it should"
+msgstr "Um domínio de revenda não responde como devia"
+
+#: src/Support/HostHealth.php:233
+msgid "Beltoft Commerce trade hosts"
+msgstr "Domínios de revenda do Beltoft Commerce"
+
+#: src/Support/HostHealth.php:250
+msgid "Trade"
+msgstr "Revenda"
+
+#. translators: %s: the COOKIE_DOMAIN value
+#: src/Support/Hosts.php:245
+#, php-format
+msgid "COOKIE_DOMAIN is set (%s). Every trade host must keep host-only cookies: remove it from wp-config.php."
+msgstr "COOKIE_DOMAIN está definido (%s). Cada domínio de revenda tem de manter cookies só desse domínio: remova-o do wp-config.php."
+
+#: src/Support/Hosts.php:255
+msgid "BELTOFT_B2B_HOSTS is set but BELTOFT_B2B_HOST is not. Set BELTOFT_B2B_HOST to the default language's trade host."
+msgstr "BELTOFT_B2B_HOSTS está definido, mas BELTOFT_B2B_HOST não. Defina BELTOFT_B2B_HOST com o domínio de revenda do idioma predefinido."
+
+#. translators: 1: language code, 2: host
+#: src/Support/Hosts.php:272
+#, php-format
+msgid "The trade host for \"%1$s\" (%2$s) is not a hostname: no IP address, port or underscore."
+msgstr "O domínio de revenda de \"%1$s\" (%2$s) não é um nome de domínio: sem endereço IP, porta nem sublinhado."
+
+#. translators: %s: host
+#: src/Support/Hosts.php:278
+#, php-format
+msgid "The trade host %s is listed twice in BELTOFT_B2B_HOSTS."
+msgstr "O domínio de revenda %s aparece duas vezes em BELTOFT_B2B_HOSTS."
+
+#. translators: %s: host
+#: src/Support/Hosts.php:285
+#, php-format
+msgid "The trade host %s is also a retail host. A trade host needs a hostname of its own."
+msgstr "O domínio de revenda %s também é um domínio de retalho. Um domínio de revenda precisa de um nome próprio."
+
+#. translators: %s: language code
+#: src/Support/Hosts.php:290
+#, php-format
+msgid "BELTOFT_B2B_HOSTS names the language \"%s\", which the language plugin does not have."
+msgstr "BELTOFT_B2B_HOSTS indica o idioma \"%s\", que o plugin de idiomas não tem."
+
+#. translators: 1: language code, 2: the default language's code
+#: src/Support/Hosts.php:295
+#, php-format
+msgid "BELTOFT_B2B_HOST is mapped to \"%1$s\", but it must be the trade host of the default language (%2$s)."
+msgstr "BELTOFT_B2B_HOST está associado a \"%1$s\", mas tem de ser o domínio de revenda do idioma predefinido (%2$s)."
+
+#. translators: %s: host
+#: src/Support/Hosts.php:301
+#, php-format
+msgid "BELTOFT_B2B_HOSTS does not list BELTOFT_B2B_HOST (%s) as the default language's trade host."
+msgstr "BELTOFT_B2B_HOSTS não inclui BELTOFT_B2B_HOST (%s) como domínio de revenda do idioma predefinido."
+
+#. translators: %s: language code
+#: src/Support/Hosts.php:308
+#, php-format
+msgid "trade_fallback_language is \"%s\", which has no trade host in BELTOFT_B2B_HOSTS."
+msgstr "trade_fallback_language é \"%s\", que não tem domínio de revenda em BELTOFT_B2B_HOSTS."
+
+#: src/Support/Hosts.php:312
+msgid "There are several trade hosts but the language plugin uses path prefixes: every trade host serves every language under its prefix."
+msgstr "Há vários domínios de revenda, mas o plugin de idiomas usa prefixos no caminho: cada domínio de revenda serve todos os idiomas no respetivo prefixo."
+
+#: src/Support/Hosts.php:322
+msgid "path_language_prefixes does not match the language plugin's URL prefixes."
+msgstr "path_language_prefixes não corresponde aos prefixos de URL do plugin de idiomas."

@@ -29,6 +29,8 @@ class TradePages {
 		add_filter( 'rest_post_search_query', array( __CLASS__, 'exclude_from_query' ) );
 		add_filter( 'wp_sitemaps_posts_query_args', array( __CLASS__, 'exclude_from_sitemap_query' ) );
 		add_filter( 'slim_seo_sitemap_post_ignore', array( __CLASS__, 'ignore_in_sitemap' ), 10, 2 );
+		// No hreflang on a trade host: its alternates are other hosts' pages (Zerolang 0.4 filter).
+		add_filter( 'zerolang_hreflang_links', array( __CLASS__, 'hreflang_links' ) );
 		add_action( 'save_post_page', array( __CLASS__, 'forget' ) );
 		add_action( 'deleted_post', array( __CLASS__, 'forget' ) );
 	}
@@ -177,6 +179,18 @@ class TradePages {
 	 */
 	public static function ignore_in_sitemap( $ignore, $post = null ) {
 		return $ignore || ( $post instanceof \WP_Post && in_array( (int) $post->ID, self::ids(), true ) );
+	}
+
+	/**
+	 * Hreflang alternates, none on a trade host. Every trade host is noindex,
+	 * and an alternate there names another trade host or a retail page - a
+	 * crawler following one would only be sent to a login page.
+	 *
+	 * @param mixed $links
+	 * @return mixed
+	 */
+	public static function hreflang_links( $links ) {
+		return Hosts::is_b2b_host() ? array() : $links;
 	}
 
 	/** @param mixed $post_id */

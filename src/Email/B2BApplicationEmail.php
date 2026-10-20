@@ -146,6 +146,26 @@ abstract class B2BApplicationEmail extends \WC_Email {
 		return wp_strip_all_tags( $this->get_heading() . "\n\n" . $this->body_copy() );
 	}
 
+	/**
+	 * The language these three are read in: the applicant's trade host's
+	 * (Registration\TradeHost), through Zerolang's zerolang_email_language.
+	 * Left alone with one trade host, or when nothing is recorded.
+	 *
+	 * @param mixed $code
+	 * @param mixed $email
+	 * @param mixed $recipient
+	 * @return mixed
+	 */
+	public static function email_language( $code, $email = null, $recipient = '' ) {
+		if ( ! $email instanceof self || ! $email->user instanceof \WP_User ) {
+			return $code;
+		}
+
+		$language = \BeltoftCommerce\Registration\TradeHost::language_for_user( (int) $email->user->ID );
+
+		return '' !== $language ? $language : $code;
+	}
+
 	/** The one paragraph that differs between the three. */
 	abstract protected function body_copy(): string;
 }

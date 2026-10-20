@@ -34,7 +34,7 @@ if ( ! in_array( $beltoft_basename, (array) get_option( 'active_plugins', array(
 
 $beltoft_plugins = defined( 'BELTOFT_SITE_PLUGINS' ) ? BELTOFT_SITE_PLUGINS : WP_PLUGIN_DIR;
 
-foreach ( array( 'Support/Config', 'Support/Hosts', 'Domain/UrlFilter', 'Domain/LoginGate', 'Domain/HostRoutes', 'Domain/PluginPolicy' ) as $beltoft_class ) {
+foreach ( array( 'Support/Config', 'Support/TradePath', 'Support/Hosts', 'Domain/UrlFilter', 'Domain/LoginGate', 'Domain/HostRoutes', 'Domain/PluginPolicy' ) as $beltoft_class ) {
 	$beltoft_file = $beltoft_plugins . '/' . dirname( $beltoft_basename ) . '/src/' . $beltoft_class . '.php';
 
 	if ( is_readable( $beltoft_file ) ) {
@@ -44,6 +44,18 @@ foreach ( array( 'Support/Config', 'Support/Hosts', 'Domain/UrlFilter', 'Domain/
 
 if ( class_exists( 'BeltoftCommerce\\Domain\\UrlFilter' ) ) {
 	BeltoftCommerce\Domain\UrlFilter::register();
+}
+
+/*
+ * One trade host per language (BELTOFT_B2B_HOSTS): the trade hosts are
+ * Zerolang's "trade" host set, so a link to another language on a trade host
+ * goes to that language's trade host, never to a retail domain. Here because
+ * Zerolang decides a request's language while its own file loads, before any
+ * ordinary plugin could add the filter. It reads it only under separate
+ * domains; without the map nothing is added and nothing changes.
+ */
+if ( class_exists( 'BeltoftCommerce\\Support\\Hosts' ) && BeltoftCommerce\Support\Hosts::b2b_hosts() ) {
+	add_filter( 'zerolang_host_sets', array( 'BeltoftCommerce\\Support\\Hosts', 'zerolang_sets' ), 10, 3 );
 }
 
 /*
@@ -83,6 +95,15 @@ if ( ! $beltoft_cli && class_exists( 'BeltoftCommerce\\Domain\\LoginGate' ) ) {
  */
 if ( ! $beltoft_cli && class_exists( 'BeltoftCommerce\\Domain\\HostRoutes' ) ) {
 	BeltoftCommerce\Domain\HostRoutes::maybe_redirect_early();
+
+	/*
+	 * And once the language plugin has decided the request's language: a
+	 * retail language domain (mindthetrash.com) and a language-prefixed path
+	 * (/es/acceder/) can only be sent to their language's trade host then.
+	 * Priority 2: after Zerolang's path-mode resolve at 1, before anything
+	 * queries or renders.
+	 */
+	add_action( 'plugins_loaded', array( 'BeltoftCommerce\\Domain\\HostRoutes', 'maybe_redirect_on_language' ), 2 );
 }
 
 /*
