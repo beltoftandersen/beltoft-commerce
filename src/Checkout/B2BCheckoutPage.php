@@ -79,6 +79,50 @@ class B2BCheckoutPage {
 		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'refuse_store_api_checkout' ), 10, 3 );
 		add_filter( 'woocommerce_get_checkout_page_id', array( __CLASS__, 'page_id' ) );
 		add_action( 'template_redirect', array( __CLASS__, 'forward_legacy' ), 1 );
+		add_action( 'template_redirect', array( __CLASS__, 'forward_trade_order_pay' ), 1 );
+	}
+
+	/**
+	 * A trade order's pay page opened anywhere but the trade host goes there.
+	 *
+	 * My Account on retail lists the partner's orders with their "Pay" links,
+	 * on retail. Since 2026-10-20 the retail host prices and pays a partner as
+	 * a retail shopper (architecture §2.3, amended); a trade order is paid on
+	 * the trade checkout. B2BPaymentMethods decides from the order as well,
+	 * for anything that reaches the endpoint here regardless.
+	 */
+	public static function forward_trade_order_pay(): void {
+		global $wp;
+
+		$id    = isset( $wp->query_vars['order-pay'] ) ? absint( $wp->query_vars['order-pay'] ) : 0;
+		$order = $id ? wc_get_order( $id ) : null;
+
+		if ( ! $order instanceof \WC_Order ) {
+			return;
+		}
+
+		$target = self::pay_target( $order );
+
+		if ( '' !== $target ) {
+			// A different host, which wp_safe_redirect() would refuse.
+			wp_redirect( $target, 302 );
+			exit;
+		}
+	}
+
+	/** The trade host's pay page for an order placed there, or '' when it is paid where it is. */
+	public static function pay_target( \WC_Order $order ): string {
+		if ( Hosts::is_b2b_host() || ! Hosts::is_b2b_configured() || ! \BeltoftCommerce\Domain\OrderHost::placed_on_trade_host( $order ) ) {
+			return '';
+		}
+
+		$slug = function_exists( 'WC' ) && isset( WC()->query ) ? (string) ( WC()->query->get_query_vars()['order-pay'] ?? '' ) : '';
+
+		if ( '' === $slug ) {
+			return '';
+		}
+
+		return 'https://' . Hosts::b2b() . self::path() . $slug . '/' . $order->get_id() . '/?pay_for_order=true&key=' . rawurlencode( $order->get_order_key() );
 	}
 
 	/** The old checkout path forwards to the new one, endpoint and query intact. */

@@ -15,8 +15,10 @@ require_once __DIR__ . '/Config.php';
 /**
  * The only place in the codebase that knows a hostname.
  *
- * Host controls presentation and URL generation. It never controls access
- * and never controls price — see the architecture document, §2.3.
+ * Host controls presentation and URL generation. It never controls access.
+ * Since 2026-10-20 it limits price: a shop-front request on any host other
+ * than the trade host is priced at retail, whoever is signed in
+ * (Pricing\PricingContext; architecture document §2.3, amended).
  *
  * SET PER ENVIRONMENT IN wp-config.php:
  *

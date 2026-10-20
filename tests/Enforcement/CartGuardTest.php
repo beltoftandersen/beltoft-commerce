@@ -30,6 +30,7 @@ class CartGuardTest extends WP_UnitTestCase {
 		WC()->cart->empty_cart();
 		wc_clear_notices();
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -52,6 +53,7 @@ class CartGuardTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_b2b_customer_cannot_add_a_retail_only_product() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 
 		$this->assertFalse( WC()->cart->add_to_cart( $this->retail_only ) );
@@ -62,6 +64,7 @@ class CartGuardTest extends WP_UnitTestCase {
 	 * add_to_cart() alone stops at is_purchasable() and never reaches it.
 	 */
 	public function test_the_add_to_cart_validation_refuses_out_of_audience() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 
 		$this->assertFalse( apply_filters( 'woocommerce_add_to_cart_validation', true, $this->retail_only, 1 ) );
@@ -87,6 +90,7 @@ class CartGuardTest extends WP_UnitTestCase {
 	 * add-to-cart time. Architecture §2.8.
 	 */
 	public function test_checkout_revalidates_when_the_catalog_changes_mid_session() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 		WC()->cart->add_to_cart( $this->both_priced );
 

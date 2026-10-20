@@ -15,6 +15,7 @@ class SingleProductTest extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -44,6 +45,7 @@ class SingleProductTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_partner_opening_a_retail_only_product_gets_a_404() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'b2b_customer' ) ) );
 
 		$this->go_to( get_permalink( $this->product( null ) ) );

@@ -20,6 +20,7 @@ class ResolverTest extends WP_UnitTestCase {
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
 
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -150,6 +151,7 @@ class ResolverTest extends WP_UnitTestCase {
 	 * -- distinct from the hidden-product case above only in the log.
 	 */
 	public function test_a_visible_but_unpriced_product_is_not_available() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		Roles::install();
 
 		$id = $this->make_product( 'QO-NOGROUPPRICE', Taxonomy::BOTH );

@@ -35,6 +35,7 @@ class CartPriceTest extends WP_UnitTestCase {
 	public function tearDown(): void {
 		WC()->cart->empty_cart();
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -47,6 +48,7 @@ class CartPriceTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_b2b_cart_totals_at_the_group_price() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 		WC()->cart->add_to_cart( $this->simple_id );
 		WC()->cart->calculate_totals();
@@ -70,6 +72,7 @@ class CartPriceTest extends WP_UnitTestCase {
 	 * add-to-cart time. Architecture §2.8.
 	 */
 	public function test_a_role_change_mid_session_is_reflected_in_cart_totals() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 		WC()->cart->add_to_cart( $this->simple_id );
 		WC()->cart->calculate_totals();
@@ -84,6 +87,7 @@ class CartPriceTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_variable_product_line_uses_the_group_price() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$variable = new WC_Product_Variable();
 		$variable->set_name( 'Cart variable' );
 		$variable->save();
@@ -120,6 +124,7 @@ class CartPriceTest extends WP_UnitTestCase {
 	 * not survive into another.
 	 */
 	public function test_the_price_is_re_resolved_when_the_cart_is_rehydrated() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 		WC()->cart->add_to_cart( $this->simple_id );
 		WC()->cart->calculate_totals();
@@ -134,6 +139,7 @@ class CartPriceTest extends WP_UnitTestCase {
 	}
 
 	public function test_quantity_multiplies_the_group_price() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 		WC()->cart->add_to_cart( $this->simple_id, 3 );
 		WC()->cart->calculate_totals();

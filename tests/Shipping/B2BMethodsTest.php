@@ -14,6 +14,7 @@ class B2BMethodsTest extends WP_UnitTestCase {
 	public function tearDown(): void {
 		delete_option( B2BMethods::OPTION );
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -39,6 +40,7 @@ class B2BMethodsTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_trade_session_sees_only_trade_rates() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$this->be_b2b();
 
 		$kept = array_keys( B2BMethods::filter_rates( $this->rates() ) );
@@ -47,6 +49,7 @@ class B2BMethodsTest extends WP_UnitTestCase {
 	}
 
 	public function test_free_carriage_supersedes_the_paid_trade_rate() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$this->be_b2b();
 
 		$rates                      = $this->rates();
@@ -81,6 +84,7 @@ class B2BMethodsTest extends WP_UnitTestCase {
 	}
 
 	public function test_the_package_carries_the_pricing_group() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		// Without this the rate cache cannot tell trade from retail, and an
 		// account approved mid-session keeps being offered consumer rates.
 		$this->be_b2b();

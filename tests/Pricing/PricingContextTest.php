@@ -11,6 +11,7 @@ class PricingContextTest extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
+		unset( $_SERVER['HTTP_HOST'] );
 		wp_set_current_user( 0 );
 		parent::tearDown();
 	}
@@ -33,11 +34,36 @@ class PricingContextTest extends WP_UnitTestCase {
 		$this->assertSame( Registry::retail_slug(), PricingContext::for_user( $user ) );
 	}
 
-	public function test_current_follows_the_logged_in_user() {
+	public function test_current_follows_the_logged_in_user_on_the_trade_host() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b();
 		$user = $this->factory->user->create( array( 'role' => 'b2b_customer' ) );
 		wp_set_current_user( $user );
 
 		$this->assertSame( 'b2b_standard', PricingContext::current() );
+	}
+
+	/** "A partner sees retail prices on retail hosts" (Christian, 2026-10-20). */
+	public function test_current_is_retail_for_a_partner_on_the_retail_host() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::retail();
+		$user = $this->factory->user->create( array( 'role' => 'b2b_customer' ) );
+		wp_set_current_user( $user );
+
+		$this->assertSame( Registry::retail_slug(), PricingContext::current() );
+		$this->assertSame( Registry::retail_slug(), PricingContext::applicable( $user ) );
+		$this->assertSame( 'b2b_standard', PricingContext::for_user( $user ) );
+	}
+
+	/** Without a trade host there is no host to quote trade prices on. */
+	public function test_without_a_trade_host_every_host_is_retail() {
+		add_filter( 'beltoft_commerce_b2b_host', '__return_empty_string' );
+		$_SERVER['HTTP_HOST'] = 'b2b.staging.mindthetrash.pt';
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'b2b_customer' ) ) );
+
+		try {
+			$this->assertSame( Registry::retail_slug(), PricingContext::current() );
+		} finally {
+			remove_filter( 'beltoft_commerce_b2b_host', '__return_empty_string' );
+		}
 	}
 
 	public function test_a_user_meta_override_takes_precedence_over_role() {

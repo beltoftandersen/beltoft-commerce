@@ -16,6 +16,7 @@ class TaxBasisTest extends WP_UnitTestCase {
 	public function tearDown(): void {
 		remove_all_filters( 'option_woocommerce_prices_include_tax' );
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -27,6 +28,7 @@ class TaxBasisTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_b2b_session_reads_prices_as_net() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'b2b_customer' ) ) );
 
 		$this->assertSame( 'no', get_option( 'woocommerce_prices_include_tax' ) );
@@ -34,6 +36,7 @@ class TaxBasisTest extends WP_UnitTestCase {
 	}
 
 	public function test_the_raw_option_read_is_covered_too() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		/*
 		 * WC_Checkout::create_order() stamps the order from a direct
 		 * get_option() call, not wc_prices_include_tax(), so filtering only
@@ -51,6 +54,7 @@ class TaxBasisTest extends WP_UnitTestCase {
 	 * same call strips IVA out of it, which the retail half asserts.
 	 */
 	public function test_a_b2b_price_is_charged_as_entered() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		WC_Tax::_insert_tax_rate( array(
 			'tax_rate_country'  => '',
 			'tax_rate'          => '23.0000',

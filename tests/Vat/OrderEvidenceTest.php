@@ -19,6 +19,7 @@ class OrderEvidenceTest extends WP_UnitTestCase {
 		remove_all_filters( 'pre_http_request' );
 		unset( $_POST['beltoft_vat_number'] );
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -93,6 +94,7 @@ class OrderEvidenceTest extends WP_UnitTestCase {
 	}
 
 	public function test_b2b_sessions_see_ex_iva_and_retail_sees_incl() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		update_option( 'woocommerce_tax_display_shop', 'incl' );
 
 		wp_set_current_user( 0 );

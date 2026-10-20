@@ -3,6 +3,7 @@
 namespace BeltoftCommerce\Domain;
 
 use BeltoftCommerce\Support\Hosts;
+use BeltoftCommerce\Support\Language;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -41,21 +42,69 @@ class TradePages {
 		return ! Hosts::is_b2b_host() && ! current_user_can( 'edit_pages' );
 	}
 
-	/** Published pages whose path belongs to the trade host (HostRoutes::should_redirect()). @return int[] */
+	/**
+	 * Published pages that belong to the trade host, in every language. @return int[]
+	 *
+	 * Every language, because a language plugin (Zerolang) narrows get_posts()
+	 * to the request's: the retail sitemap, built in Portuguese, listed every
+	 * Spanish trade page (/es/acceder/, /es/b2b-tienda/ ...).
+	 */
 	public static function ids(): array {
 		if ( null !== self::$ids ) {
 			return self::$ids;
 		}
 
-		$ids = array();
+		$pages = array_map( 'intval', get_posts( Language::every_language( array( 'post_type' => 'page', 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids' ) ) ) );
 
-		foreach ( get_posts( array( 'post_type' => 'page', 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids' ) ) as $id ) {
-			if ( HostRoutes::is_b2b_only_path( '/' . trim( (string) get_page_uri( (int) $id ), '/' ) . '/' ) ) {
-				$ids[] = (int) $id;
+		Language::prime( $pages );
+
+		return self::$ids = array_values( array_filter( $pages, array( __CLASS__, 'is_trade_page' ) ) );
+	}
+
+	/**
+	 * Whether a page belongs to the trade host - by identity, not by its own
+	 * address.
+	 *
+	 * A translated copy has its own slug (acceder for entrar, cuenta-de-socio
+	 * for conta), so it is judged by its default-language page, the anchor:
+	 * a trade page when the anchor is mapped by HostPages, is the configured
+	 * trade account or checkout page, or sits on a trade-only path
+	 * (HostRoutes::b2b_only_paths()). The page's own path still counts, for a
+	 * copy that has a b2b- slug but no anchor.
+	 */
+	public static function is_trade_page( int $post_id ): bool {
+		if ( ! $post_id || 'page' !== get_post_type( $post_id ) ) {
+			return false;
+		}
+
+		$anchor = Language::default_sibling( $post_id );
+
+		if ( in_array( $anchor, self::identities(), true ) ) {
+			return true;
+		}
+
+		foreach ( array_unique( array( $anchor, $post_id ) ) as $id ) {
+			if ( HostRoutes::is_b2b_only_path( '/' . trim( (string) get_page_uri( $id ), '/' ) . '/' ) ) {
+				return true;
 			}
 		}
 
-		return self::$ids = $ids;
+		return false;
+	}
+
+	/** The trade pages named by id in the settings, whatever their slugs. @return int[] */
+	private static function identities(): array {
+		$ids = class_exists( '\\BeltoftCommerce\\Frontend\\HostPages' ) ? array_values( \BeltoftCommerce\Frontend\HostPages::map() ) : array();
+
+		if ( class_exists( '\\BeltoftCommerce\\Checkout\\B2BCheckoutPage' ) ) {
+			$ids[] = \BeltoftCommerce\Checkout\B2BCheckoutPage::configured_id();
+		}
+
+		if ( class_exists( '\\BeltoftCommerce\\Account\\B2BAccountPage' ) ) {
+			$ids[] = \BeltoftCommerce\Account\B2BAccountPage::configured_id();
+		}
+
+		return array_values( array_filter( array_map( 'intval', $ids ) ) );
 	}
 
 	/** @param array $args */

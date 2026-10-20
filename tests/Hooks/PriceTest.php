@@ -22,6 +22,7 @@ class PriceTest extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -32,6 +33,7 @@ class PriceTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_b2b_customer_sees_the_group_price() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 
 		$this->assertSame( '60', wc_get_product( $this->product_id )->get_price() );
@@ -48,6 +50,7 @@ class PriceTest extends WP_UnitTestCase {
 	 * campaigns that do not apply to them. Architecture §2.5.
 	 */
 	public function test_a_retail_sale_does_not_put_the_product_on_sale_for_b2b() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$product = wc_get_product( $this->product_id );
 		$product->set_sale_price( '70' );
 		$product->save();
@@ -60,6 +63,7 @@ class PriceTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_group_sale_puts_it_on_sale_for_b2b_only() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		update_post_meta( $this->product_id, '_sale_price_group_b2b_standard', '45' );
 
 		wp_set_current_user( $this->b2b_user );
@@ -75,6 +79,7 @@ class PriceTest extends WP_UnitTestCase {
 	 * not purchasable, rather than falling back to retail.
 	 */
 	public function test_a_product_with_no_group_price_shows_nothing_for_b2b() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$bare = new WC_Product_Simple();
 		$bare->set_regular_price( '100' );
 		$bare->save();
@@ -87,6 +92,7 @@ class PriceTest extends WP_UnitTestCase {
 	}
 
 	public function test_regular_and_sale_getters_also_resolve_by_group() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 		$product = wc_get_product( $this->product_id );
 

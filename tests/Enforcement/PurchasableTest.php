@@ -27,6 +27,7 @@ class PurchasableTest extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -55,6 +56,7 @@ class PurchasableTest extends WP_UnitTestCase {
 	}
 
 	public function test_b2b_cannot_purchase_a_retail_only_product() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 
 		$this->assertFalse( wc_get_product( $this->retail_only )->is_purchasable() );
@@ -65,6 +67,7 @@ class PurchasableTest extends WP_UnitTestCase {
 	 * is missing the test proves nothing. Audience must be what excludes it.
 	 */
 	public function test_b2b_cannot_purchase_a_priced_retail_only_product() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 
 		$this->assertSame( '60', wc_get_product( $this->retail_only_priced )->get_price() );
@@ -82,6 +85,7 @@ class PurchasableTest extends WP_UnitTestCase {
 	 * buyable, and must not fall back to retail.
 	 */
 	public function test_b2b_cannot_purchase_a_visible_but_unpriced_product() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 
 		$this->assertFalse( wc_get_product( $this->both_unpriced )->is_purchasable() );

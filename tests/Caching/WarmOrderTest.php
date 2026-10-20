@@ -61,6 +61,7 @@ class WarmOrderTest extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -154,6 +155,7 @@ class WarmOrderTest extends WP_UnitTestCase {
 
 	/** @dataProvider cache_layers */
 	public function test_warming_as_retail_does_not_leak_into_b2b( string $name ) {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$layer = $this->layer( $name );
 
 		$this->as_guest();
@@ -181,6 +183,7 @@ class WarmOrderTest extends WP_UnitTestCase {
 	 * results), so the same discipline applies to catalog visibility.
 	 */
 	public function test_warming_a_listing_as_retail_does_not_leak_into_b2b() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$retail_only = new WC_Product_Simple();
 		$retail_only->set_regular_price( '100' );
 		$retail_only->set_status( 'publish' );

@@ -38,6 +38,8 @@ class Plugin {
 		Frontend\VariationRows::register();
 		Frontend\CartNewestFirst::register();
 		Frontend\CheckoutResume::register();
+		// A partner's trade cart and retail cart share one session row; kept apart (§2.3, 2026-10-20).
+		Frontend\HostCart::register();
 		// Filter drawer and responsive filter layout are native Bricks elements.
 		Frontend\FilterCounts::register();
 		Frontend\RetailOnlyAssets::register();

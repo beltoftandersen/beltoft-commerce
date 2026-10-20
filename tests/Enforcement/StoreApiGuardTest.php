@@ -24,6 +24,7 @@ class StoreApiGuardTest extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -54,6 +55,7 @@ class StoreApiGuardTest extends WP_UnitTestCase {
 	}
 
 	public function test_listing_excludes_out_of_audience_items_for_b2b() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 		$ids = $this->listing_ids();
 
@@ -74,6 +76,7 @@ class StoreApiGuardTest extends WP_UnitTestCase {
 	 * lives — a direct fetch by ID must be denied too. Architecture §2.8.
 	 */
 	public function test_a_direct_fetch_of_a_restricted_product_is_denied_for_b2b() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 
 		$this->assertSame( 404, $this->fetch_status( $this->retail_only ) );
@@ -97,6 +100,7 @@ class StoreApiGuardTest extends WP_UnitTestCase {
 	 * product. The guard's own identifier pattern did not match them.
 	 */
 	public function test_a_direct_fetch_by_slug_is_denied_whatever_is_appended() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 
 		foreach ( array( '', '/', '.' ) as $suffix ) {

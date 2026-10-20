@@ -205,6 +205,7 @@ class ReviewLowFixesTest extends WP_UnitTestCase {
 
 	/** #47: a trade session's price bounds go to the group table; WooCommerce's retail clause never sees them. */
 	public function test_trade_price_bounds_leave_the_retail_clause() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'b2b_customer' ) ) );
 		$_GET['min_price'] = '5';
 

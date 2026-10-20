@@ -266,7 +266,8 @@ class CatalogAudience {
 	}
 
 	public static function can_view( ?int $user_id, int $product_id ): bool {
-		$key = (int) $user_id . ':' . $product_id;
+		// The group in the key: the same account is a retail shopper on the retail host.
+		$key = (int) $user_id . ':' . PricingContext::applicable( $user_id ) . ':' . $product_id;
 
 		if ( isset( self::$view[ $key ] ) ) {
 			return self::$view[ $key ];
@@ -277,7 +278,7 @@ class CatalogAudience {
 
 	private static function compute_can_view( ?int $user_id, int $product_id ): bool {
 		$audience = Taxonomy::audience_of( $product_id );
-		$group    = PricingContext::for_user( $user_id );
+		$group    = PricingContext::applicable( $user_id );
 
 		if ( ! Registry::is_trade( $group ) ) {
 			// Retail sessions see everything except B2B-only products.
@@ -294,7 +295,7 @@ class CatalogAudience {
 	 * not buyable, and must not fall back to retail.
 	 */
 	public static function can_purchase( ?int $user_id, int $product_id ): bool {
-		$key = (int) $user_id . ':' . $product_id;
+		$key = (int) $user_id . ':' . PricingContext::applicable( $user_id ) . ':' . $product_id;
 
 		if ( isset( self::$purchase[ $key ] ) ) {
 			return self::$purchase[ $key ];
@@ -308,7 +309,7 @@ class CatalogAudience {
 			return false;
 		}
 
-		$group = PricingContext::for_user( $user_id );
+		$group = PricingContext::applicable( $user_id );
 
 		if ( ! Registry::is_trade( $group ) ) {
 			return true;

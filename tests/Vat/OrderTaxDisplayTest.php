@@ -34,6 +34,7 @@ class OrderTaxDisplayTest extends WP_UnitTestCase {
 		remove_all_filters( 'option_woocommerce_tax_display_cart' );
 		remove_all_filters( 'option_woocommerce_tax_display_shop' );
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -123,6 +124,7 @@ class OrderTaxDisplayTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_b2b_session_gets_itemized_tax() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'b2b_customer' ) ) );
 
 		$this->assertSame( 'itemized', get_option( 'woocommerce_tax_total_display' ) );

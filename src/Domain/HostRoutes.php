@@ -111,6 +111,11 @@ class HostRoutes {
 	}
 
 	public static function should_redirect( string $path, bool $is_bricks_builder = false ): bool {
+		return self::may_redirect( $is_bricks_builder ) && self::is_b2b_only_path( $path );
+	}
+
+	/** Whether this request may be sent to the trade host at all, whatever it asked for. */
+	private static function may_redirect( bool $is_bricks_builder ): bool {
 		// No trade host configured: these pages have nowhere to go.
 		if ( Hosts::is_b2b_host() || ! Hosts::is_b2b_configured() ) {
 			return false;
@@ -123,11 +128,7 @@ class HostRoutes {
 		 * Bricks rejects it with error_role_manager. Bricks validates both login
 		 * state and edit_post itself before it starts the builder.
 		 */
-		if ( $is_bricks_builder ) {
-			return false;
-		}
-
-		return self::is_b2b_only_path( $path );
+		return ! $is_bricks_builder;
 	}
 
 	/** Whether a path belongs to the trade host, whichever host is asking. */
@@ -190,7 +191,16 @@ class HostRoutes {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only compared, never stored.
 		$is_bricks_builder = isset( $_GET['bricks'] ) && 'run' === $_GET['bricks'];
 
-		if ( ! self::should_redirect( $path, $is_bricks_builder ) ) {
+		/*
+		 * By identity, not by path: a translated copy of a trade page has its
+		 * own slug (/es/acceder/ for /entrar/), which no path list names, and
+		 * answered 200 here. TradePages judges it by its default-language page.
+		 */
+		$is_trade_page = class_exists( '\\BeltoftCommerce\\Domain\\TradePages' )
+			? TradePages::is_trade_page( (int) $post->ID )
+			: self::is_b2b_only_path( $path );
+
+		if ( ! $is_trade_page || ! self::may_redirect( $is_bricks_builder ) ) {
 			return '';
 		}
 
@@ -201,7 +211,21 @@ class HostRoutes {
 		 */
 		$root = class_exists( '\\BeltoftCommerce\\Frontend\\HostPages' ) ? \BeltoftCommerce\Frontend\HostPages::slug_for( (int) $post->ID ) : '';
 
-		return 'https://' . Hosts::b2b() . ( '' !== $root ? '/' . trim( $root, '/' ) . '/' : $path );
+		if ( '' !== $root ) {
+			return 'https://' . Hosts::b2b() . '/' . trim( $root, '/' ) . '/';
+		}
+
+		/*
+		 * Otherwise at its own address, language prefix and all: in path mode
+		 * the Spanish copy is /es/b2b-tienda/, and sending it to /b2b-tienda/
+		 * dropped the language. The permalink is the address the language
+		 * plugin gives it. HostPages maps only default-language pages to root
+		 * paths so far, so a translated copy keeps its physical slug until
+		 * per-language roots exist.
+		 */
+		$link = wp_parse_url( (string) get_permalink( $post ), PHP_URL_PATH );
+
+		return 'https://' . Hosts::b2b() . ( is_string( $link ) && '' !== trim( $link, '/' ) ? '/' . trim( $link, '/' ) . '/' : $path );
 	}
 
 	/** Sends a trade page resolved on the retail host to the trade host. */

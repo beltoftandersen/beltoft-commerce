@@ -28,6 +28,7 @@ class StoreApiPriceTest extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -49,6 +50,7 @@ class StoreApiPriceTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_b2b_request_gets_the_group_price() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 		$data = $this->fetch_product();
 

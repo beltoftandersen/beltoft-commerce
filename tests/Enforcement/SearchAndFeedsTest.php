@@ -24,6 +24,7 @@ class SearchAndFeedsTest extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -48,6 +49,7 @@ class SearchAndFeedsTest extends WP_UnitTestCase {
 	 * a query filter does not reach them. Architecture §2.8.
 	 */
 	public function test_search_hits_are_filtered_for_b2b() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 
 		$hits = SearchIndex::filter_hits( array( array(
@@ -94,6 +96,7 @@ class SearchAndFeedsTest extends WP_UnitTestCase {
 	 * in view context only: the product editor still sees and keeps them all.
 	 */
 	public function test_upsells_and_cross_sells_follow_the_audience() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$b2b_only = $this->make( Taxonomy::B2B );
 
 		$product = wc_get_product( $this->both );
@@ -114,6 +117,7 @@ class SearchAndFeedsTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_feed_excludes_out_of_audience_products() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 
 		$ids = FeedGuard::filter_ids( array( $this->retail_only, $this->both ) );
@@ -126,6 +130,7 @@ class SearchAndFeedsTest extends WP_UnitTestCase {
 	 * restricted sessions rather than recalculated. Architecture §2.8.
 	 */
 	public function test_category_counts_are_hidden_for_a_restricted_session() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 
 		$this->assertSame( '', NavCounts::filter_count( '(12)' ) );

@@ -31,6 +31,7 @@ class AudienceExposureTest extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -102,6 +103,7 @@ class AudienceExposureTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_retail_only_product_never_appears_to_a_b2b_session() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'b2b_customer' ) ) );
 
 		$response = rest_do_request( new WP_REST_Request( 'GET', '/wc/store/v1/products' ) );
@@ -118,6 +120,7 @@ class AudienceExposureTest extends WP_UnitTestCase {
 	 * invisible to everyone.
 	 */
 	public function test_a_b2b_customer_does_see_the_b2b_only_product() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'b2b_customer' ) ) );
 
 		$status = rest_do_request(
@@ -199,6 +202,7 @@ class AudienceExposureTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_b2b_session_lists_only_variations_of_its_catalogue() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		list( , $retail ) = $this->variable( 'Retail variable', null );
 		list( , $trade )  = $this->variable( 'Trade variable', Taxonomy::BOTH );
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'b2b_customer' ) ) );

@@ -27,6 +27,11 @@ class CatalogAudienceTest extends WP_UnitTestCase {
 		$this->pending_user = $this->factory->user->create( array( 'role' => 'b2b_pending' ) );
 	}
 
+	public function tearDown(): void {
+		unset( $_SERVER['HTTP_HOST'] );
+		parent::tearDown();
+	}
+
 	private function make_product( ?string $audience, ?string $group_price ): int {
 		$product = new WC_Product_Simple();
 		$product->set_regular_price( '100' );
@@ -51,6 +56,7 @@ class CatalogAudienceTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_b2b_customer_sees_b2b_and_both_but_not_retail_only() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$this->assertTrue( CatalogAudience::can_view( $this->b2b_user, $this->b2b_only ) );
 		$this->assertTrue( CatalogAudience::can_view( $this->b2b_user, $this->both ) );
 		$this->assertFalse( CatalogAudience::can_view( $this->b2b_user, $this->retail_only ) );
@@ -75,6 +81,7 @@ class CatalogAudienceTest extends WP_UnitTestCase {
 	 * visible to the group, but unpriced for it, means not buyable.
 	 */
 	public function test_can_purchase_is_false_when_the_group_has_no_price() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$this->assertTrue( CatalogAudience::can_view( $this->b2b_user, $this->both_unpriced ) );
 		$this->assertFalse( CatalogAudience::can_purchase( $this->b2b_user, $this->both_unpriced ) );
 	}
@@ -90,11 +97,13 @@ class CatalogAudienceTest extends WP_UnitTestCase {
 	}
 
 	public function test_can_purchase_is_false_for_a_product_the_user_cannot_view() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$this->assertFalse( CatalogAudience::can_purchase( $this->b2b_user, $this->retail_only ) );
 		$this->assertFalse( CatalogAudience::can_purchase( 0, $this->b2b_only ) );
 	}
 
 	public function test_restricts_current_request_is_false_for_a_guest() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( 0 );
 		$this->assertFalse( CatalogAudience::restricts_current_request() );
 
@@ -106,6 +115,7 @@ class CatalogAudienceTest extends WP_UnitTestCase {
 
 	/** A role change in the same process is answered afresh, not from memory. */
 	public function test_a_role_change_is_seen_at_once() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$this->assertFalse( CatalogAudience::can_view( $this->pending_user, $this->b2b_only ) );
 
 		get_userdata( $this->pending_user )->set_role( 'b2b_customer' );
@@ -115,6 +125,7 @@ class CatalogAudienceTest extends WP_UnitTestCase {
 
 	/** A group price written as plain meta, as imports do, is seen at once. */
 	public function test_a_group_price_written_as_meta_is_seen_at_once() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$this->assertFalse( CatalogAudience::can_purchase( $this->b2b_user, $this->both_unpriced ) );
 
 		update_post_meta( $this->both_unpriced, '_price_group_b2b_standard', '55' );

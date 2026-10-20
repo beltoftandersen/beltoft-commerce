@@ -138,6 +138,31 @@ class OrderHost {
 	}
 
 	/**
+	 * Whether an order is a trade order: placed on the trade host, or - with
+	 * no host recorded (placed before hosts were recorded, or made by staff in
+	 * wp-admin) - for a customer whose account trades. Decides how the order
+	 * is paid wherever it is paid from (Checkout\B2BPaymentMethods).
+	 */
+	public static function is_trade_order( \WC_Order $order ): bool {
+		$host = (string) $order->get_meta( self::META_KEY );
+
+		if ( '' !== $host ) {
+			return Hosts::is_b2b_host( $host );
+		}
+
+		$customer = (int) $order->get_customer_id();
+
+		return $customer && \BeltoftCommerce\Pricing\Registry::is_trade( \BeltoftCommerce\Pricing\PricingContext::for_user( $customer ) );
+	}
+
+	/** Whether the order was placed on the trade host (recorded, not inferred). */
+	public static function placed_on_trade_host( \WC_Order $order ): bool {
+		$host = (string) $order->get_meta( self::META_KEY );
+
+		return '' !== $host && Hosts::is_b2b_host( $host );
+	}
+
+	/**
 	 * Emails can be rendered mid-request during checkout, so the previous
 	 * value is stacked and restored rather than unset — clobbering the live
 	 * host would corrupt the rest of that request.

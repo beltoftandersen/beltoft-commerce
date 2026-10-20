@@ -44,6 +44,7 @@ class PriceExposureTest extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -153,6 +154,7 @@ class PriceExposureTest extends WP_UnitTestCase {
 	}
 
 	public function test_a_b2b_customer_does_see_the_group_price() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		// The contract must not be satisfied by the price simply never
 		// appearing anywhere.
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'b2b_customer' ) ) );

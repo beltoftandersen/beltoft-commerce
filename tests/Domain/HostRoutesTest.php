@@ -5,6 +5,9 @@ use BeltoftCommerce\Support\Hosts;
 
 class HostRoutesTest extends WP_UnitTestCase {
 
+	/** @var callable[] page_link filters added by spanish_copy(). */
+	private array $links = array();
+
 	public function setUp(): void {
 		parent::setUp();
 		$_SERVER['HTTP_HOST'] = Hosts::retail();
@@ -12,6 +15,11 @@ class HostRoutesTest extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		unset( $_SERVER['HTTP_HOST'] );
+		remove_all_filters( 'beltoft_commerce_default_language_post' );
+		foreach ( $this->links as $link ) {
+			remove_filter( 'page_link', $link, 10 );
+		}
+		\BeltoftCommerce\Domain\TradePages::forget();
 		parent::tearDown();
 	}
 
@@ -88,5 +96,55 @@ class HostRoutesTest extends WP_UnitTestCase {
 		wp_set_current_user( 0 );
 		$this->go_to( home_url( '/?page_id=' . $page ) );
 		$this->assertStringStartsWith( 'https://' . Hosts::b2b(), HostRoutes::resolved_redirect_target() );
+	}
+
+	/**
+	 * A translated copy, as a path-mode language plugin serves it: linked to
+	 * its default-language page and at a /es/ address.
+	 */
+	private function spanish_copy( int $anchor, string $slug ): int {
+		$copy = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => $slug, 'post_status' => 'publish' ) );
+
+		add_filter( 'beltoft_commerce_default_language_post', static fn( $id, $post_id ) => (int) $post_id === $copy ? $anchor : $id, 10, 2 );
+		$this->links[] = static fn( $link, $post_id ) => (int) $post_id === $copy ? home_url( '/es/' . $slug . '/' ) : $link;
+		add_filter( 'page_link', end( $this->links ), 10, 2 );
+		\BeltoftCommerce\Domain\TradePages::forget();
+
+		return $copy;
+	}
+
+	/** D2: the Spanish login page (/es/acceder/) is a trade page by identity, and never renders on retail. */
+	public function test_a_translated_trade_page_with_its_own_slug_goes_to_the_trade_host() {
+		$login = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'entrar', 'post_status' => 'publish' ) );
+		$copy  = $this->spanish_copy( $login, 'acceder' );
+
+		$this->go_to( home_url( '/?page_id=' . $copy ) );
+
+		$this->assertSame( 'https://' . Hosts::b2b() . '/es/acceder/', HostRoutes::resolved_redirect_target() );
+	}
+
+	/** D3: the language prefix survives the move to the trade host. */
+	public function test_a_translated_trade_copy_keeps_its_language_on_the_trade_host() {
+		$shop = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'b2b-loja', 'post_status' => 'publish' ) );
+		update_option( \BeltoftCommerce\Frontend\HostPages::OPTION, array( 'loja' => $shop ) );
+		$copy = $this->spanish_copy( $shop, 'b2b-tienda' );
+
+		$this->go_to( home_url( '/?page_id=' . $copy ) );
+		$this->assertSame( 'https://' . Hosts::b2b() . '/es/b2b-tienda/', HostRoutes::resolved_redirect_target() );
+
+		// The default-language page still goes to its root path.
+		$this->go_to( home_url( '/?page_id=' . $shop ) );
+		$this->assertSame( 'https://' . Hosts::b2b() . '/loja/', HostRoutes::resolved_redirect_target() );
+
+		delete_option( \BeltoftCommerce\Frontend\HostPages::OPTION );
+	}
+
+	public function test_a_translated_retail_page_stays_on_retail() {
+		$retail = self::factory()->post->create( array( 'post_type' => 'page', 'post_name' => 'sobre-nos', 'post_status' => 'publish' ) );
+		$copy   = $this->spanish_copy( $retail, 'sobre-nosotros' );
+
+		$this->go_to( home_url( '/?page_id=' . $copy ) );
+
+		$this->assertSame( '', HostRoutes::resolved_redirect_target() );
 	}
 }

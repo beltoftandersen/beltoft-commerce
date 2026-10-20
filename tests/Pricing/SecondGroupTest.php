@@ -33,6 +33,7 @@ class SecondGroupTest extends WP_UnitTestCase {
 		wp_set_current_user( 0 );
 		PricingContext::flush();
 		CatalogAudience::flush();
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -61,6 +62,7 @@ class SecondGroupTest extends WP_UnitTestCase {
 	}
 
 	public function test_its_own_price_is_charged_and_missing_prices_fail_closed() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( self::factory()->user->create( array( 'role' => self::ROLE ) ) );
 
 		$priced   = $this->product( Taxonomy::BOTH, '42' );
@@ -72,6 +74,7 @@ class SecondGroupTest extends WP_UnitTestCase {
 	}
 
 	public function test_it_sees_the_trade_catalogue() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$user = self::factory()->user->create( array( 'role' => self::ROLE ) );
 
 		$this->assertTrue( CatalogAudience::can_view( $user, $this->product( Taxonomy::B2B, '5' )->get_id() ) );

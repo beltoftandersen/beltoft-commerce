@@ -89,6 +89,7 @@ class ScannerContextTest extends WP_UnitTestCase {
 
 	/** Same answer the catalogue gives: a retail-only product is invisible to trade. */
 	public function test_a_product_outside_the_partners_catalogue_is_not_visible() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$partner = self::factory()->user->create( array( 'role' => 'b2b_customer' ) );
 
 		$this->assertSame( 'not_visible', $this->assess( $this->product( null ), $partner ) );
@@ -102,6 +103,7 @@ class ScannerContextTest extends WP_UnitTestCase {
 
 	/** A variation is judged by its parent's audience, as the catalogue does. */
 	public function test_a_variation_is_judged_by_its_parent() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		$partner = self::factory()->user->create( array( 'role' => 'b2b_customer' ) );
 
 		$parent = new WC_Product_Variable();

@@ -41,6 +41,7 @@ class VariationPriceTest extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
+		unset( $_SERVER['HTTP_HOST'] );
 		parent::tearDown();
 	}
 
@@ -59,6 +60,7 @@ class VariationPriceTest extends WP_UnitTestCase {
 	 * disagreed with the price of the variation actually selected.
 	 */
 	public function test_an_individual_variation_object_resolves_by_group() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 
 		$variation_id = wc_get_product( $this->variable_id )->get_children()[0];
@@ -91,6 +93,7 @@ class VariationPriceTest extends WP_UnitTestCase {
 	 * simulates one.
 	 */
 	public function test_the_resolver_wins_over_a_late_priority_competitor() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		add_filter( 'woocommerce_product_variation_get_price', function () {
 			return '999';
 		}, 99 );
@@ -108,6 +111,7 @@ class VariationPriceTest extends WP_UnitTestCase {
 	}
 
 	public function test_b2b_sees_the_b2b_range() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( $this->b2b_user );
 
 		$this->assertSame( '60.00', $this->min_price() );
@@ -121,6 +125,7 @@ class VariationPriceTest extends WP_UnitTestCase {
 	 * this filter. Architecture §2.5.
 	 */
 	public function test_warming_as_retail_then_reading_as_b2b_does_not_leak() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( 0 );
 		$this->min_price(); // warm
 
@@ -142,6 +147,7 @@ class VariationPriceTest extends WP_UnitTestCase {
 	 * required to participate in.
 	 */
 	public function test_the_pricing_group_is_folded_into_the_cache_hash() {
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b(); // A trade session is priced on the trade host (§2.3, 2026-10-20).
 		wp_set_current_user( 0 );
 		$retail_hash = apply_filters( 'woocommerce_get_variation_prices_hash', array(), wc_get_product( $this->variable_id ), true );
 

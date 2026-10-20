@@ -229,7 +229,8 @@ class QueryResultCache {
 			return '';
 		}
 
-		$group = PricingContext::for_user();
+		// The group the rows are priced in (PricingContext::current()), not merely the account's.
+		$group = PricingContext::current();
 
 		if ( '' === $group ) {
 			return '';

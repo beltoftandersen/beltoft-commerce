@@ -107,12 +107,34 @@ class B2BPaymentMethods {
 	}
 
 	/**
-	 * Wherever trade prices are charged - not only on the trade host. Pricing
-	 * follows the account, so a partner signed in on the retail site sees
-	 * trade prices and trade shipping there; with retail gateways on top, a
-	 * wholesale order was paid by card.
+	 * Wherever trade prices are charged. Since 2026-10-20 that is the trade
+	 * host only, for the shop front (architecture §2.3, amended): a partner
+	 * signed in on the retail site is priced and pays as a retail shopper.
+	 * Asked through the pricing context, so the two cannot disagree - before,
+	 * retail gateways on top of trade prices had a wholesale order paid by card.
+	 *
+	 * EXCEPT AN ORDER BEING PAID: its total is fixed, so the order decides, not
+	 * the request. A partner opening a pending trade order's pay page from My
+	 * Account on retail was offered cards for the wholesale total.
+	 * (B2BCheckoutPage also sends that page to the trade host.)
 	 */
 	private static function applies(): bool {
+		$order = self::order_being_paid();
+
+		if ( $order ) {
+			return \BeltoftCommerce\Domain\OrderHost::is_trade_order( $order );
+		}
+
 		return \BeltoftCommerce\Pricing\Registry::is_trade( \BeltoftCommerce\Pricing\PricingContext::current() );
+	}
+
+	/** The order on the order-pay endpoint, as WooCommerce parsed it (its pay action reads the same var). */
+	private static function order_being_paid(): ?\WC_Order {
+		global $wp;
+
+		$id    = isset( $wp->query_vars['order-pay'] ) ? absint( $wp->query_vars['order-pay'] ) : 0;
+		$order = $id ? wc_get_order( $id ) : null;
+
+		return $order instanceof \WC_Order ? $order : null;
 	}
 }
