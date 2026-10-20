@@ -142,14 +142,66 @@ class Hosts {
 	 * would silently fall through to retail behaviour on the B2B host.
 	 */
 	public static function is_b2b_host( ?string $host = null ): bool {
-		$host = self::normalise( (string) ( $host ?? ( $_SERVER['HTTP_HOST'] ?? '' ) ) );
-		$b2b  = self::b2b();
+		$raw = (string) ( $host ?? ( $_SERVER['HTTP_HOST'] ?? '' ) );
 
-		if ( '' === $host || '' === $b2b ) {
-			return false;
+		if ( self::host_filtered() ) {
+			$host = self::normalise( $raw );
+
+			return '' !== $host && isset( self::build_trade_host_set()[ $host ] );
 		}
 
-		return $host === $b2b || in_array( $host, self::b2b_hosts(), true );
+		$key = self::memo_key();
+
+		if ( ! isset( self::$answers[ $key ][ $raw ] ) ) {
+			$set  = self::$trade_host_sets[ $key ] ??= self::build_trade_host_set();
+			$host = self::normalise( $raw );
+
+			self::$answers[ $key ][ $raw ] = '' !== $host && isset( $set[ $host ] );
+		}
+
+		return self::$answers[ $key ][ $raw ];
+	}
+
+	/*
+	 * The trade hosts, and is_b2b_host()'s answers, worked out once per
+	 * configuration.
+	 *
+	 * is_b2b_host() is asked several hundred times a page: every price filter
+	 * (PricingContext) and every home/siteurl read (UrlFilter), on every host.
+	 * Rebuilding and validating the host map each time was most of this
+	 * plugin's own cost on a retail page.
+	 *
+	 * Only while no host filter is attached: the constants cannot change in a
+	 * request, and the stored home address (which decides the retail host,
+	 * and so which map entries are dropped, when BELTOFT_RETAIL_HOST is not
+	 * set) is part of the key. A filter may answer differently on every call,
+	 * so with one attached nothing is kept.
+	 */
+
+	/** @var array<string,array<string,true>> memo key => trade host => true */
+	private static array $trade_host_sets = array();
+
+	/** @var array<string,array<string,bool>> memo key => host as asked => answer */
+	private static array $answers = array();
+
+	/**
+	 * Whether a host filter has a callback. WordPress drops a hook's entry
+	 * from $wp_filter when its last callback is removed, so isset() is
+	 * has_filter() without the call - this runs on every is_b2b_host().
+	 */
+	private static function host_filtered(): bool {
+		$filters = $GLOBALS['wp_filter'] ?? array();
+
+		return isset( $filters['beltoft_commerce_b2b_host'] ) || isset( $filters['beltoft_commerce_b2b_hosts'] ) || isset( $filters['beltoft_commerce_retail_host'] );
+	}
+
+	private static function memo_key(): string {
+		return defined( 'BELTOFT_RETAIL_HOST' ) || ! defined( 'BELTOFT_B2B_HOSTS' ) ? '' : self::stored_home();
+	}
+
+	/** @return array<string,true> Every trade host, as host => true. */
+	private static function build_trade_host_set(): array {
+		return array_fill_keys( self::all_b2b_hosts(), true );
 	}
 
 	/** This request's trade host, normalised, or '' when it is not on one. */

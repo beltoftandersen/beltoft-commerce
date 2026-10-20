@@ -50,6 +50,8 @@ class FeedGuard {
 
 		$user_id = get_current_user_id();
 
+		CatalogAudience::prime( array_map( 'intval', $ids ) );
+
 		return array_values( array_filter(
 			$ids,
 			function ( $id ) use ( $user_id ) {
@@ -71,6 +73,8 @@ class FeedGuard {
 		if ( ! is_array( $ids ) ) {
 			return $ids;
 		}
+
+		CatalogAudience::prime( array_map( 'intval', $ids ) );
 
 		return array_values( array_filter( $ids, static fn( $id ) => CatalogAudience::can_view( 0, (int) $id ) ) );
 	}

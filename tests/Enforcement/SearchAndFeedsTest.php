@@ -126,6 +126,71 @@ class SearchAndFeedsTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Related products, upsells and cross-sells arrive as stored ids that no
+	 * WP_Query loaded: FeedGuard loads their posts and terms in one go
+	 * (CatalogAudience::prime()) instead of two queries per id. Read from a
+	 * cold cache, the answer is the one each id gets on its own - variations
+	 * by their product - for retail and for trade, at a fixed query cost.
+	 */
+	public function test_priming_the_related_ids_changes_nothing_that_is_visible() {
+		$b2b_only  = $this->make( Taxonomy::B2B );
+		$variable  = new WC_Product_Variable();
+		$variable->set_status( 'publish' );
+		$variable->save();
+		Taxonomy::set_audience( $variable->get_id(), Taxonomy::B2B );
+		$variation = new WC_Product_Variation();
+		$variation->set_parent_id( $variable->get_id() );
+		$variation->set_regular_price( '10' );
+		$variation->save();
+		$extra = array();
+
+		for ( $i = 0; $i < 6; $i++ ) {
+			$extra[] = $this->make( 0 === $i % 2 ? null : Taxonomy::BOTH );
+		}
+
+		$ids  = array_merge( array( $this->retail_only, $b2b_only, $this->both, $variation->get_id(), $variable->get_id() ), $extra );
+		$seen = array();
+
+		foreach ( array( 'retail' => 0, 'trade' => $this->b2b_user ) as $session => $user ) {
+			if ( $user ) {
+				$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b();
+			}
+
+			wp_set_current_user( $user );
+
+			// One by one, from a cold cache: the answer before priming existed.
+			$expected = array();
+
+			foreach ( $ids as $id ) {
+				wp_cache_flush();
+				\BeltoftCommerce\Catalog\CatalogAudience::flush();
+
+				if ( \BeltoftCommerce\Catalog\CatalogAudience::can_view( $user, $id ) ) {
+					$expected[] = $id;
+				}
+			}
+
+			wp_cache_flush();
+			\BeltoftCommerce\Catalog\CatalogAudience::flush();
+			\BeltoftCommerce\Catalog\CatalogAudience::may_hide_any(); // Its own one-off lookup, not per id.
+
+			$before = get_num_queries();
+			$kept   = FeedGuard::filter_ids( $ids );
+			$spent  = get_num_queries() - $before;
+
+			$this->assertSame( $expected, $kept, $session );
+			$this->assertLessThanOrEqual( 5, $spent, $session . ': priming, not a query or two per id' );
+			$seen[ $session ] = $kept;
+		}
+
+		$this->assertNotContains( $b2b_only, $seen['retail'] );
+		$this->assertNotContains( $variation->get_id(), $seen['retail'] );
+		$this->assertContains( $this->retail_only, $seen['retail'] );
+		$this->assertContains( $variation->get_id(), $seen['trade'], 'the variation of a B2B-only product is visible to trade' );
+		$this->assertNotContains( $this->retail_only, $seen['trade'] );
+	}
+
+	/**
 	 * Category counts are stored globally per term, so they are hidden for
 	 * restricted sessions rather than recalculated. Architecture §2.8.
 	 */

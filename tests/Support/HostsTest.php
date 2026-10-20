@@ -35,6 +35,34 @@ class HostsTest extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	/**
+	 * is_b2b_host() keeps its answers (it is asked on every price filter), but
+	 * only while no host filter is attached: a filter added after an answer
+	 * was kept is obeyed at once, and so is its removal.
+	 */
+	public function test_kept_answers_follow_the_host_filters() {
+		$this->assertTrue( Hosts::is_b2b_host( Hosts::b2b() ) );
+		$this->assertFalse( Hosts::is_b2b_host( self::$en_trade ) );
+
+		$this->seam( 'beltoft_commerce_b2b_hosts', static fn() => array( 'pt' => Hosts::b2b(), 'en' => self::$en_trade ) );
+		$this->assertTrue( Hosts::is_b2b_host( self::$en_trade ) );
+
+		$this->forget_trade_hosts();
+		$this->assertFalse( Hosts::is_b2b_host( self::$en_trade ) );
+
+		$b2b = Hosts::b2b();
+		add_filter( 'beltoft_commerce_b2b_host', '__return_empty_string' );
+		$this->assertFalse( Hosts::is_b2b_host( $b2b ) );
+		remove_filter( 'beltoft_commerce_b2b_host', '__return_empty_string' );
+		$this->assertTrue( Hosts::is_b2b_host( $b2b ) );
+
+		// The request's own host, as it changes between calls.
+		$_SERVER['HTTP_HOST'] = Hosts::retail();
+		$this->assertFalse( Hosts::is_b2b_host() );
+		$_SERVER['HTTP_HOST'] = strtoupper( $b2b ) . ':8443';
+		$this->assertTrue( Hosts::is_b2b_host() );
+	}
+
 	public function test_a_trailing_dot_is_the_same_host() {
 		$this->assertTrue( Hosts::is_b2b_host( Hosts::b2b() . '.' ) );
 	}

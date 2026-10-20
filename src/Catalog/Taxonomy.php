@@ -129,16 +129,115 @@ class Taxonomy {
 	}
 
 	public static function ensure_terms(): void {
-		$labels = array(
+		/*
+		 * One read of the audience terms (terms()), not a term_exists() pair
+		 * per slug: this runs on init, on every request. The same read gives
+		 * the shop's queries their term ids (term_taxonomy_ids()).
+		 */
+		$existing = self::terms();
+		$labels   = array(
 			self::B2B  => __( 'B2B only', 'beltoft-commerce' ),
 			self::BOTH => __( 'Retail and B2B', 'beltoft-commerce' ),
 		);
 
 		foreach ( $labels as $slug => $label ) {
-			if ( ! term_exists( $slug, self::TAXONOMY ) ) {
+			if ( ! isset( $existing[ $slug ] ) && ! term_exists( $slug, self::TAXONOMY ) ) {
 				wp_insert_term( $label, self::TAXONOMY, array( 'slug' => $slug ) );
 			}
 		}
+	}
+
+	/**
+	 * The audience terms read during this request, with the term cache
+	 * generation they were read in (any term change starts a new one).
+	 *
+	 * @var array{0:string,1:array<string,array{term_id:int,term_taxonomy_id:int,parent:int}>}|null
+	 */
+	private static ?array $terms = null;
+
+	/**
+	 * Every audience term, keyed by slug: one query per term cache
+	 * generation, none while a persistent object cache holds the answer.
+	 *
+	 * A lookup, as WP_Tax_Query::transform_query() makes one (get=all): not
+	 * a term listing, so no listing filter (a language plugin's) applies.
+	 *
+	 * @return array<string,array{term_id:int,term_taxonomy_id:int,parent:int}>
+	 */
+	public static function terms(): array {
+		$generation = (string) wp_cache_get_last_changed( 'terms' );
+
+		if ( null !== self::$terms && $generation === self::$terms[0] ) {
+			return self::$terms[1];
+		}
+
+		$key   = 'audience_terms:' . $generation;
+		$terms = wp_cache_get( $key, 'beltoft_commerce' );
+
+		if ( ! is_array( $terms ) ) {
+			global $wpdb;
+
+			$terms = array();
+			$rows  = $wpdb->get_results( $wpdb->prepare(
+				"SELECT t.term_id, t.slug, tt.term_taxonomy_id, tt.parent FROM {$wpdb->terms} AS t INNER JOIN {$wpdb->term_taxonomy} AS tt ON tt.term_id = t.term_id WHERE tt.taxonomy = %s",
+				self::TAXONOMY
+			) );
+
+			foreach ( (array) $rows as $row ) {
+				$terms[ (string) $row->slug ] = array(
+					'term_id'          => (int) $row->term_id,
+					'term_taxonomy_id' => (int) $row->term_taxonomy_id,
+					'parent'           => (int) $row->parent,
+				);
+			}
+
+			wp_cache_set( $key, $terms, 'beltoft_commerce', DAY_IN_SECONDS );
+		}
+
+		self::$terms = array( $generation, $terms );
+
+		return $terms;
+	}
+
+	/**
+	 * The term_taxonomy_ids of these audience slugs and of their child terms -
+	 * what WP_Tax_Query turns a slug clause on this (hierarchical) taxonomy
+	 * into, without the two lookups it makes to get there. Null when a slug
+	 * has no term: callers then keep the slug clause, which is what it was.
+	 *
+	 * @param string[] $slugs
+	 * @return int[]|null
+	 */
+	public static function term_taxonomy_ids( array $slugs ): ?array {
+		$terms = self::terms();
+		$ids   = array();
+
+		foreach ( $slugs as $slug ) {
+			if ( ! isset( $terms[ $slug ] ) ) {
+				return null;
+			}
+
+			$ids[] = $terms[ $slug ]['term_taxonomy_id'];
+		}
+
+		// Children, at any depth (include_children, WP_Tax_Query's default here).
+		$parents = array_map( static fn( $slug ) => $terms[ $slug ]['term_id'], $slugs );
+
+		do {
+			$added = false;
+
+			foreach ( $terms as $term ) {
+				if ( in_array( $term['parent'], $parents, true ) && ! in_array( $term['term_id'], $parents, true ) ) {
+					$parents[] = $term['term_id'];
+					$ids[]     = $term['term_taxonomy_id'];
+					$added     = true;
+				}
+			}
+		} while ( $added );
+
+		sort( $ids );
+
+		return array_values( array_unique( $ids ) );
 	}
 
 	/**

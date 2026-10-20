@@ -129,6 +129,17 @@ class CatalogAudience {
 			return self::$published_b2b_only;
 		}
 
+		/*
+		 * By term_taxonomy_id (B2B and any child term, as the slug clause
+		 * matched), so WP_Tax_Query needs no lookups of its own. No B2B term
+		 * at all: nothing can carry it.
+		 */
+		$tt_ids = Taxonomy::term_taxonomy_ids( array( Taxonomy::B2B ) );
+
+		if ( null === $tt_ids ) {
+			return self::$published_b2b_only = false;
+		}
+
 		$ids = \BeltoftCommerce\Enforcement\QueryFilter::without_audience( static fn() => get_posts( array(
 			'post_type'               => 'product',
 			'post_status'             => 'publish',
@@ -139,9 +150,10 @@ class CatalogAudience {
 			'update_post_term_cache'  => false,
 			'tax_query'               => array(
 				array(
-					'taxonomy' => Taxonomy::TAXONOMY,
-					'field'    => 'slug',
-					'terms'    => array( Taxonomy::B2B ),
+					'taxonomy'         => Taxonomy::TAXONOMY,
+					'field'            => 'term_taxonomy_id',
+					'terms'            => $tt_ids,
+					'include_children' => false,
 				),
 			),
 		) ) );
@@ -253,6 +265,37 @@ class CatalogAudience {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Load the posts and product terms can_view() reads for these ids in two
+	 * queries, rather than two per id. For lists of stored ids (related
+	 * products, upsells, cross-sells, feeds) that no WP_Query primed. Only a
+	 * cache fill: what can_view() answers does not change.
+	 *
+	 * @param int[] $ids Products or variations.
+	 */
+	public static function prime( array $ids ): void {
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', $ids ) ) ) );
+
+		if ( ! $ids ) {
+			return;
+		}
+
+		_prime_post_caches( $ids, false, false );
+
+		// A variation is judged on its product (Taxonomy::audience_of()).
+		$products = array();
+
+		foreach ( $ids as $id ) {
+			$post       = get_post( $id );
+			$products[] = $post && 'product_variation' === $post->post_type && $post->post_parent ? (int) $post->post_parent : $id;
+		}
+
+		$products = array_values( array_unique( $products ) );
+
+		_prime_post_caches( $products, false, false );
+		update_object_term_cache( $products, 'product' );
 	}
 
 	/** wc_get_product() with a per-request memory. Read-only use only. */

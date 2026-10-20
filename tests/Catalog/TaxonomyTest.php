@@ -34,6 +34,24 @@ class TaxonomyTest extends WP_UnitTestCase {
 		$this->assertFalse( $taxonomy->show_in_rest );
 	}
 
+	/** The ids WP_Tax_Query would turn the slugs into: each term, its children, and null for a slug with no term. */
+	public function test_term_taxonomy_ids_are_the_terms_and_their_children() {
+		$b2b   = get_term_by( 'slug', Taxonomy::B2B, Taxonomy::TAXONOMY );
+		$both  = get_term_by( 'slug', Taxonomy::BOTH, Taxonomy::TAXONOMY );
+		$child = wp_insert_term( 'Stands', Taxonomy::TAXONOMY, array( 'slug' => 'b2b-stands', 'parent' => (int) $b2b->term_id ) );
+		$grand = wp_insert_term( 'Small stands', Taxonomy::TAXONOMY, array( 'slug' => 'b2b-stands-small', 'parent' => (int) $child['term_id'] ) );
+
+		$expected = array( (int) $b2b->term_taxonomy_id, (int) $child['term_taxonomy_id'], (int) $grand['term_taxonomy_id'] );
+		sort( $expected );
+
+		$this->assertSame( $expected, Taxonomy::term_taxonomy_ids( array( Taxonomy::B2B ) ) );
+		$this->assertSame( array( (int) $both->term_taxonomy_id ), Taxonomy::term_taxonomy_ids( array( Taxonomy::BOTH ) ) );
+		$this->assertNull( Taxonomy::term_taxonomy_ids( array( 'no-such-audience' ) ) );
+
+		wp_delete_term( (int) $grand['term_id'], Taxonomy::TAXONOMY );
+		$this->assertNotContains( (int) $grand['term_taxonomy_id'], Taxonomy::term_taxonomy_ids( array( Taxonomy::B2B ) ), 'a term change is seen at once' );
+	}
+
 	public function test_only_the_two_real_terms_exist() {
 		foreach ( array( Taxonomy::B2B, Taxonomy::BOTH ) as $slug ) {
 			$this->assertNotNull(

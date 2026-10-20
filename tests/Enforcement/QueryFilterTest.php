@@ -53,6 +53,46 @@ class QueryFilterTest extends WP_UnitTestCase {
 		return array_map( 'intval', $q->posts );
 	}
 
+	/**
+	 * The audience clause names its terms by term_taxonomy_id
+	 * (Taxonomy::term_taxonomy_ids()), so WP_Tax_Query makes no lookups of
+	 * its own. It must select exactly what the slug clause selected, child
+	 * terms of an audience term included, for retail and for trade.
+	 */
+	public function test_the_audience_clause_selects_what_the_slug_clause_did() {
+		$child  = wp_insert_term( 'B2B display stands', Taxonomy::TAXONOMY, array( 'slug' => 'b2b-stands', 'parent' => (int) get_term_by( 'slug', Taxonomy::B2B, Taxonomy::TAXONOMY )->term_id ) );
+		$stand  = $this->make( null );
+		wp_set_object_terms( $stand, array( (int) $child['term_id'] ), Taxonomy::TAXONOMY );
+		$by_slug = static fn( array $slugs, string $operator ) => \BeltoftCommerce\Enforcement\QueryFilter::without_audience( fn() => array_map( 'intval', get_posts( array(
+			'post_type'      => 'product',
+			'post_status'    => 'publish',
+			'fields'         => 'ids',
+			'posts_per_page' => -1,
+			'orderby'        => 'ID',
+			'order'          => 'ASC',
+			'tax_query'      => array( array( 'taxonomy' => Taxonomy::TAXONOMY, 'field' => 'slug', 'terms' => $slugs, 'operator' => $operator ) ),
+		) ) ) );
+		$filtered = fn() => $this->ids( array( 'orderby' => 'ID', 'order' => 'ASC' ) );
+
+		wp_set_current_user( 0 );
+		\BeltoftCommerce\Catalog\CatalogAudience::flush();
+		$this->assertSame( $by_slug( Taxonomy::retail_hidden_slugs(), 'NOT IN' ), $filtered() );
+		$this->assertNotContains( $stand, $filtered(), 'a child of the B2B term is hidden from retail, as before' );
+
+		// From a cold cache: the product query and one read of the audience
+		// terms, where the slug clause took two term lookups of its own.
+		wp_cache_flush();
+		wp_load_alloptions();
+		$before = get_num_queries();
+		$filtered();
+		$this->assertLessThanOrEqual( 2, get_num_queries() - $before );
+
+		$_SERVER['HTTP_HOST'] = \BeltoftCommerce\Support\Hosts::b2b();
+		wp_set_current_user( $this->b2b_user );
+		$this->assertSame( $by_slug( Taxonomy::b2b_visible_slugs(), 'IN' ), $filtered() );
+		$this->assertContains( $stand, $filtered() );
+	}
+
 	public function test_a_guest_sees_retail_and_both_but_not_b2b_only() {
 		wp_set_current_user( 0 );
 		$ids = $this->ids();

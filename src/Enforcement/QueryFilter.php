@@ -147,22 +147,45 @@ class QueryFilter {
 			// A B2B session sees only b2b and both. Expressed as IN rather
 			// than NOT IN because untagged products are retail-only and
 			// must be excluded.
-			? array(
-				'taxonomy' => Taxonomy::TAXONOMY,
-				'field'    => 'slug',
-				'terms'    => Taxonomy::b2b_visible_slugs(),
-				'operator' => 'IN',
-			)
-			: array(
-				'taxonomy' => Taxonomy::TAXONOMY,
-				'field'    => 'slug',
-				'terms'    => Taxonomy::retail_hidden_slugs(),
-				'operator' => 'NOT IN',
-			);
+			? self::audience_clause( Taxonomy::b2b_visible_slugs(), 'IN' )
+			: self::audience_clause( Taxonomy::retail_hidden_slugs(), 'NOT IN' );
 
 		$clauses = array_diff_key( $existing, array( 'relation' => true ) );
 
 		$query->set( 'tax_query', $clauses ? array( 'relation' => 'AND', $existing, $audience ) : array( $audience ) );
+	}
+
+	/**
+	 * The audience clause, by term_taxonomy_id when the terms are known.
+	 *
+	 * The same SQL as the slug clause it replaces: WP_Tax_Query turns a slug
+	 * on a hierarchical taxonomy into term ids, adds the children, and turns
+	 * those into term_taxonomy_ids - two queries for every product query on a
+	 * page without a persistent object cache. Taxonomy::term_taxonomy_ids()
+	 * gives the same ids (children included) from one read per request. A
+	 * slug with no term keeps the slug clause, exactly as before.
+	 *
+	 * @param string[] $slugs
+	 */
+	private static function audience_clause( array $slugs, string $operator ): array {
+		$ids = Taxonomy::term_taxonomy_ids( $slugs );
+
+		if ( null === $ids ) {
+			return array(
+				'taxonomy' => Taxonomy::TAXONOMY,
+				'field'    => 'slug',
+				'terms'    => $slugs,
+				'operator' => $operator,
+			);
+		}
+
+		return array(
+			'taxonomy'         => Taxonomy::TAXONOMY,
+			'field'            => 'term_taxonomy_id',
+			'terms'            => $ids,
+			'operator'         => $operator,
+			'include_children' => false,
+		);
 	}
 
 	/** See CatalogAudience::published_b2b_only_exist(). */

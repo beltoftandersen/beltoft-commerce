@@ -34,7 +34,7 @@ class AccountEndpoint {
 
 		if ( ! get_option( 'beltoft_saved_carts_endpoint_flushed' ) ) {
 			flush_rewrite_rules( false );
-			update_option( 'beltoft_saved_carts_endpoint_flushed', '1', false );
+			update_option( 'beltoft_saved_carts_endpoint_flushed', '1', true ); // Autoloaded: read on every request.
 		}
 	}
 

@@ -81,7 +81,9 @@ class TradePages {
 
 		$anchor = Language::default_sibling( $post_id );
 
-		if ( in_array( $anchor, self::identities(), true ) ) {
+		// The named ids first: identities() reads each page's status, a query
+		// per page on a request that has not loaded them - asked on every page view.
+		if ( in_array( $anchor, self::named_ids(), true ) && in_array( $anchor, self::identities(), true ) ) {
 			return true;
 		}
 
@@ -92,6 +94,26 @@ class TradePages {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Every id the settings name, published or not, from the (autoloaded)
+	 * options identities() reads: nothing outside this list can be one of them.
+	 *
+	 * @return int[]
+	 */
+	private static function named_ids(): array {
+		$ids = class_exists( '\\BeltoftCommerce\\Frontend\\HostPages' ) ? array_values( (array) get_option( \BeltoftCommerce\Frontend\HostPages::OPTION, array() ) ) : array();
+
+		if ( class_exists( '\\BeltoftCommerce\\Checkout\\B2BCheckoutPage' ) ) {
+			$ids[] = get_option( \BeltoftCommerce\Checkout\B2BCheckoutPage::OPTION, 0 );
+		}
+
+		if ( class_exists( '\\BeltoftCommerce\\Account\\B2BAccountPage' ) ) {
+			$ids[] = get_option( \BeltoftCommerce\Account\B2BAccountPage::OPTION, 0 );
+		}
+
+		return array_map( 'intval', $ids );
 	}
 
 	/** The trade pages named by id in the settings, whatever their slugs. @return int[] */

@@ -174,7 +174,8 @@ class PricingContext {
 	 */
 	private static function is_queue_runner(): bool {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only compared; the runner checks its own nonce.
-		return wp_doing_ajax() && isset( $_REQUEST['action'] ) && 'as_async_request_queue_runner' === $_REQUEST['action'];
+		// The request field first: wp_doing_ajax() runs a filter, and this is asked on every price filter.
+		return isset( $_REQUEST['action'] ) && 'as_async_request_queue_runner' === $_REQUEST['action'] && wp_doing_ajax();
 	}
 
 	/** Whether the ACCOUNT is retail (its own group, not this request's). */
